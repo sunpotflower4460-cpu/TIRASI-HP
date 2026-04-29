@@ -1,0 +1,106 @@
+.performer-editor-note,
+.performer-empty {
+  color: #75686a;
+  font-size: 0.92rem;
+  margin-top: 4px;
+}
+
+.performer-editor-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.performer-editor-item {
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(209, 122, 134, 0.18);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.performer-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.performer-card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.performer-card {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 14px;
+  align-items: start;
+  color: var(--text-color);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(209, 122, 134, 0.16);
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.performer-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(209, 122, 134, 0.34);
+}
+
+.performer-image-box {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: rgba(209, 122, 134, 0.12);
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.performer-image-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.performer-card h3 {
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-size: 1.25rem;
+  margin-bottom: 4px;
+}
+
+.performer-catchcopy {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.performer-bio {
+  color: #75686a;
+  font-size: 0.92rem;
+}
+
+.theme-night .performer-editor-note,
+.theme-night .performer-empty,
+.theme-night .performer-bio {
+  color: rgba(243, 237, 240, 0.72);
+}
+
+.theme-night .performer-editor-item,
+.theme-night .performer-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(201, 168, 90, 0.22);
+}
+
+@media (max-width: 560px) {
+  .performer-card {
+    grid-template-columns: 1fr;
+  }
+}
