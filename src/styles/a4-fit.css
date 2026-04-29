@@ -1,0 +1,29 @@
+.a4-fit-warning-box {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(242, 156, 156, 0.14);
+  border: 1px solid rgba(242, 156, 156, 0.35);
+}
+
+.a4-fit-warning-box strong {
+  display: block;
+  color: var(--primary-color);
+  margin-bottom: 6px;
+}
+
+.a4-fit-warning-box ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #75686a;
+}
+
+.a4-fit-ok {
+  margin-top: 12px;
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+.theme-night .a4-fit-warning-box ul {
+  color: rgba(243, 237, 240, 0.72);
+}
