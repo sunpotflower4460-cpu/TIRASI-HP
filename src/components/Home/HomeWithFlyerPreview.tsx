@@ -8,13 +8,13 @@ import "../../styles/home-flyer-preview.css";
 type HomeWithFlyerPreviewProps = {
   eventData: EventData;
   onOpenFlyer: () => void;
-  onEdit: () => void;
+  onEdit?: () => void;
 };
 
-export function HomeWithFlyerPreview({ eventData, onOpenFlyer, onEdit }: HomeWithFlyerPreviewProps) {
+export function HomeWithFlyerPreview({ eventData, onOpenFlyer }: HomeWithFlyerPreviewProps) {
   return (
     <>
-      <HomePage eventData={eventData} onOpenFlyer={onOpenFlyer} onEdit={onEdit} />
+      <HomePage eventData={eventData} onOpenFlyer={onOpenFlyer} />
       <div className="home-page home-flyer-preview-wrap">
         <PerformerProfiles eventData={eventData} />
         <VisitorInfo eventData={eventData} />

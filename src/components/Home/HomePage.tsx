@@ -6,10 +6,11 @@ import "../../styles/home-responsive.css";
 type HomePageProps = {
   eventData: EventData;
   onOpenFlyer: () => void;
-  onEdit: () => void;
+  onEdit?: () => void;
+  showEditButton?: boolean;
 };
 
-export function HomePage({ eventData, onOpenFlyer, onEdit }: HomePageProps) {
+export function HomePage({ eventData, onOpenFlyer, onEdit, showEditButton = false }: HomePageProps) {
   const acts = eventData.schedule.filter((item) => item.type === "act");
 
   return (
@@ -26,7 +27,9 @@ export function HomePage({ eventData, onOpenFlyer, onEdit }: HomePageProps) {
           </p>
           <div className="home-cta-row">
             <button type="button" onClick={onOpenFlyer}>A4チラシを見る</button>
-            <button type="button" className="secondary" onClick={onEdit}>内容を編集</button>
+            {showEditButton && onEdit ? (
+              <button type="button" className="secondary" onClick={onEdit}>内容を編集</button>
+            ) : null}
           </div>
         </div>
 
