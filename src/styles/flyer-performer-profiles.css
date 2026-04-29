@@ -1,0 +1,49 @@
+.flyer-performer-section {
+  width: min(600px, calc(100% - 20px));
+  margin: 18px auto 40px;
+  background: var(--bg-color);
+  border: 1px solid rgba(209, 122, 134, 0.18);
+  box-shadow: var(--shadow);
+  border-radius: 12px;
+  padding: 26px;
+}
+
+.flyer-performer-list {
+  display: grid;
+  gap: 10px;
+}
+
+.flyer-performer-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px dotted rgba(209, 122, 134, 0.3);
+}
+
+.flyer-performer-item strong {
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-size: 1.08rem;
+}
+
+.flyer-performer-item span {
+  color: #75686a;
+  font-size: 0.9rem;
+}
+
+.theme-night .flyer-performer-item span {
+  color: rgba(243, 237, 240, 0.72);
+}
+
+@media print {
+  .flyer-performer-section {
+    width: 210mm;
+    max-width: 210mm;
+    min-height: auto;
+    margin: 0;
+    box-shadow: none;
+    border-radius: 0;
+    page-break-before: always;
+    padding: 16mm 14mm;
+  }
+}

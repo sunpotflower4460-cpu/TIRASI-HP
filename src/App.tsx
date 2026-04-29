@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { EditorPage } from "./components/Editor/EditorPage";
 import { EventManager } from "./components/Editor/EventManager";
 import { ThemeEditor } from "./components/Editor/ThemeEditor";
-import { FlyerView } from "./components/Flyer/FlyerView";
+import { FlyerWithProfiles } from "./components/Flyer/FlyerWithProfiles";
 import { HomeWithFlyerPreview } from "./components/Home/HomeWithFlyerPreview";
 import { getThemeClassName } from "./data/themes";
 import { useEventData } from "./hooks/useEventData";
@@ -90,7 +90,7 @@ export default function App() {
           <button onClick={() => navigate("/editor")}>編集</button>
           <button className="active" onClick={() => navigate("/flyer")}>A4</button>
         </nav>
-        <FlyerView eventData={eventData} variant="a4" onEdit={() => navigate("/editor")} onPrint={() => window.print()} />
+        <FlyerWithProfiles eventData={eventData} onEdit={() => navigate("/editor")} onPrint={() => window.print()} />
       </div>
     );
   }

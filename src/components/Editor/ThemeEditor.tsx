@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { themeOptions } from "../../data/themes";
 import type { EventData } from "../../types/event";
+import { FlyerOptionsEditor } from "./FlyerOptionsEditor";
 import { PerformerEditor } from "./PerformerEditor";
 
 type ThemeEditorProps = {
@@ -33,6 +34,7 @@ export function ThemeEditor({ eventData, setEventData }: ThemeEditorProps) {
         </label>
         <p className="theme-description">{selectedTheme.description}</p>
       </section>
+      <FlyerOptionsEditor eventData={eventData} setEventData={setEventData} />
       <PerformerEditor eventData={eventData} setEventData={setEventData} />
     </>
   );
