@@ -1,0 +1,295 @@
+.one-page-flyer-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 10px 40px;
+}
+
+.one-page-toolbar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.one-page-toolbar button {
+  color: white;
+  background: var(--primary-color);
+  border: 1px solid rgba(209, 122, 134, 0.22);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(209, 122, 134, 0.18);
+}
+
+.one-page-sheet {
+  width: 210mm;
+  height: 297mm;
+  max-width: calc(100vw - 20px);
+  background: var(--bg-color);
+  color: var(--text-color);
+  box-shadow: var(--shadow);
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 12mm;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 8mm;
+}
+
+.one-page-header {
+  border-bottom: 2px dashed var(--secondary-color);
+  padding-bottom: 6mm;
+}
+
+.one-page-kicker {
+  color: var(--secondary-color);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  margin-bottom: 4mm;
+}
+
+.one-page-title-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8mm;
+}
+
+.one-page-title-row h1 {
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-size: 3.6rem;
+  line-height: 1;
+}
+
+.one-page-subtitle {
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin-top: 2mm;
+}
+
+.one-page-subtitle span {
+  color: var(--primary-color);
+  font-size: 0.72em;
+  margin-left: 3mm;
+}
+
+.one-page-date {
+  background: white;
+  border: 1px solid rgba(209, 122, 134, 0.18);
+  border-radius: 16px;
+  padding: 5mm 7mm;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(209, 122, 134, 0.12);
+}
+
+.one-page-date strong {
+  display: block;
+  color: var(--primary-color);
+  font-size: 1.4rem;
+}
+
+.one-page-date span {
+  font-weight: 700;
+}
+
+.one-page-organizer {
+  margin-top: 4mm;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.one-page-badges {
+  display: flex;
+  gap: 3mm;
+  flex-wrap: wrap;
+  margin-top: 4mm;
+}
+
+.one-page-badges span {
+  background: var(--primary-color);
+  color: white;
+  border-radius: 999px;
+  padding: 2mm 5mm;
+  font-weight: 700;
+}
+
+.one-page-badges span:nth-child(2) {
+  background: var(--accent-color);
+}
+
+.one-page-note {
+  margin-top: 3mm;
+  color: #6d6062;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.one-page-main-grid {
+  display: grid;
+  grid-template-columns: 1.28fr 0.82fr;
+  gap: 8mm;
+  min-height: 0;
+}
+
+.one-page-schedule,
+.one-page-open-mic,
+.one-page-access {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(209, 122, 134, 0.14);
+  border-radius: 18px;
+  padding: 6mm;
+}
+
+.one-page-schedule h2,
+.one-page-open-mic h2,
+.one-page-access h2 {
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-size: 1.25rem;
+  margin-bottom: 4mm;
+}
+
+.one-page-schedule-list {
+  display: grid;
+  gap: 2.4mm;
+}
+
+.one-page-schedule-row {
+  display: grid;
+  grid-template-columns: 34mm 1fr;
+  gap: 4mm;
+  align-items: baseline;
+  padding-bottom: 2.4mm;
+  border-bottom: 1px dotted rgba(209, 122, 134, 0.3);
+}
+
+.one-page-time {
+  color: var(--primary-color);
+  font-family: "Roboto", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.one-page-schedule-row strong {
+  font-size: 0.98rem;
+}
+
+.one-page-break {
+  color: var(--accent-color);
+  background: rgba(141, 163, 114, 0.08);
+  border-radius: 999px;
+  padding: 2mm 4mm;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.one-page-end {
+  color: var(--secondary-color);
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-align: center;
+  margin-top: 1mm;
+}
+
+.one-page-side {
+  display: grid;
+  gap: 6mm;
+  align-content: start;
+}
+
+.one-page-open-mic {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 10px 18px rgba(209, 122, 134, 0.18);
+}
+
+.one-page-open-mic h2 {
+  color: white;
+}
+
+.one-page-open-mic strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 2mm;
+}
+
+.one-page-open-mic p,
+.one-page-open-mic small {
+  display: block;
+  line-height: 1.5;
+}
+
+.one-page-open-headline {
+  font-weight: 700;
+  margin: 4mm 0 1.5mm;
+}
+
+.one-page-access p {
+  color: #6d6062;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.one-page-footer {
+  display: flex;
+  justify-content: center;
+  gap: 8mm;
+  border-top: 2px dashed var(--secondary-color);
+  padding-top: 5mm;
+  color: #6d6062;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+@media screen and (max-width: 760px) {
+  .one-page-flyer-page {
+    overflow-x: auto;
+    align-items: flex-start;
+  }
+
+  .one-page-sheet {
+    transform: scale(0.46);
+    transform-origin: top left;
+    max-width: none;
+    margin-left: 8px;
+    margin-bottom: -150mm;
+  }
+
+  .one-page-toolbar {
+    width: 100%;
+  }
+}
+
+@media print {
+  html,
+  body {
+    width: 210mm;
+    min-height: 297mm;
+    background: white !important;
+  }
+
+  .one-page-flyer-page {
+    display: block;
+    width: 210mm;
+    height: 297mm;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .one-page-sheet {
+    width: 210mm;
+    height: 297mm;
+    max-width: 210mm;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 10mm;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+}

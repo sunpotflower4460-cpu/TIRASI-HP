@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { EditorGate } from "./components/Editor/EditorGate";
 import { EditorPage } from "./components/Editor/EditorPage";
 import { EventManager } from "./components/Editor/EventManager";
 import { ThemeEditor } from "./components/Editor/ThemeEditor";
@@ -20,6 +21,7 @@ function getRoute(): Route {
 
 export default function App() {
   const [route, setRoute] = useState<Route>(getRoute);
+  const [isEditorUnlocked, setIsEditorUnlocked] = useState(false);
   const {
     eventData,
     setEventData,
@@ -49,6 +51,19 @@ export default function App() {
   };
 
   if (route === "/editor") {
+    if (!isEditorUnlocked) {
+      return (
+        <div className={`app-shell ${themeClassName}`}>
+          <nav className="app-nav print-hidden" aria-label="ページ切り替え">
+            <button onClick={() => navigate("/")}>HP</button>
+            <button className="active" onClick={() => navigate("/editor")}>管理</button>
+            <button onClick={() => navigate("/flyer")}>A4</button>
+          </nav>
+          <EditorGate onUnlock={() => setIsEditorUnlocked(true)} onBackHome={() => navigate("/")} />
+        </div>
+      );
+    }
+
     return (
       <div className={`app-shell ${themeClassName}`}>
         <nav className="app-nav print-hidden" aria-label="ページ切り替え">
