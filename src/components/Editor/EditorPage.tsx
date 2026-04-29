@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
+import { normalizeEventData } from "../../hooks/useEventData";
 import type { EventData, ScheduleItem, SocialLink } from "../../types/event";
 import { FlyerView } from "../Flyer/FlyerView";
 
@@ -195,7 +196,7 @@ export function EditorPage({
           return;
         }
 
-        setEventData(parsed);
+        setEventData(normalizeEventData(parsed));
         setNotice("JSONからイベント内容を読み込みました。");
       } catch {
         setNotice("読み込みに失敗しました。JSONファイルを確認してください。");

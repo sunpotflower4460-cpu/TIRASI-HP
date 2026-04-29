@@ -4,6 +4,13 @@ import type { EventData } from "../types/event";
 
 const STORAGE_KEY = "tirasi-hp:event-data:v1";
 
+export function normalizeEventData(eventData: EventData): EventData {
+  return {
+    ...eventData,
+    themeId: eventData.themeId || defaultEvent.themeId
+  };
+}
+
 function safeParseEventData(value: string | null): EventData | null {
   if (!value) return null;
 
@@ -12,7 +19,7 @@ function safeParseEventData(value: string | null): EventData | null {
     if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.schedule)) {
       return null;
     }
-    return parsed;
+    return normalizeEventData(parsed);
   } catch {
     return null;
   }

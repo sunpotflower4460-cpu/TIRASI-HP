@@ -19,6 +19,7 @@ export type SocialLink = {
 };
 
 export type EventData = {
+  themeId: string;
   venueSubtitle: string;
   title: string;
   subtitle: string;
