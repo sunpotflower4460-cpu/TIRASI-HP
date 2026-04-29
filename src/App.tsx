@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { EditorPage } from "./components/Editor/EditorPage";
+import { EventManager } from "./components/Editor/EventManager";
 import { ThemeEditor } from "./components/Editor/ThemeEditor";
 import { FlyerView } from "./components/Flyer/FlyerView";
 import { HomeWithFlyerPreview } from "./components/Home/HomeWithFlyerPreview";
 import { getThemeClassName } from "./data/themes";
 import { useEventData } from "./hooks/useEventData";
 import "./styles/theme.css";
+import "./styles/event-manager.css";
 
 type Route = "/" | "/editor" | "/flyer";
 
@@ -18,7 +20,19 @@ function getRoute(): Route {
 
 export default function App() {
   const [route, setRoute] = useState<Route>(getRoute);
-  const { eventData, setEventData, resetEventData, hasCustomData } = useEventData();
+  const {
+    eventData,
+    setEventData,
+    resetEventData,
+    hasCustomData,
+    eventRecords,
+    activeEventId,
+    selectEvent,
+    createNewEvent,
+    duplicateActiveEvent,
+    renameActiveEvent,
+    deleteActiveEvent
+  } = useEventData();
   const themeClassName = getThemeClassName(eventData.themeId);
 
   useEffect(() => {
@@ -43,6 +57,15 @@ export default function App() {
         </nav>
         <div className="editor-page theme-editor-wrap">
           <section className="editor-panel">
+            <EventManager
+              eventRecords={eventRecords}
+              activeEventId={activeEventId}
+              onSelectEvent={selectEvent}
+              onCreateNewEvent={createNewEvent}
+              onDuplicateActiveEvent={duplicateActiveEvent}
+              onRenameActiveEvent={renameActiveEvent}
+              onDeleteActiveEvent={deleteActiveEvent}
+            />
             <ThemeEditor eventData={eventData} setEventData={setEventData} />
           </section>
         </div>
