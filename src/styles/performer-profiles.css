@@ -44,3 +44,63 @@
   border-radius: 20px;
   padding: 16px;
 }
+
+.performer-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(209, 122, 134, 0.34);
+}
+
+.performer-image-box {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: rgba(209, 122, 134, 0.12);
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.performer-image-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.performer-card h3 {
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-size: 1.25rem;
+  margin-bottom: 4px;
+}
+
+.performer-catchcopy {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.performer-bio {
+  color: #75686a;
+  font-size: 0.92rem;
+}
+
+.theme-night .performer-editor-note,
+.theme-night .performer-empty,
+.theme-night .performer-bio {
+  color: rgba(243, 237, 240, 0.72);
+}
+
+.theme-night .performer-editor-item,
+.theme-night .performer-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(201, 168, 90, 0.22);
+}
+
+@media (max-width: 560px) {
+  .performer-card {
+    grid-template-columns: 1fr;
+  }
+}
