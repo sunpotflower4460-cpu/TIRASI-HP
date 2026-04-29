@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { EditorPage } from "./components/Editor/EditorPage";
 import { FlyerView } from "./components/Flyer/FlyerView";
 import { HomeWithFlyerPreview } from "./components/Home/HomeWithFlyerPreview";
+import { getThemeClassName } from "./data/themes";
 import { useEventData } from "./hooks/useEventData";
 
 type Route = "/" | "/editor" | "/flyer";
@@ -16,6 +17,7 @@ function getRoute(): Route {
 export default function App() {
   const [route, setRoute] = useState<Route>(getRoute);
   const { eventData, setEventData, resetEventData, hasCustomData } = useEventData();
+  const themeClassName = getThemeClassName(eventData.themeId);
 
   useEffect(() => {
     const onPopState = () => setRoute(getRoute());
@@ -31,7 +33,7 @@ export default function App() {
 
   if (route === "/editor") {
     return (
-      <div className="app-shell">
+      <div className={`app-shell ${themeClassName}`}>
         <nav className="app-nav print-hidden" aria-label="ページ切り替え">
           <button onClick={() => navigate("/")}>HP</button>
           <button className="active" onClick={() => navigate("/editor")}>編集</button>
@@ -50,7 +52,7 @@ export default function App() {
 
   if (route === "/flyer") {
     return (
-      <div className="app-shell">
+      <div className={`app-shell ${themeClassName}`}>
         <nav className="app-nav print-hidden" aria-label="ページ切り替え">
           <button onClick={() => navigate("/")}>HP</button>
           <button onClick={() => navigate("/editor")}>編集</button>
@@ -62,7 +64,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${themeClassName}`}>
       <nav className="app-nav print-hidden" aria-label="ページ切り替え">
         <button className="active" onClick={() => navigate("/")}>HP</button>
         <button onClick={() => navigate("/editor")}>編集</button>
