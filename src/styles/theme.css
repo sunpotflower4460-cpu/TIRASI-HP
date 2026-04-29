@@ -66,6 +66,24 @@
   border-radius: 12px;
   background: white;
   padding: 10px 12px;
-  color: var(--text-color);
+  color: #4a3e40;
   outline: none;
+}
+
+.theme-night .editor-header,
+.theme-night .editor-card,
+.theme-night .home-hero-copy,
+.theme-night .home-event-card,
+.theme-night .home-section,
+.theme-night .home-summary-grid article {
+  background: rgba(25, 23, 42, 0.92);
+  border-color: rgba(201, 168, 90, 0.24);
+}
+
+.theme-night .soft-text,
+.theme-night .save-status,
+.theme-night .theme-description,
+.theme-night .status-note,
+.theme-night .address {
+  color: rgba(243, 237, 240, 0.72);
 }
