@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { EditorPage } from "./components/Editor/EditorPage";
+import { ThemeEditor } from "./components/Editor/ThemeEditor";
 import { FlyerView } from "./components/Flyer/FlyerView";
 import { HomeWithFlyerPreview } from "./components/Home/HomeWithFlyerPreview";
 import { getThemeClassName } from "./data/themes";
 import { useEventData } from "./hooks/useEventData";
+import "./styles/theme.css";
 
 type Route = "/" | "/editor" | "/flyer";
 
@@ -39,6 +41,11 @@ export default function App() {
           <button className="active" onClick={() => navigate("/editor")}>編集</button>
           <button onClick={() => navigate("/flyer")}>A4</button>
         </nav>
+        <div className="editor-page theme-editor-wrap">
+          <section className="editor-panel">
+            <ThemeEditor eventData={eventData} setEventData={setEventData} />
+          </section>
+        </div>
         <EditorPage
           eventData={eventData}
           setEventData={setEventData}
