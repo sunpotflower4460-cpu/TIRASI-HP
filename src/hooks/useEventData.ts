@@ -56,7 +56,17 @@ function safeParseEventData(value: string | null): EventData | null {
   }
 }
 
-function safeParseEventLibrary(value: string | null): EventRecord[] | null {
+function normalizeEventRecord(record: EventRecord): EventRecord {
+  return {
+    ...record,
+    id: record.id || createEventId(),
+    name: record.name || buildEventName(record.eventData),
+    eventData: normalizeEventData(record.eventData),
+    updatedAt: record.updatedAt || nowIso()
+  };
+}
+
+export function safeParseEventLibrary(value: string | null): EventRecord[] | null {
   if (!value) return null;
 
   try {
@@ -64,13 +74,9 @@ function safeParseEventLibrary(value: string | null): EventRecord[] | null {
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
 
     const records = parsed
-      .filter((record) => record && typeof record.id === "string" && typeof record.name === "string")
+      .filter((record) => record && typeof record === "object")
       .filter((record) => record.eventData && Array.isArray(record.eventData.schedule))
-      .map((record) => ({
-        ...record,
-        eventData: normalizeEventData(record.eventData),
-        updatedAt: record.updatedAt || nowIso()
-      }));
+      .map((record) => normalizeEventRecord(record));
 
     return records.length > 0 ? records : null;
   } catch {
@@ -194,6 +200,15 @@ export function useEventData() {
     });
   };
 
+  const replaceEventLibrary = (records: EventRecord[]) => {
+    const normalizedRecords = records.map((record) => normalizeEventRecord(record));
+    if (normalizedRecords.length === 0) return false;
+
+    setEventRecords(normalizedRecords);
+    setActiveEventId(normalizedRecords[0].id);
+    return true;
+  };
+
   return {
     eventData,
     setEventData,
@@ -205,6 +220,7 @@ export function useEventData() {
     createNewEvent,
     duplicateActiveEvent,
     renameActiveEvent,
-    deleteActiveEvent
+    deleteActiveEvent,
+    replaceEventLibrary
   };
 }
