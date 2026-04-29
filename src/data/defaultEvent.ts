@@ -23,6 +23,9 @@ export const defaultEvent: EventData = {
     { type: "end", label: "- 企画終了 -" }
   ],
   performers: [],
+  flyerOptions: {
+    showPerformerProfiles: false
+  },
   openMic: {
     title: "Open Mic",
     time: "企画終了後 - 19:30",
