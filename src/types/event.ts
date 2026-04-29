@@ -18,6 +18,15 @@ export type SocialLink = {
   url: string;
 };
 
+export type PerformerProfile = {
+  id: string;
+  name: string;
+  catchcopy: string;
+  bio: string;
+  imageUrl: string;
+  linkUrl: string;
+};
+
 export type EventData = {
   themeId: string;
   venueSubtitle: string;
@@ -31,6 +40,7 @@ export type EventData = {
   startTime: string;
   statusNote: string;
   schedule: ScheduleItem[];
+  performers: PerformerProfile[];
   openMic: {
     title: string;
     time: string;
