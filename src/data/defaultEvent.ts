@@ -1,6 +1,7 @@
 import type { EventData } from "../types/event";
 
 export const defaultEvent: EventData = {
+  themeId: "spring",
   venueSubtitle: "In TATEBAYASHI PUBLIC HOUSE",
   title: "生音",
   subtitle: "Acoustic Live",
