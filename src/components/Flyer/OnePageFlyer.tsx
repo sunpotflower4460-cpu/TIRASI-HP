@@ -34,9 +34,7 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
 
   const handlePrint = () => {
     setPrintNotice("印刷画面を開きます。反応しない場合は、共有ボタンからSafari/ブラウザで開いてPDF保存してください。");
-    window.setTimeout(() => {
-      onPrint();
-    }, 80);
+    onPrint();
   };
 
   return (
