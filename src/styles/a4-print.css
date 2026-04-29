@@ -1,0 +1,45 @@
+.a4-sheet {
+  overflow: visible;
+}
+
+.a4-sheet .content-wrapper {
+  min-height: 297mm;
+}
+
+.flyer-page-a4 .flyer-container {
+  margin: 0 auto;
+}
+
+@media screen {
+  .flyer-page-a4 {
+    overflow-x: auto;
+  }
+}
+
+@media print {
+  .app-shell {
+    background: white !important;
+  }
+
+  .flyer-page-a4 {
+    width: 210mm;
+    margin: 0;
+  }
+
+  .a4-sheet {
+    page-break-after: always;
+    overflow: hidden;
+  }
+
+  .a4-sheet .content-wrapper {
+    min-height: 297mm;
+  }
+
+  .flyer-header,
+  .status-box,
+  .timetable,
+  .open-mic-card,
+  .flyer-footer {
+    break-inside: avoid;
+  }
+}
