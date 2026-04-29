@@ -1,4 +1,7 @@
 import type { EventData } from "../../types/event";
+import "../../styles/home.css";
+import "../../styles/home-extra.css";
+import "../../styles/home-responsive.css";
 
 type HomePageProps = {
   eventData: EventData;
