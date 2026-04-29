@@ -26,7 +26,11 @@ export function normalizeEventData(eventData: EventData): EventData {
   return {
     ...eventData,
     themeId: eventData.themeId || defaultEvent.themeId,
-    performers: Array.isArray(eventData.performers) ? eventData.performers : []
+    performers: Array.isArray(eventData.performers) ? eventData.performers : [],
+    flyerOptions: {
+      ...defaultEvent.flyerOptions,
+      ...(eventData.flyerOptions ?? {})
+    }
   };
 }
 
