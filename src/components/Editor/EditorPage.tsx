@@ -1,4 +1,5 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useRef, useState } from "react";
+import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 import type { EventData, ScheduleItem, SocialLink } from "../../types/event";
 import { FlyerView } from "../Flyer/FlyerView";
 
@@ -40,6 +41,29 @@ function updateLabelItem(item: ScheduleItem, label: string): ScheduleItem {
   return { ...item, label };
 }
 
+function isEventData(value: unknown): value is EventData {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Partial<EventData>;
+  return (
+    typeof candidate.title === "string" &&
+    typeof candidate.subtitle === "string" &&
+    typeof candidate.volume === "string" &&
+    typeof candidate.date === "string" &&
+    typeof candidate.day === "string" &&
+    typeof candidate.startTime === "string" &&
+    Array.isArray(candidate.schedule) &&
+    Boolean(candidate.openMic) &&
+    Boolean(candidate.venue) &&
+    Array.isArray(candidate.socials)
+  );
+}
+
+function makeExportFileName(eventData: EventData) {
+  const safeTitle = `${eventData.title}-${eventData.volume}`.replace(/[\\/:*?"<>|\s]+/g, "-");
+  return `${safeTitle || "event-flyer"}.json`;
+}
+
 export function EditorPage({
   eventData,
   setEventData,
@@ -47,6 +71,12 @@ export function EditorPage({
   hasCustomData,
   onOpenFlyer
 }: EditorPageProps) {
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [notice, setNotice] = useState<string>("");
+
+  const actCount = eventData.schedule.filter((item) => item.type === "act").length;
+  const hasA4Warning = eventData.schedule.length >= 8 || actCount >= 7;
+
   const updateRoot = (patch: Partial<EventData>) => {
     setEventData((current) => ({ ...current, ...patch }));
   };
@@ -72,6 +102,20 @@ export function EditorPage({
     }));
   };
 
+  const moveScheduleItem = (index: number, direction: -1 | 1) => {
+    setEventData((current) => {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= current.schedule.length) return current;
+
+      const nextSchedule = [...current.schedule];
+      const currentItem = nextSchedule[index];
+      nextSchedule[index] = nextSchedule[nextIndex];
+      nextSchedule[nextIndex] = currentItem;
+
+      return { ...current, schedule: nextSchedule };
+    });
+  };
+
   const addAct = () => {
     setEventData((current) => ({
       ...current,
@@ -80,6 +124,9 @@ export function EditorPage({
   };
 
   const removeScheduleItem = (index: number) => {
+    const shouldRemove = window.confirm("このスケジュール項目を削除しますか？");
+    if (!shouldRemove) return;
+
     setEventData((current) => ({
       ...current,
       schedule: current.schedule.filter((_, itemIndex) => itemIndex !== index)
@@ -103,10 +150,61 @@ export function EditorPage({
   };
 
   const removeSocial = (index: number) => {
+    const shouldRemove = window.confirm("このSNSリンクを削除しますか？");
+    if (!shouldRemove) return;
+
     setEventData((current) => ({
       ...current,
       socials: current.socials.filter((_, socialIndex) => socialIndex !== index)
     }));
+  };
+
+  const handleReset = () => {
+    const shouldReset = window.confirm("編集内容をすべて初期値に戻しますか？このブラウザに保存された内容も消えます。");
+    if (!shouldReset) return;
+
+    resetEventData();
+    setNotice("初期データに戻しました。");
+  };
+
+  const downloadEventJson = () => {
+    const json = JSON.stringify(eventData, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = makeExportFileName(eventData);
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setNotice("JSONを書き出しました。");
+  };
+
+  const importEventJson = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        if (!isEventData(parsed)) {
+          setNotice("読み込みに失敗しました。イベントJSONの形式を確認してください。");
+          return;
+        }
+
+        setEventData(parsed);
+        setNotice("JSONからイベント内容を読み込みました。");
+      } catch {
+        setNotice("読み込みに失敗しました。JSONファイルを確認してください。");
+      } finally {
+        event.target.value = "";
+      }
+    };
+
+    reader.readAsText(file);
   };
 
   return (
@@ -121,15 +219,32 @@ export function EditorPage({
 
           <div className="editor-actions">
             <button type="button" onClick={onOpenFlyer}>A4を見る</button>
-            <button type="button" className="ghost" onClick={resetEventData}>
+            <button type="button" onClick={downloadEventJson}>JSON保存</button>
+            <button type="button" onClick={() => importInputRef.current?.click()}>JSON読込</button>
+            <button type="button" className="ghost" onClick={handleReset}>
               初期値に戻す
             </button>
+            <input
+              ref={importInputRef}
+              className="visually-hidden"
+              type="file"
+              accept="application/json,.json"
+              onChange={importEventJson}
+            />
           </div>
         </div>
 
         <p className="save-status">
           {hasCustomData ? "編集内容を保存中です。" : "現在は初期データを表示しています。"}
         </p>
+
+        {notice ? <p className="editor-notice">{notice}</p> : null}
+
+        {hasA4Warning ? (
+          <div className="editor-warning">
+            <strong>A4注意:</strong> スケジュール項目が多いため、印刷時に下部が詰まる可能性があります。A4画面で収まりを確認してください。
+          </div>
+        ) : null}
 
         <section className="editor-card">
           <h2>基本情報</h2>
@@ -191,9 +306,17 @@ export function EditorPage({
                   />
                 )}
 
-                <button type="button" className="danger" onClick={() => removeScheduleItem(index)}>
-                  削除
-                </button>
+                <div className="row-actions">
+                  <button type="button" onClick={() => moveScheduleItem(index, -1)} disabled={index === 0}>
+                    ↑
+                  </button>
+                  <button type="button" onClick={() => moveScheduleItem(index, 1)} disabled={index === eventData.schedule.length - 1}>
+                    ↓
+                  </button>
+                  <button type="button" className="danger" onClick={() => removeScheduleItem(index)}>
+                    削除
+                  </button>
+                </div>
               </div>
             ))}
           </div>
