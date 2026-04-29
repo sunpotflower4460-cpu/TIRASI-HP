@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { themeOptions } from "../../data/themes";
 import type { EventData } from "../../types/event";
+import { AdminGuide } from "./AdminGuide";
 import { EditorNotice } from "./EditorNotice";
 import { FlyerOptionsEditor } from "./FlyerOptionsEditor";
 import { PerformerEditor } from "./PerformerEditor";
@@ -16,6 +17,7 @@ export function ThemeEditor({ eventData, setEventData }: ThemeEditorProps) {
   return (
     <>
       <EditorNotice />
+      <AdminGuide />
       <section className="editor-card">
         <h2>色テーマ</h2>
         <label className="editor-field">
