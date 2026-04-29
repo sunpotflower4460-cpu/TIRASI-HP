@@ -7,7 +7,13 @@ export function FlyerWithProfiles(props: { eventData: EventData; onEdit: () => v
 
   return (
     <>
-      <FlyerView eventData={props.eventData} variant="a4" onEdit={props.onEdit} onPrint={props.onPrint} />
+      <FlyerView
+        eventData={props.eventData}
+        variant="a4"
+        onEdit={props.onEdit}
+        onPrint={props.onPrint}
+        showEditButton={false}
+      />
       {showProfiles ? <FlyerPerformerProfiles performers={props.eventData.performers} /> : null}
     </>
   );
