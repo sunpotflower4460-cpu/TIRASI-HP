@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { EventData } from "../../types/event";
 import { getA4FitWarnings } from "../../utils/a4Fit";
+import "../../styles/a4-fit.css";
 
 type FlyerOptionsEditorProps = {
   eventData: EventData;
