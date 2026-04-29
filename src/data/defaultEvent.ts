@@ -22,6 +22,7 @@ export const defaultEvent: EventData = {
     { type: "act", time: "17:40 - 18:05", name: "結城和也" },
     { type: "end", label: "- 企画終了 -" }
   ],
+  performers: [],
   openMic: {
     title: "Open Mic",
     time: "企画終了後 - 19:30",
