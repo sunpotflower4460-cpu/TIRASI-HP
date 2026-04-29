@@ -1,0 +1,63 @@
+.visitor-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.visitor-info-card {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(209, 122, 134, 0.16);
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.visitor-info-wide {
+  grid-column: 1 / -1;
+}
+
+.visitor-info-card h3 {
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.visitor-info-card ol {
+  padding-left: 1.2rem;
+}
+
+.visitor-info-card li + li {
+  margin-top: 8px;
+}
+
+.visitor-info-card dt {
+  color: var(--primary-color);
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.visitor-info-card dd {
+  color: #75686a;
+  margin-top: 2px;
+}
+
+.visitor-info-note {
+  color: #75686a;
+  margin-top: 8px;
+}
+
+.theme-night .visitor-info-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(201, 168, 90, 0.22);
+}
+
+.theme-night .visitor-info-card dd,
+.theme-night .visitor-info-note {
+  color: rgba(243, 237, 240, 0.72);
+}
+
+@media (max-width: 760px) {
+  .visitor-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
