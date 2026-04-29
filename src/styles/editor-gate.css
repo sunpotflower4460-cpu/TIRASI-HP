@@ -1,0 +1,87 @@
+.editor-gate-page {
+  min-height: calc(100vh - 72px);
+  display: grid;
+  place-items: center;
+  padding: 28px 16px;
+}
+
+.editor-gate-card {
+  width: min(100%, 520px);
+  background: rgba(255, 249, 250, 0.94);
+  border: 1px solid rgba(209, 122, 134, 0.18);
+  box-shadow: var(--shadow);
+  border-radius: 28px;
+  padding: 30px;
+}
+
+.editor-gate-card h1 {
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  margin: 4px 0 10px;
+}
+
+.editor-gate-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 22px;
+  font-weight: 700;
+}
+
+.editor-gate-field span {
+  color: #6d6062;
+  font-size: 0.92rem;
+}
+
+.editor-gate-field input {
+  width: 100%;
+  border: 1px solid rgba(209, 122, 134, 0.24);
+  border-radius: 16px;
+  background: white;
+  padding: 13px 14px;
+  color: var(--text-color);
+  outline: none;
+}
+
+.editor-gate-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.editor-gate-actions button {
+  color: white;
+  background: var(--primary-color);
+  border: 1px solid rgba(209, 122, 134, 0.22);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 700;
+}
+
+.editor-gate-actions .ghost {
+  color: var(--text-color);
+  background: white;
+}
+
+.editor-gate-error {
+  color: #9b4450;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.editor-gate-note {
+  color: #75686a;
+  font-size: 0.85rem;
+  margin-top: 18px;
+}
+
+@media (max-width: 560px) {
+  .editor-gate-card {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .editor-gate-actions button {
+    width: 100%;
+  }
+}
