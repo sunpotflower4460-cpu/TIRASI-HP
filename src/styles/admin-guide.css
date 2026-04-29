@@ -1,0 +1,76 @@
+.admin-guide-card {
+  border-color: rgba(141, 163, 114, 0.24);
+}
+
+.admin-guide-note {
+  color: #75686a;
+  font-size: 0.92rem;
+  margin-top: 4px;
+}
+
+.admin-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.admin-guide-grid article {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(209, 122, 134, 0.14);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.admin-guide-grid h3 {
+  color: var(--primary-color);
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-size: 1.08rem;
+  margin-bottom: 10px;
+}
+
+.admin-guide-steps,
+.admin-checklist {
+  display: grid;
+  gap: 8px;
+  color: #6d6062;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.admin-guide-steps {
+  padding-left: 1.25rem;
+}
+
+.admin-checklist {
+  list-style: none;
+  padding-left: 0;
+}
+
+.admin-checklist li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+}
+
+.admin-checklist span {
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+.theme-night .admin-guide-note,
+.theme-night .admin-guide-steps,
+.theme-night .admin-checklist {
+  color: rgba(243, 237, 240, 0.72);
+}
+
+.theme-night .admin-guide-grid article {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(201, 168, 90, 0.22);
+}
+
+@media (max-width: 760px) {
+  .admin-guide-grid {
+    grid-template-columns: 1fr;
+  }
+}
