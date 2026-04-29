@@ -84,10 +84,9 @@ export default function App() {
 
   if (route === "/flyer") {
     return (
-      <div className={`app-shell ${themeClassName}`}>
+      <div className={`app-shell public-view ${themeClassName}`}>
         <nav className="app-nav print-hidden" aria-label="ページ切り替え">
           <button onClick={() => navigate("/")}>HP</button>
-          <button onClick={() => navigate("/editor")}>編集</button>
           <button className="active" onClick={() => navigate("/flyer")}>A4</button>
         </nav>
         <FlyerWithProfiles eventData={eventData} onEdit={() => navigate("/editor")} onPrint={() => window.print()} />
@@ -96,10 +95,9 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${themeClassName}`}>
+    <div className={`app-shell public-view ${themeClassName}`}>
       <nav className="app-nav print-hidden" aria-label="ページ切り替え">
         <button className="active" onClick={() => navigate("/")}>HP</button>
-        <button onClick={() => navigate("/editor")}>編集</button>
         <button onClick={() => navigate("/flyer")}>A4</button>
       </nav>
       <HomeWithFlyerPreview eventData={eventData} onOpenFlyer={() => navigate("/flyer")} onEdit={() => navigate("/editor")} />
