@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { EditorPage } from "./components/Editor/EditorPage";
 import { FlyerView } from "./components/Flyer/FlyerView";
-import { HomePage } from "./components/Home/HomePage";
+import { HomeWithFlyerPreview } from "./components/Home/HomeWithFlyerPreview";
 import { useEventData } from "./hooks/useEventData";
 
 type Route = "/" | "/editor" | "/flyer";
@@ -68,7 +68,7 @@ export default function App() {
         <button onClick={() => navigate("/editor")}>編集</button>
         <button onClick={() => navigate("/flyer")}>A4</button>
       </nav>
-      <HomePage eventData={eventData} onOpenFlyer={() => navigate("/flyer")} onEdit={() => navigate("/editor")} />
+      <HomeWithFlyerPreview eventData={eventData} onOpenFlyer={() => navigate("/flyer")} onEdit={() => navigate("/editor")} />
     </div>
   );
 }
