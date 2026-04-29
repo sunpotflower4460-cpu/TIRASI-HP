@@ -1,4 +1,5 @@
 import type { EventData } from "../../types/event";
+import { AdminEntryLink } from "./AdminEntryLink";
 import { HomeFlyerPreview } from "./HomeFlyerPreview";
 import { HomePage } from "./HomePage";
 import { PerformerProfiles } from "./PerformerProfiles";
@@ -11,7 +12,7 @@ type HomeWithFlyerPreviewProps = {
   onEdit?: () => void;
 };
 
-export function HomeWithFlyerPreview({ eventData, onOpenFlyer }: HomeWithFlyerPreviewProps) {
+export function HomeWithFlyerPreview({ eventData, onOpenFlyer, onEdit }: HomeWithFlyerPreviewProps) {
   return (
     <>
       <HomePage eventData={eventData} onOpenFlyer={onOpenFlyer} />
@@ -19,6 +20,7 @@ export function HomeWithFlyerPreview({ eventData, onOpenFlyer }: HomeWithFlyerPr
         <PerformerProfiles eventData={eventData} />
         <VisitorInfo eventData={eventData} />
         <HomeFlyerPreview eventData={eventData} onOpenFlyer={onOpenFlyer} />
+        <AdminEntryLink onEdit={onEdit} />
       </div>
     </>
   );
