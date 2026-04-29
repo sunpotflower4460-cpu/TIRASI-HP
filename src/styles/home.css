@@ -1,0 +1,195 @@
+.home-page {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 44px 0 72px;
+}
+
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.home-hero-copy,
+.home-event-card,
+.home-section {
+  background: rgba(255, 249, 250, 0.92);
+  border: 1px solid rgba(209, 122, 134, 0.18);
+  box-shadow: var(--shadow);
+  border-radius: 28px;
+}
+
+.home-hero-copy {
+  padding: clamp(28px, 5vw, 64px);
+}
+
+.home-kicker,
+.home-section-label,
+.card-label {
+  color: var(--primary-color);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.home-hero h1 {
+  font-family: "Zen Maru Gothic", sans-serif;
+  color: var(--primary-color);
+  font-size: clamp(3.2rem, 10vw, 6.6rem);
+  line-height: 0.92;
+  margin: 16px 0 22px;
+}
+
+.home-hero h1 span {
+  display: block;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  line-height: 1.25;
+  margin-top: 14px;
+  color: var(--text-color);
+}
+
+.home-lead {
+  max-width: 660px;
+  color: #6d6062;
+  font-size: clamp(1rem, 2vw, 1.18rem);
+}
+
+.home-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.home-cta-row button {
+  color: white;
+  background: var(--primary-color);
+  border: 1px solid rgba(209, 122, 134, 0.4);
+  border-radius: 999px;
+  padding: 12px 20px;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(209, 122, 134, 0.18);
+}
+
+.home-cta-row button.secondary {
+  color: var(--text-color);
+  background: white;
+}
+
+.home-event-card {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(160deg, rgba(255, 249, 250, 0.98), rgba(141, 163, 114, 0.12));
+}
+
+.home-date {
+  color: var(--primary-color);
+  font-family: "Roboto", sans-serif;
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  font-weight: 700;
+  margin: 14px 0 8px;
+}
+
+.home-date span {
+  font-size: 0.55em;
+}
+
+.home-start,
+.home-price,
+.home-place {
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.home-price {
+  display: inline-flex;
+  justify-content: center;
+  align-self: center;
+  background: var(--highlight-color);
+  color: white;
+  border-radius: 999px;
+  padding: 7px 18px;
+}
+
+.home-section {
+  margin-top: 28px;
+  padding: clamp(22px, 4vw, 34px);
+}
+
+.home-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.home-summary-grid article {
+  background: rgba(255, 249, 250, 0.92);
+  border: 1px solid rgba(209, 122, 134, 0.18);
+  box-shadow: var(--shadow);
+  border-radius: 24px;
+  padding: 26px;
+}
+
+.home-section h2,
+.home-summary-grid h2 {
+  font-family: "Zen Maru Gothic", sans-serif;
+  color: var(--primary-color);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  margin: 4px 0 12px;
+}
+
+.soft-text {
+  color: #75686a;
+  margin-top: 8px;
+}
+
+.home-section-heading {
+  margin-bottom: 18px;
+}
+
+.home-schedule-list {
+  display: grid;
+  gap: 10px;
+}
+
+.home-schedule-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(224, 200, 203, 0.64);
+}
+
+.home-schedule-row span {
+  color: var(--primary-color);
+  font-family: "Roboto", sans-serif;
+  font-weight: 700;
+}
+
+.home-schedule-row.break,
+.home-schedule-row.end {
+  background: rgba(141, 163, 114, 0.12);
+}
+
+.home-schedule-row.break span,
+.home-schedule-row.end span {
+  color: var(--accent-color);
+}
+
+.home-act-count {
+  margin-top: 14px;
+  color: #75686a;
+  font-weight: 700;
+}
