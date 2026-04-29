@@ -31,7 +31,8 @@ export default function App() {
     createNewEvent,
     duplicateActiveEvent,
     renameActiveEvent,
-    deleteActiveEvent
+    deleteActiveEvent,
+    replaceEventLibrary
   } = useEventData();
   const themeClassName = getThemeClassName(eventData.themeId);
 
@@ -65,6 +66,7 @@ export default function App() {
               onDuplicateActiveEvent={duplicateActiveEvent}
               onRenameActiveEvent={renameActiveEvent}
               onDeleteActiveEvent={deleteActiveEvent}
+              onReplaceEventLibrary={replaceEventLibrary}
             />
             <ThemeEditor eventData={eventData} setEventData={setEventData} />
           </section>
