@@ -27,6 +27,10 @@ export type PerformerProfile = {
   linkUrl: string;
 };
 
+export type FlyerOptions = {
+  showPerformerProfiles: boolean;
+};
+
 export type EventData = {
   themeId: string;
   venueSubtitle: string;
@@ -41,6 +45,7 @@ export type EventData = {
   statusNote: string;
   schedule: ScheduleItem[];
   performers: PerformerProfile[];
+  flyerOptions: FlyerOptions;
   openMic: {
     title: string;
     time: string;
