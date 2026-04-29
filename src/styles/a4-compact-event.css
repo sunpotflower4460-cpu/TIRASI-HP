@@ -1,0 +1,146 @@
+.a4-sheet.compact-event-flyer .content-wrapper {
+  padding: 11mm 12mm;
+}
+
+.a4-sheet.compact-event-flyer .flyer-header {
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+.a4-sheet.compact-event-flyer .subtitle {
+  font-size: 0.72rem;
+  margin-bottom: 6px;
+}
+
+.a4-sheet.compact-event-flyer .flyer-header h1 {
+  font-size: 2.15rem;
+  margin-bottom: 10px;
+}
+
+.a4-sheet.compact-event-flyer .title-subline {
+  font-size: 0.58em;
+}
+
+.a4-sheet.compact-event-flyer .date-box {
+  padding: 8px 22px;
+  font-size: 1.1rem;
+  margin: 8px 0;
+}
+
+.a4-sheet.compact-event-flyer .venue-info {
+  margin-top: 8px;
+  font-size: 0.92rem;
+}
+
+.a4-sheet.compact-event-flyer .price-tag {
+  margin-top: 10px;
+  font-size: 0.92rem;
+  padding: 4px 14px;
+}
+
+.a4-sheet.compact-event-flyer .status-box {
+  margin-bottom: 20px;
+  padding: 12px;
+}
+
+.a4-sheet.compact-event-flyer .start-time {
+  font-size: 1rem;
+}
+
+.a4-sheet.compact-event-flyer .status-note {
+  font-size: 0.74rem;
+  margin-top: 6px;
+}
+
+.a4-sheet.compact-event-flyer .timetable {
+  margin-bottom: 22px;
+}
+
+.a4-sheet.compact-event-flyer .section-title {
+  margin-bottom: 14px;
+  font-size: 1.15rem;
+}
+
+.a4-sheet.compact-event-flyer .act-item {
+  padding: 8px 0;
+}
+
+.a4-sheet.compact-event-flyer .act-time {
+  min-width: 100px;
+  font-size: 0.86rem;
+}
+
+.a4-sheet.compact-event-flyer .act-name {
+  font-size: 0.95rem;
+}
+
+.a4-sheet.compact-event-flyer .break-item {
+  margin: 8px 0;
+  padding: 7px;
+  font-size: 0.8rem;
+}
+
+.a4-sheet.compact-event-flyer .end-marker {
+  margin-top: 12px;
+  font-size: 0.74rem;
+}
+
+.a4-sheet.compact-event-flyer .open-mic-card {
+  padding: 18px 18px;
+  margin-bottom: 20px;
+}
+
+.a4-sheet.compact-event-flyer .open-mic-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+}
+
+.a4-sheet.compact-event-flyer .open-mic-time {
+  font-size: 1rem;
+}
+
+.a4-sheet.compact-event-flyer .order-info {
+  font-size: 0.84rem;
+  margin-bottom: 8px;
+}
+
+.a4-sheet.compact-event-flyer .open-mic-footer {
+  font-size: 0.76rem;
+  padding: 9px;
+  margin-top: 8px;
+}
+
+.a4-sheet.compact-event-flyer .open-mic-headline {
+  font-size: 0.92rem;
+}
+
+.a4-sheet.compact-event-flyer .flyer-footer {
+  padding-top: 18px;
+}
+
+.a4-sheet.compact-event-flyer .location-name {
+  font-size: 0.92rem;
+}
+
+.a4-sheet.compact-event-flyer .address,
+.a4-sheet.compact-event-flyer .web-link,
+.a4-sheet.compact-event-flyer .social-btn {
+  font-size: 0.78rem;
+}
+
+.a4-sheet.compact-event-flyer .social-links {
+  gap: 10px;
+  margin-top: 14px;
+}
+
+@media print {
+  .a4-sheet.compact-event-flyer {
+    min-height: 297mm;
+    max-height: 297mm;
+  }
+
+  .a4-sheet.compact-event-flyer .content-wrapper {
+    min-height: 297mm;
+    padding: 10mm 12mm;
+  }
+}
