@@ -1,0 +1,23 @@
+.admin-entry-link-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 24px;
+}
+
+.admin-entry-link {
+  border: 0;
+  background: transparent;
+  color: rgba(74, 62, 64, 0.42);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  padding: 8px 12px;
+}
+
+.admin-entry-link:hover {
+  color: var(--primary-color);
+}
+
+.theme-night .admin-entry-link {
+  color: rgba(243, 237, 240, 0.45);
+}

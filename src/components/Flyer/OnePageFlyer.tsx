@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { EventData, ScheduleItem } from "../../types/event";
 import "../../styles/one-page-flyer.css";
 
@@ -29,10 +30,18 @@ function ScheduleRow({ item }: { item: ScheduleItem }) {
 }
 
 export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onPrint: () => void }) {
+  const [printNotice, setPrintNotice] = useState("");
+
+  const handlePrint = () => {
+    setPrintNotice("印刷画面を開きます。反応しない場合は、共有ボタンからSafari/ブラウザで開いてPDF保存してください。");
+    onPrint();
+  };
+
   return (
     <main className="one-page-flyer-page">
       <div className="one-page-toolbar print-hidden">
-        <button type="button" onClick={onPrint}>PDF / 印刷</button>
+        <button type="button" onClick={handlePrint}>PDF / 印刷</button>
+        {printNotice ? <p className="one-page-print-notice">{printNotice}</p> : null}
       </div>
 
       <article className="one-page-sheet">
