@@ -1,0 +1,59 @@
+@media (max-width: 640px) {
+  .theme-editor-wrap {
+    padding: 16px;
+  }
+
+  .theme-editor-wrap .editor-panel {
+    gap: 14px;
+  }
+
+  .editor-card {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .event-manager-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 10px;
+  }
+
+  .event-manager-actions button {
+    width: 100%;
+    min-height: 46px;
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+
+  .event-manager-note,
+  .performer-editor-note,
+  .flyer-option-note {
+    line-height: 1.7;
+  }
+
+  .editor-field input,
+  .editor-field textarea,
+  .editor-field select {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .flyer-option-toggle {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: start;
+    line-height: 1.6;
+  }
+
+  .performer-editor-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
