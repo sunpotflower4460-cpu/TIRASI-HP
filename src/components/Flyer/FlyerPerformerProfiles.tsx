@@ -1,4 +1,5 @@
 import type { PerformerProfile } from "../../types/event";
+import "../../styles/flyer-performer-profiles.css";
 
 type FlyerPerformerProfilesProps = {
   performers: PerformerProfile[];
