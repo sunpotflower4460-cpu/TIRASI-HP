@@ -1,4 +1,5 @@
 import type { EventData, ScheduleItem } from "../../types/event";
+import "../../styles/a4-compact-event.css";
 
 type FlyerViewProps = {
   eventData: EventData;
@@ -36,6 +37,8 @@ function TimetableItem({ item }: { item: ScheduleItem }) {
 }
 
 export function FlyerView({ eventData, variant = "web", onEdit, onPrint, showEditButton = true }: FlyerViewProps) {
+  const flyerClassName = variant === "a4" ? "flyer-container a4-sheet compact-event-flyer" : "flyer-container";
+
   return (
     <main className={variant === "a4" ? "flyer-page flyer-page-a4" : "flyer-page"}>
       <div className="toolbar print-hidden">
@@ -43,7 +46,7 @@ export function FlyerView({ eventData, variant = "web", onEdit, onPrint, showEdi
         {showEditButton ? <button type="button" onClick={onEdit}>内容を編集</button> : null}
       </div>
 
-      <article className={`flyer-container ${variant === "a4" ? "a4-sheet" : ""}`}>
+      <article className={flyerClassName}>
         <div className="content-wrapper">
           <header className="flyer-header">
             <p className="subtitle">{eventData.venueSubtitle}</p>
