@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "../../styles/editor-gate.css";
 
-const EDITOR_PASSCODE = "namane";
+const EDITOR_PASSCODE = "4460";
 
 type EditorGateProps = {
   onUnlock: () => void;
