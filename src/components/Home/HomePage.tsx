@@ -113,7 +113,7 @@ export function HomePage({ eventData, onOpenFlyer, onEdit, showEditButton = fals
         <div className="home-socials">
           {eventData.socials.map((social, index) => {
             const socialUrl = getSafeExternalUrl(social.url);
-            const key = `${social.label}-${social.url}-${index}`;
+            const key = index;
 
             if (!social.label.trim()) return null;
 
