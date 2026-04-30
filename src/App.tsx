@@ -55,9 +55,9 @@ export default function App() {
       return (
         <div className={`app-shell ${themeClassName}`}>
           <nav className="app-nav print-hidden" aria-label="ページ切り替え">
-            <button onClick={() => navigate("/")}>HP</button>
+            <button onClick={() => navigate("/")}>ホーム</button>
             <button className="active" onClick={() => navigate("/editor")}>管理</button>
-            <button onClick={() => navigate("/flyer")}>A4</button>
+            <button onClick={() => navigate("/flyer")}>A4チラシ</button>
           </nav>
           <EditorGate onUnlock={() => setIsEditorUnlocked(true)} onBackHome={() => navigate("/")} />
         </div>
@@ -67,9 +67,9 @@ export default function App() {
     return (
       <div className={`app-shell ${themeClassName}`}>
         <nav className="app-nav print-hidden" aria-label="ページ切り替え">
-          <button onClick={() => navigate("/")}>HP</button>
+          <button onClick={() => navigate("/")}>ホーム</button>
           <button className="active" onClick={() => navigate("/editor")}>編集</button>
-          <button onClick={() => navigate("/flyer")}>A4</button>
+          <button onClick={() => navigate("/flyer")}>A4チラシ</button>
         </nav>
         <div className="editor-page theme-editor-wrap">
           <section className="editor-panel">
@@ -101,8 +101,8 @@ export default function App() {
     return (
       <div className={`app-shell public-view ${themeClassName}`}>
         <nav className="app-nav print-hidden" aria-label="ページ切り替え">
-          <button onClick={() => navigate("/")}>HP</button>
-          <button className="active" onClick={() => navigate("/flyer")}>A4</button>
+          <button onClick={() => navigate("/")}>ホーム</button>
+          <button className="active" onClick={() => navigate("/flyer")}>A4チラシ</button>
         </nav>
         <FlyerWithProfiles eventData={eventData} onEdit={() => navigate("/editor")} onPrint={() => window.print()} />
       </div>
@@ -112,8 +112,8 @@ export default function App() {
   return (
     <div className={`app-shell public-view ${themeClassName}`}>
       <nav className="app-nav print-hidden" aria-label="ページ切り替え">
-        <button className="active" onClick={() => navigate("/")}>HP</button>
-        <button onClick={() => navigate("/flyer")}>A4</button>
+        <button className="active" onClick={() => navigate("/")}>ホーム</button>
+        <button onClick={() => navigate("/flyer")}>A4チラシ</button>
       </nav>
       <HomeWithFlyerPreview eventData={eventData} onOpenFlyer={() => navigate("/flyer")} onEdit={() => navigate("/editor")} />
     </div>
