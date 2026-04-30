@@ -55,6 +55,19 @@ function withTimeout<T>(promise: Promise<T>, ms: number) {
   });
 }
 
+function createExportClone(sheet: HTMLElement) {
+  const stage = document.createElement("div");
+  stage.className = "one-page-export-stage";
+
+  const clone = sheet.cloneNode(true) as HTMLElement;
+  clone.classList.add("exporting-for-image", "export-image-copy");
+
+  stage.appendChild(clone);
+  document.body.appendChild(stage);
+
+  return { stage, clone };
+}
+
 function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -111,26 +124,30 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
     const sheet = sheetRef.current;
     if (!sheet) return;
 
+    let stage: HTMLDivElement | null = null;
+
     try {
       setNotice("PNGを書き出しています。共有画面が開くまで少しお待ちください。");
       await document.fonts?.ready;
 
-      sheet.classList.add("exporting-for-image");
+      const exportClone = createExportClone(sheet);
+      stage = exportClone.stage;
       await waitForFrame();
 
       const canvas = await withTimeout(
-        html2canvas(sheet, {
+        html2canvas(exportClone.clone, {
           backgroundColor: "#fff9fa",
           scale: 3,
           useCORS: true,
           logging: false,
-          windowWidth: sheet.scrollWidth,
-          windowHeight: sheet.scrollHeight
+          windowWidth: exportClone.clone.scrollWidth,
+          windowHeight: exportClone.clone.scrollHeight
         }),
         20000
       );
 
-      sheet.classList.remove("exporting-for-image");
+      stage.remove();
+      stage = null;
 
       canvas.toBlob(async (blob) => {
         if (!blob) {
@@ -145,7 +162,7 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
         }
       }, "image/png");
     } catch {
-      sheet.classList.remove("exporting-for-image");
+      stage?.remove();
       setNotice("このブラウザではPNG書き出しが止まりました。Safariで開いて再試行、またはスクリーンショット保存をお試しください。");
     }
   };
