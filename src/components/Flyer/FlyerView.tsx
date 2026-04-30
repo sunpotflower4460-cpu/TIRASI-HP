@@ -1,4 +1,5 @@
 import type { EventData, ScheduleItem } from "../../types/event";
+import { getExternalUrlLabel, getSafeExternalUrl } from "../../utils/safeExternalUrl";
 import "../../styles/a4-compact-event.css";
 
 type FlyerViewProps = {
@@ -38,6 +39,7 @@ function TimetableItem({ item }: { item: ScheduleItem }) {
 
 export function FlyerView({ eventData, variant = "web", onEdit, onPrint, showEditButton = true }: FlyerViewProps) {
   const flyerClassName = variant === "a4" ? "flyer-container a4-sheet compact-event-flyer" : "flyer-container";
+  const venueUrl = getSafeExternalUrl(eventData.venue.url);
 
   return (
     <main className={variant === "a4" ? "flyer-page flyer-page-a4" : "flyer-page"}>
@@ -96,17 +98,30 @@ export function FlyerView({ eventData, variant = "web", onEdit, onPrint, showEdi
             <div className="access-box">
               <p className="location-name">📍 {eventData.venue.name}</p>
               <p className="address">{eventData.venue.address}</p>
-              <a href={eventData.venue.url} target="_blank" rel="noreferrer" className="web-link">
-                {eventData.venue.url.replace("https://", "")}
-              </a>
+              {venueUrl ? (
+                <a href={venueUrl} target="_blank" rel="noopener noreferrer" className="web-link">
+                  {getExternalUrlLabel(venueUrl)}
+                </a>
+              ) : eventData.venue.url.trim() ? (
+                <p className="web-link">{eventData.venue.url.trim()}</p>
+              ) : null}
             </div>
 
             <div className="social-links">
-              {eventData.socials.map((social) => (
-                <a href={social.url} target="_blank" rel="noreferrer" className="social-btn" key={social.label}>
-                  ◎ {social.label}
-                </a>
-              ))}
+              {eventData.socials.map((social, index) => {
+                const socialUrl = getSafeExternalUrl(social.url);
+                const key = `${social.label}-${index}`;
+
+                if (!social.label.trim()) return null;
+
+                return socialUrl ? (
+                  <a href={socialUrl} target="_blank" rel="noopener noreferrer" className="social-btn" key={key}>
+                    ◎ {social.label}
+                  </a>
+                ) : (
+                  <span className="social-btn" key={key}>◎ {social.label}</span>
+                );
+              })}
             </div>
           </footer>
         </div>

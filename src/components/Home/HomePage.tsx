@@ -1,4 +1,5 @@
 import type { EventData } from "../../types/event";
+import { getExternalUrlLabel, getSafeExternalUrl } from "../../utils/safeExternalUrl";
 import "../../styles/home.css";
 import "../../styles/home-extra.css";
 import "../../styles/home-responsive.css";
@@ -12,6 +13,7 @@ type HomePageProps = {
 
 export function HomePage({ eventData, onOpenFlyer, onEdit, showEditButton = false }: HomePageProps) {
   const acts = eventData.schedule.filter((item) => item.type === "act");
+  const venueUrl = getSafeExternalUrl(eventData.venue.url);
 
   return (
     <main className="home-page">
@@ -100,16 +102,29 @@ export function HomePage({ eventData, onOpenFlyer, onEdit, showEditButton = fals
           <p className="home-section-label">Access</p>
           <h2>{eventData.venue.name}</h2>
           <p>{eventData.venue.address}</p>
-          <a href={eventData.venue.url} target="_blank" rel="noreferrer">
-            {eventData.venue.url.replace("https://", "")}
-          </a>
+          {venueUrl ? (
+            <a href={venueUrl} target="_blank" rel="noopener noreferrer">
+              {getExternalUrlLabel(venueUrl)}
+            </a>
+          ) : eventData.venue.url.trim() ? (
+            <p>{eventData.venue.url.trim()}</p>
+          ) : null}
         </div>
         <div className="home-socials">
-          {eventData.socials.map((social) => (
-            <a href={social.url} target="_blank" rel="noreferrer" key={social.label}>
-              ◎ {social.label}
-            </a>
-          ))}
+          {eventData.socials.map((social, index) => {
+            const socialUrl = getSafeExternalUrl(social.url);
+            const key = `${social.label}-${index}`;
+
+            if (!social.label.trim()) return null;
+
+            return socialUrl ? (
+              <a href={socialUrl} target="_blank" rel="noopener noreferrer" key={key}>
+                ◎ {social.label}
+              </a>
+            ) : (
+              <span key={key}>◎ {social.label}</span>
+            );
+          })}
         </div>
       </section>
     </main>

@@ -15,7 +15,7 @@ export function HomeFlyerPreview({ eventData, onOpenFlyer }: HomeFlyerPreviewPro
         <h2>A4チラシもそのまま作れます</h2>
         <p>
           HPでイベントを伝えつつ、同じ内容から印刷用のA4チラシも確認できます。
-          編集画面で直した内容は、このチラシにも反映されます。
+          ページ下部のプレビューからそのまま開けます。
         </p>
         <button type="button" onClick={onOpenFlyer}>A4プレビューを開く</button>
       </div>

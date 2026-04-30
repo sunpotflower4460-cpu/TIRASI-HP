@@ -115,7 +115,7 @@ export default function App() {
         <button className="active" onClick={() => navigate("/")}>HP</button>
         <button onClick={() => navigate("/flyer")}>A4</button>
       </nav>
-      <HomeWithFlyerPreview eventData={eventData} onOpenFlyer={() => navigate("/flyer")} onEdit={() => navigate("/editor")} />
+      <HomeWithFlyerPreview eventData={eventData} onOpenFlyer={() => navigate("/flyer")} />
     </div>
   );
 }

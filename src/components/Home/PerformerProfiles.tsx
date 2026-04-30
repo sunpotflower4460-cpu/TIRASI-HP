@@ -1,4 +1,5 @@
 import type { EventData, PerformerProfile } from "../../types/event";
+import { getSafeExternalUrl } from "../../utils/safeExternalUrl";
 import "../../styles/performer-profiles.css";
 
 function getInitial(name: string) {
@@ -6,10 +7,12 @@ function getInitial(name: string) {
 }
 
 function PerformerCard({ performer }: { performer: PerformerProfile }) {
+  const imageUrl = getSafeExternalUrl(performer.imageUrl);
+  const linkUrl = getSafeExternalUrl(performer.linkUrl);
   const body = (
     <>
       <div className="performer-image-box">
-        {performer.imageUrl ? <img src={performer.imageUrl} alt={performer.name} loading="lazy" /> : <span>{getInitial(performer.name)}</span>}
+        {imageUrl ? <img src={imageUrl} alt={performer.name} loading="lazy" /> : <span>{getInitial(performer.name)}</span>}
       </div>
       <div className="performer-card-body">
         <h3>{performer.name}</h3>
@@ -19,9 +22,9 @@ function PerformerCard({ performer }: { performer: PerformerProfile }) {
     </>
   );
 
-  if (performer.linkUrl) {
+  if (linkUrl) {
     return (
-      <a className="performer-card" href={performer.linkUrl} target="_blank" rel="noreferrer">
+      <a className="performer-card" href={linkUrl} target="_blank" rel="noopener noreferrer">
         {body}
       </a>
     );
