@@ -2,6 +2,13 @@ import { useRef, useState } from "react";
 import type { EventData, ScheduleItem } from "../../types/event";
 import "../../styles/one-page-flyer.css";
 
+type Html2Canvas = (element: HTMLElement, options?: Record<string, unknown>) => Promise<HTMLCanvasElement>;
+type ShareFileData = { files: File[]; title: string; text?: string };
+type NavigatorWithFileShare = Navigator & {
+  canShare?: (data: ShareFileData) => boolean;
+  share?: (data: ShareFileData) => Promise<void>;
+};
+
 function nl2br(text: string) {
   const lines = text.split("\n");
   return lines.map((line, index) => (
@@ -29,15 +36,35 @@ function ScheduleRow({ item }: { item: ScheduleItem }) {
   );
 }
 
-function copyComputedStyles(source: Element, target: Element) {
-  const computed = window.getComputedStyle(source);
-  const targetElement = target as HTMLElement;
-  targetElement.style.cssText = computed.cssText;
+function waitForFrame() {
+  return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
 
-  Array.from(source.children).forEach((sourceChild, index) => {
-    const targetChild = target.children[index];
-    if (targetChild) copyComputedStyles(sourceChild, targetChild);
+function withTimeout<T>(promise: Promise<T>, ms: number) {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("timeout")), ms);
+    promise
+      .then((value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      });
   });
+}
+
+async function getHtml2Canvas(): Promise<Html2Canvas> {
+  const module = (await import(/* @vite-ignore */ "https://esm.sh/html2canvas@1.4.1")) as {
+    default?: Html2Canvas;
+  };
+
+  if (!module.default) {
+    throw new Error("html2canvas is unavailable");
+  }
+
+  return module.default;
 }
 
 function downloadBlob(blob: Blob, fileName: string) {
@@ -48,7 +75,40 @@ function downloadBlob(blob: Blob, fileName: string) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+async function shareOrOpenPng(blob: Blob, setNotice: (message: string) => void) {
+  const fileName = "namane-acoustic-live-vol5.png";
+  const file = new File([blob], fileName, { type: "image/png" });
+  const shareData: ShareFileData = {
+    files: [file],
+    title: "生音 Acoustic Live vol.5",
+    text: "A4チラシPNG"
+  };
+  const nav = navigator as NavigatorWithFileShare;
+
+  if (nav.canShare?.(shareData) && nav.share) {
+    try {
+      await nav.share(shareData);
+      setNotice("共有画面を開きました。写真に保存、またはファイルに保存を選んでください。");
+      return;
+    } catch {
+      setNotice("共有がキャンセルされました。必要ならもう一度PNG保存を押してください。");
+      return;
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  if (opened) {
+    setNotice("PNGを新しい画面で開きました。長押し保存、または共有から保存してください。");
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return;
+  }
+
+  downloadBlob(blob, fileName);
+  setNotice("PNGを書き出しました。保存先をご確認ください。");
 }
 
 export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onPrint: () => void }) {
@@ -65,62 +125,38 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
     if (!sheet) return;
 
     try {
-      setNotice("PNGを書き出しています。少しだけお待ちください。");
+      setNotice("PNGを書き出しています。共有画面が開くまで少しお待ちください。");
       await document.fonts?.ready;
 
-      const width = sheet.offsetWidth;
-      const height = sheet.offsetHeight;
-      const scale = 3;
-      const clone = sheet.cloneNode(true) as HTMLElement;
-      clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-      copyComputedStyles(sheet, clone);
-      clone.style.transform = "none";
-      clone.style.margin = "0";
-      clone.style.width = `${width}px`;
-      clone.style.height = `${height}px`;
+      const html2canvas = await withTimeout(getHtml2Canvas(), 12000);
+      sheet.classList.add("exporting-for-image");
+      await waitForFrame();
 
-      const serialized = new XMLSerializer().serializeToString(clone);
-      const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${width * scale}" height="${height * scale}" viewBox="0 0 ${width} ${height}">
-          <foreignObject width="${width}" height="${height}">${serialized}</foreignObject>
-        </svg>
-      `;
-      const svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
-      const image = new Image();
+      const canvas = await withTimeout(
+        html2canvas(sheet, {
+          backgroundColor: "#fff9fa",
+          scale: 3,
+          useCORS: true,
+          logging: false,
+          windowWidth: sheet.scrollWidth,
+          windowHeight: sheet.scrollHeight
+        }),
+        20000
+      );
 
-      image.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = width * scale;
-        canvas.height = height * scale;
-        const context = canvas.getContext("2d");
-        if (!context) {
-          URL.revokeObjectURL(svgUrl);
-          setNotice("PNG書き出しに失敗しました。ブラウザのスクリーンショット保存をお試しください。");
+      sheet.classList.remove("exporting-for-image");
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setNotice("PNG書き出しに失敗しました。スクリーンショット保存をお試しください。");
           return;
         }
 
-        context.scale(scale, scale);
-        context.drawImage(image, 0, 0);
-        URL.revokeObjectURL(svgUrl);
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            setNotice("PNG書き出しに失敗しました。ブラウザのスクリーンショット保存をお試しください。");
-            return;
-          }
-
-          downloadBlob(blob, "namane-acoustic-live-vol5.png");
-          setNotice("PNGを書き出しました。保存先をご確認ください。");
-        }, "image/png");
-      };
-
-      image.onerror = () => {
-        URL.revokeObjectURL(svgUrl);
-        setNotice("このブラウザではPNG書き出しができませんでした。Safariで開くか、スクリーンショット保存をお試しください。");
-      };
-
-      image.src = svgUrl;
+        await shareOrOpenPng(blob, setNotice);
+      }, "image/png");
     } catch {
-      setNotice("PNG書き出しに失敗しました。Safariで開くか、スクリーンショット保存をお試しください。");
+      sheet.classList.remove("exporting-for-image");
+      setNotice("このブラウザではPNG書き出しが止まりました。Safariで開いて再試行、またはスクリーンショット保存をお試しください。");
     }
   };
 
