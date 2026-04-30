@@ -56,9 +56,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number) {
 }
 
 async function getHtml2Canvas(): Promise<Html2Canvas> {
-  const module = (await import(/* @vite-ignore */ "https://esm.sh/html2canvas@1.4.1")) as {
-    default?: Html2Canvas;
-  };
+  const html2canvasUrl = "https://esm.sh/html2canvas@1.4.1";
+  const importFromUrl = new Function("url", "return import(url)") as (url: string) => Promise<{ default?: Html2Canvas }>;
+  const module = await importFromUrl(html2canvasUrl);
 
   if (!module.default) {
     throw new Error("html2canvas is unavailable");
