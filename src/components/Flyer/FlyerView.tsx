@@ -110,7 +110,7 @@ export function FlyerView({ eventData, variant = "web", onEdit, onPrint, showEdi
             <div className="social-links">
               {eventData.socials.map((social, index) => {
                 const socialUrl = getSafeExternalUrl(social.url);
-                const key = `${social.label}-${index}`;
+                const key = `${social.label}-${social.url}-${index}`;
 
                 if (!social.label.trim()) return null;
 
