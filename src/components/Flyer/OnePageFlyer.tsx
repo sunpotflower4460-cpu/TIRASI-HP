@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
+import html2canvas from "html2canvas";
 import type { EventData, ScheduleItem } from "../../types/event";
 import "../../styles/one-page-flyer.css";
 
-type Html2Canvas = (element: HTMLElement, options?: Record<string, unknown>) => Promise<HTMLCanvasElement>;
 type ShareFileData = { files: File[]; title: string; text?: string };
 type NavigatorWithFileShare = Navigator & {
   canShare?: (data: ShareFileData) => boolean;
@@ -55,18 +55,6 @@ function withTimeout<T>(promise: Promise<T>, ms: number) {
   });
 }
 
-async function getHtml2Canvas(): Promise<Html2Canvas> {
-  const html2canvasUrl = "https://esm.sh/html2canvas@1.4.1";
-  const importFromUrl = new Function("url", "return import(url)") as (url: string) => Promise<{ default?: Html2Canvas }>;
-  const module = await importFromUrl(html2canvasUrl);
-
-  if (!module.default) {
-    throw new Error("html2canvas is unavailable");
-  }
-
-  return module.default;
-}
-
 function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -94,8 +82,7 @@ async function shareOrOpenPng(blob: Blob, setNotice: (message: string) => void) 
       setNotice("共有画面を開きました。写真に保存、またはファイルに保存を選んでください。");
       return;
     } catch {
-      setNotice("共有がキャンセルされました。必要ならもう一度PNG保存を押してください。");
-      return;
+      setNotice("共有を開けなかったため、PNG表示/保存に切り替えます。");
     }
   }
 
@@ -128,7 +115,6 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
       setNotice("PNGを書き出しています。共有画面が開くまで少しお待ちください。");
       await document.fonts?.ready;
 
-      const html2canvas = await withTimeout(getHtml2Canvas(), 12000);
       sheet.classList.add("exporting-for-image");
       await waitForFrame();
 
