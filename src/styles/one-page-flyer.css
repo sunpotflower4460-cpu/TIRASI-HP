@@ -48,6 +48,18 @@
   text-align: center;
 }
 
+.one-page-export-stage {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  z-index: -1;
+}
+
 .one-page-sheet {
   width: 210mm;
   height: 297mm;
@@ -64,9 +76,13 @@
 }
 
 .one-page-sheet.exporting-for-image {
+  width: 210mm;
+  height: 297mm;
   max-width: none;
   transform: none !important;
   margin: 0 !important;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 .one-page-header {
@@ -90,11 +106,20 @@
   gap: 6mm;
 }
 
+.one-page-sheet.export-image-copy .one-page-title-row {
+  grid-template-columns: minmax(0, 1fr) 40mm;
+  gap: 4mm;
+}
+
 .one-page-title-row h1 {
   color: var(--primary-color);
   font-family: "Zen Maru Gothic", sans-serif;
   font-size: 4.55rem;
   line-height: 0.98;
+}
+
+.one-page-sheet.export-image-copy .one-page-title-row h1 {
+  font-size: 4.72rem;
 }
 
 .one-page-subtitle {
@@ -119,6 +144,11 @@
   box-shadow: 0 10px 20px rgba(209, 122, 134, 0.14);
 }
 
+.one-page-sheet.export-image-copy .one-page-date {
+  min-width: 40mm;
+  padding: 8mm 7mm;
+}
+
 .one-page-date strong {
   display: block;
   color: var(--primary-color);
@@ -136,6 +166,10 @@
   font-size: 1.06rem;
 }
 
+.one-page-sheet.export-image-copy .one-page-organizer {
+  font-size: 1.09rem;
+}
+
 .one-page-badges {
   display: flex;
   gap: 3mm;
@@ -150,6 +184,10 @@
   padding: 2.3mm 6.2mm;
   font-weight: 700;
   font-size: 1rem;
+}
+
+.one-page-sheet.export-image-copy .one-page-badges span {
+  padding-inline: 6.8mm;
 }
 
 .one-page-badges span:nth-child(2) {
