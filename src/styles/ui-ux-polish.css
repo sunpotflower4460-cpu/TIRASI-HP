@@ -1,0 +1,263 @@
+/* Final UI/UX polish layer.
+   This file intentionally makes small, low-risk adjustments without changing the app structure. */
+
+:root {
+  --surface-soft: rgba(255, 249, 250, 0.94);
+  --surface-white: rgba(255, 255, 255, 0.76);
+  --border-soft: rgba(209, 122, 134, 0.16);
+}
+
+.app-shell {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.62), transparent 32rem),
+    var(--paper-bg);
+}
+
+.app-nav {
+  gap: 8px;
+  padding: 12px max(12px, env(safe-area-inset-left));
+  box-shadow: 0 8px 24px rgba(120, 82, 88, 0.06);
+}
+
+.app-nav button {
+  min-height: 40px;
+  min-width: 88px;
+}
+
+.app-nav button:focus-visible,
+.home-cta-row button:focus-visible,
+.one-page-toolbar button:focus-visible,
+.editor-card button:focus-visible,
+.editor-actions button:focus-visible,
+.admin-entry-link:focus-visible {
+  outline: 3px solid rgba(141, 163, 114, 0.38);
+  outline-offset: 3px;
+}
+
+.home-page {
+  padding-top: 36px;
+}
+
+.home-hero,
+.home-summary-grid,
+.home-section {
+  scroll-margin-top: 88px;
+}
+
+.home-hero-copy,
+.home-event-card,
+.home-section,
+.home-summary-grid article {
+  backdrop-filter: blur(10px);
+}
+
+.home-hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.home-cta-row button,
+.one-page-toolbar button,
+.editor-actions button,
+.editor-card button,
+.event-manager-actions button {
+  min-height: 42px;
+}
+
+.home-schedule-row {
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.home-schedule-row:hover {
+  transform: translateY(-1px);
+  border-color: rgba(209, 122, 134, 0.28);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.home-schedule-row.break,
+.home-schedule-row.end {
+  border-color: rgba(141, 163, 114, 0.18);
+}
+
+.home-socials a,
+.social-btn,
+.admin-entry-link {
+  min-height: 40px;
+}
+
+.admin-entry-link-wrap {
+  margin-top: 8px;
+}
+
+.editor-page.theme-editor-wrap {
+  padding-bottom: 8px;
+}
+
+.editor-card,
+.editor-header,
+.editor-gate-card {
+  background: var(--surface-soft);
+}
+
+.editor-field input:focus,
+.editor-field textarea:focus,
+.editor-field select:focus,
+.schedule-editor-item input:focus,
+.schedule-editor-item select:focus,
+.social-editor-item input:focus {
+  border-color: rgba(209, 122, 134, 0.58);
+  box-shadow: 0 0 0 4px rgba(209, 122, 134, 0.1);
+}
+
+.one-page-toolbar {
+  position: relative;
+  z-index: 2;
+}
+
+.one-page-toolbar-actions {
+  width: min(100%, 420px);
+}
+
+.one-page-toolbar-actions button {
+  flex: 1 1 150px;
+}
+
+.one-page-print-notice {
+  box-shadow: 0 8px 18px rgba(120, 82, 88, 0.08);
+}
+
+.one-page-sheet {
+  border: 1px solid rgba(209, 122, 134, 0.08);
+}
+
+.theme-night .app-shell {
+  background:
+    radial-gradient(circle at top left, rgba(255, 245, 223, 0.08), transparent 28rem),
+    var(--paper-bg);
+}
+
+.theme-night .home-hero-copy,
+.theme-night .home-event-card,
+.theme-night .home-section,
+.theme-night .home-summary-grid article,
+.theme-night .editor-card,
+.theme-night .editor-header,
+.theme-night .editor-gate-card {
+  background: rgba(32, 27, 32, 0.86);
+}
+
+.theme-night .home-schedule-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 820px) {
+  .home-page {
+    padding-top: 18px;
+  }
+
+  .home-hero-copy {
+    padding: 30px 24px;
+  }
+
+  .home-event-card {
+    padding: 26px 22px;
+  }
+
+  .home-section,
+  .home-summary-grid article {
+    padding: 24px 20px;
+  }
+
+  .home-openmic-section,
+  .home-access-section {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-nav {
+    justify-content: stretch;
+    padding: 10px;
+  }
+
+  .app-nav button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 10px;
+  }
+
+  .home-hero-copy,
+  .home-event-card,
+  .home-section,
+  .home-summary-grid article {
+    border-radius: 0;
+  }
+
+  .home-hero h1 {
+    letter-spacing: -0.04em;
+  }
+
+  .home-lead,
+  .soft-text,
+  .home-section p {
+    font-size: 0.96rem;
+  }
+
+  .home-cta-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .home-cta-row button {
+    width: 100%;
+  }
+
+  .home-schedule-row {
+    padding: 13px 14px;
+    border-radius: 14px;
+  }
+
+  .home-order-badge {
+    width: 100%;
+    text-align: center;
+  }
+
+  .home-socials,
+  .home-socials a {
+    width: 100%;
+  }
+
+  .home-socials a {
+    text-align: center;
+  }
+
+  .one-page-toolbar-actions {
+    padding-inline: 10px;
+  }
+
+  .one-page-toolbar-actions button {
+    flex-basis: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  .app-shell {
+    background: white !important;
+  }
+
+  .one-page-sheet {
+    border: 0;
+  }
+}
