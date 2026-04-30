@@ -138,7 +138,11 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
           return;
         }
 
-        await shareOrOpenPng(blob, setNotice);
+        try {
+          await shareOrOpenPng(blob, setNotice);
+        } catch {
+          setNotice("共有処理中にエラーが発生しました。Safariで開くか、スクリーンショット保存をお試しください。");
+        }
       }, "image/png");
     } catch {
       sheet.classList.remove("exporting-for-image");
