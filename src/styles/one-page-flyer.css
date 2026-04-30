@@ -57,15 +57,21 @@
   box-shadow: var(--shadow);
   border-radius: 6px;
   overflow: hidden;
-  padding: 11mm;
+  padding: 9.5mm;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 6mm;
+  gap: 5mm;
+}
+
+.one-page-sheet.exporting-for-image {
+  max-width: none;
+  transform: none !important;
+  margin: 0 !important;
 }
 
 .one-page-header {
   border-bottom: 2px dashed var(--secondary-color);
-  padding-bottom: 6mm;
+  padding-bottom: 5mm;
 }
 
 .one-page-kicker {
@@ -73,26 +79,26 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  font-size: 0.82rem;
-  margin-bottom: 4mm;
+  font-size: 0.86rem;
+  margin-bottom: 3.5mm;
 }
 
 .one-page-title-row {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 8mm;
+  gap: 6mm;
 }
 
 .one-page-title-row h1 {
   color: var(--primary-color);
   font-family: "Zen Maru Gothic", sans-serif;
-  font-size: 4.15rem;
-  line-height: 1;
+  font-size: 4.55rem;
+  line-height: 0.98;
 }
 
 .one-page-subtitle {
-  font-size: 1.65rem;
+  font-size: 1.78rem;
   font-weight: 700;
   margin-top: 2mm;
 }
@@ -105,45 +111,45 @@
 
 .one-page-date {
   background: white;
-  border: 1px solid rgba(209, 122, 134, 0.18);
+  border: 1px solid rgba(209, 122, 134, 0.2);
   border-radius: 18px;
-  min-width: 38mm;
-  padding: 7mm 8mm;
+  min-width: 43mm;
+  padding: 8.5mm 9mm;
   text-align: center;
-  box-shadow: 0 8px 18px rgba(209, 122, 134, 0.12);
+  box-shadow: 0 10px 20px rgba(209, 122, 134, 0.14);
 }
 
 .one-page-date strong {
   display: block;
   color: var(--primary-color);
-  font-size: 1.65rem;
+  font-size: 1.82rem;
 }
 
 .one-page-date span {
   font-weight: 700;
-  font-size: 1.08rem;
+  font-size: 1.16rem;
 }
 
 .one-page-organizer {
-  margin-top: 4mm;
+  margin-top: 3.5mm;
   font-weight: 700;
-  font-size: 1.02rem;
+  font-size: 1.06rem;
 }
 
 .one-page-badges {
   display: flex;
   gap: 3mm;
   flex-wrap: wrap;
-  margin-top: 4mm;
+  margin-top: 3.5mm;
 }
 
 .one-page-badges span {
   background: var(--primary-color);
   color: white;
   border-radius: 999px;
-  padding: 2.2mm 5.8mm;
+  padding: 2.3mm 6.2mm;
   font-weight: 700;
-  font-size: 0.98rem;
+  font-size: 1rem;
 }
 
 .one-page-badges span:nth-child(2) {
@@ -151,31 +157,32 @@
 }
 
 .one-page-note {
-  margin-top: 3mm;
+  margin-top: 2.7mm;
   color: #6d6062;
-  font-size: 0.83rem;
+  font-size: 0.88rem;
   line-height: 1.45;
 }
 
 .one-page-main-grid {
   display: grid;
-  grid-template-columns: 1.34fr 0.78fr;
-  gap: 7mm;
+  grid-template-columns: 1.38fr 0.76fr;
+  gap: 6mm;
   min-height: 0;
 }
 
 .one-page-schedule,
 .one-page-open-mic,
 .one-page-access {
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.66);
   border: 1px solid rgba(209, 122, 134, 0.14);
   border-radius: 18px;
-  padding: 6.5mm;
+  padding: 7mm;
 }
 
 .one-page-schedule {
   display: grid;
   grid-template-rows: auto 1fr;
+  min-height: 148mm;
 }
 
 .one-page-schedule h2,
@@ -183,57 +190,59 @@
 .one-page-access h2 {
   color: var(--primary-color);
   font-family: "Zen Maru Gothic", sans-serif;
-  font-size: 1.35rem;
-  margin-bottom: 4.4mm;
+  font-size: 1.45rem;
+  margin-bottom: 5mm;
 }
 
 .one-page-schedule-list {
   display: grid;
   align-content: start;
-  gap: 3.6mm;
+  gap: 4.2mm;
 }
 
 .one-page-schedule-row {
   display: grid;
-  grid-template-columns: 36mm 1fr;
-  gap: 4.5mm;
+  grid-template-columns: 38mm 1fr;
+  gap: 5mm;
   align-items: baseline;
-  padding-bottom: 3.3mm;
-  border-bottom: 1px dotted rgba(209, 122, 134, 0.3);
+  padding-bottom: 3.5mm;
+  border-bottom: 1px dotted rgba(209, 122, 134, 0.32);
 }
 
 .one-page-time {
   color: var(--primary-color);
   font-family: "Roboto", sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.96rem;
   font-weight: 700;
 }
 
 .one-page-schedule-row strong {
-  font-size: 1.08rem;
+  font-size: 1.15rem;
 }
 
 .one-page-break {
-  color: var(--accent-color);
-  background: rgba(141, 163, 114, 0.08);
+  color: #5f7f3c;
+  background: rgba(141, 163, 114, 0.2);
+  border: 1px solid rgba(95, 127, 60, 0.22);
   border-radius: 999px;
-  padding: 2.2mm 4mm;
-  font-size: 0.9rem;
-  font-weight: 700;
+  padding: 2.8mm 4.8mm;
+  font-size: 0.96rem;
+  font-weight: 800;
   text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.48);
 }
 
 .one-page-end {
   color: var(--secondary-color);
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   letter-spacing: 0.18em;
   text-align: center;
-  margin-top: 1mm;
+  margin-top: 1.2mm;
 }
 
 .one-page-side {
   display: grid;
-  gap: 6mm;
+  gap: 5mm;
   align-content: start;
 }
 
@@ -266,7 +275,7 @@
 
 .one-page-access p {
   color: #6d6062;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
@@ -276,10 +285,10 @@
   justify-content: center;
   gap: 8mm;
   border-top: 2px dashed var(--secondary-color);
-  padding-top: 5mm;
+  padding-top: 4.5mm;
   color: #6d6062;
   font-weight: 700;
-  font-size: 0.86rem;
+  font-size: 0.88rem;
 }
 
 @media screen and (max-width: 760px) {
@@ -324,7 +333,7 @@
     max-width: 210mm;
     box-shadow: none;
     border-radius: 0;
-    padding: 9.5mm;
+    padding: 8.5mm;
     page-break-after: avoid;
     break-after: avoid;
   }
