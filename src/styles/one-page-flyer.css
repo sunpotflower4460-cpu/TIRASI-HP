@@ -14,6 +14,13 @@
   margin-bottom: 16px;
 }
 
+.one-page-toolbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .one-page-toolbar button {
   color: white;
   background: var(--primary-color);
@@ -22,6 +29,11 @@
   padding: 10px 18px;
   font-weight: 700;
   box-shadow: 0 8px 18px rgba(209, 122, 134, 0.18);
+}
+
+.one-page-toolbar button.secondary {
+  color: var(--text-color);
+  background: white;
 }
 
 .one-page-print-notice {
@@ -45,10 +57,10 @@
   box-shadow: var(--shadow);
   border-radius: 6px;
   overflow: hidden;
-  padding: 12mm;
+  padding: 11mm;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 8mm;
+  gap: 6mm;
 }
 
 .one-page-header {
@@ -61,7 +73,7 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   margin-bottom: 4mm;
 }
 
@@ -75,12 +87,12 @@
 .one-page-title-row h1 {
   color: var(--primary-color);
   font-family: "Zen Maru Gothic", sans-serif;
-  font-size: 3.6rem;
+  font-size: 4.15rem;
   line-height: 1;
 }
 
 .one-page-subtitle {
-  font-size: 1.45rem;
+  font-size: 1.65rem;
   font-weight: 700;
   margin-top: 2mm;
 }
@@ -94,8 +106,9 @@
 .one-page-date {
   background: white;
   border: 1px solid rgba(209, 122, 134, 0.18);
-  border-radius: 16px;
-  padding: 5mm 7mm;
+  border-radius: 18px;
+  min-width: 38mm;
+  padding: 7mm 8mm;
   text-align: center;
   box-shadow: 0 8px 18px rgba(209, 122, 134, 0.12);
 }
@@ -103,17 +116,18 @@
 .one-page-date strong {
   display: block;
   color: var(--primary-color);
-  font-size: 1.4rem;
+  font-size: 1.65rem;
 }
 
 .one-page-date span {
   font-weight: 700;
+  font-size: 1.08rem;
 }
 
 .one-page-organizer {
   margin-top: 4mm;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1.02rem;
 }
 
 .one-page-badges {
@@ -127,8 +141,9 @@
   background: var(--primary-color);
   color: white;
   border-radius: 999px;
-  padding: 2mm 5mm;
+  padding: 2.2mm 5.8mm;
   font-weight: 700;
+  font-size: 0.98rem;
 }
 
 .one-page-badges span:nth-child(2) {
@@ -138,14 +153,14 @@
 .one-page-note {
   margin-top: 3mm;
   color: #6d6062;
-  font-size: 0.78rem;
+  font-size: 0.83rem;
   line-height: 1.45;
 }
 
 .one-page-main-grid {
   display: grid;
-  grid-template-columns: 1.28fr 0.82fr;
-  gap: 8mm;
+  grid-template-columns: 1.34fr 0.78fr;
+  gap: 7mm;
   min-height: 0;
 }
 
@@ -155,7 +170,12 @@
   background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(209, 122, 134, 0.14);
   border-radius: 18px;
-  padding: 6mm;
+  padding: 6.5mm;
+}
+
+.one-page-schedule {
+  display: grid;
+  grid-template-rows: auto 1fr;
 }
 
 .one-page-schedule h2,
@@ -163,48 +183,49 @@
 .one-page-access h2 {
   color: var(--primary-color);
   font-family: "Zen Maru Gothic", sans-serif;
-  font-size: 1.25rem;
-  margin-bottom: 4mm;
+  font-size: 1.35rem;
+  margin-bottom: 4.4mm;
 }
 
 .one-page-schedule-list {
   display: grid;
-  gap: 2.4mm;
+  align-content: start;
+  gap: 3.6mm;
 }
 
 .one-page-schedule-row {
   display: grid;
-  grid-template-columns: 34mm 1fr;
-  gap: 4mm;
+  grid-template-columns: 36mm 1fr;
+  gap: 4.5mm;
   align-items: baseline;
-  padding-bottom: 2.4mm;
+  padding-bottom: 3.3mm;
   border-bottom: 1px dotted rgba(209, 122, 134, 0.3);
 }
 
 .one-page-time {
   color: var(--primary-color);
   font-family: "Roboto", sans-serif;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
 .one-page-schedule-row strong {
-  font-size: 0.98rem;
+  font-size: 1.08rem;
 }
 
 .one-page-break {
   color: var(--accent-color);
   background: rgba(141, 163, 114, 0.08);
   border-radius: 999px;
-  padding: 2mm 4mm;
-  font-size: 0.82rem;
+  padding: 2.2mm 4mm;
+  font-size: 0.9rem;
   font-weight: 700;
   text-align: center;
 }
 
 .one-page-end {
   color: var(--secondary-color);
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   letter-spacing: 0.18em;
   text-align: center;
   margin-top: 1mm;
@@ -228,14 +249,14 @@
 
 .one-page-open-mic strong {
   display: block;
-  font-size: 1rem;
+  font-size: 1.08rem;
   margin-bottom: 2mm;
 }
 
 .one-page-open-mic p,
 .one-page-open-mic small {
   display: block;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .one-page-open-headline {
@@ -245,8 +266,8 @@
 
 .one-page-access p {
   color: #6d6062;
-  font-size: 0.84rem;
-  line-height: 1.5;
+  font-size: 0.9rem;
+  line-height: 1.55;
   overflow-wrap: anywhere;
 }
 
@@ -258,7 +279,7 @@
   padding-top: 5mm;
   color: #6d6062;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.86rem;
 }
 
 @media screen and (max-width: 760px) {
@@ -303,7 +324,7 @@
     max-width: 210mm;
     box-shadow: none;
     border-radius: 0;
-    padding: 10mm;
+    padding: 9.5mm;
     page-break-after: avoid;
     break-after: avoid;
   }
