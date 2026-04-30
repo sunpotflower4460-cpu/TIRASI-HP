@@ -104,7 +104,7 @@ export function HomePage({ eventData, onOpenFlyer, onEdit, showEditButton = fals
           <p>{eventData.venue.address}</p>
           {venueUrl ? (
             <a href={venueUrl} target="_blank" rel="noopener noreferrer">
-              {getExternalUrlLabel(venueUrl)}
+              {getExternalUrlLabel(eventData.venue.url)}
             </a>
           ) : eventData.venue.url.trim() ? (
             <p>{eventData.venue.url.trim()}</p>

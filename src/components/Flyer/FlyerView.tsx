@@ -100,7 +100,7 @@ export function FlyerView({ eventData, variant = "web", onEdit, onPrint, showEdi
               <p className="address">{eventData.venue.address}</p>
               {venueUrl ? (
                 <a href={venueUrl} target="_blank" rel="noopener noreferrer" className="web-link">
-                  {getExternalUrlLabel(venueUrl)}
+                  {getExternalUrlLabel(eventData.venue.url)}
                 </a>
               ) : eventData.venue.url.trim() ? (
                 <p className="web-link">{eventData.venue.url.trim()}</p>
