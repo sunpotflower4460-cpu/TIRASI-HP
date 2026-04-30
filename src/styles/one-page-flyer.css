@@ -56,7 +56,6 @@
   height: 297mm;
   overflow: hidden;
   pointer-events: none;
-  opacity: 0;
   z-index: -1;
 }
 
@@ -107,8 +106,14 @@
 }
 
 .one-page-sheet.export-image-copy .one-page-title-row {
-  grid-template-columns: minmax(0, 1fr) 40mm;
-  gap: 4mm;
+  grid-template-columns: minmax(0, 1fr) 41mm;
+  gap: 4.5mm;
+  align-items: start;
+}
+
+.one-page-sheet.export-image-copy .one-page-title-row > div:first-child {
+  padding-left: 2.5mm;
+  padding-right: 1mm;
 }
 
 .one-page-title-row h1 {
@@ -139,25 +144,44 @@
   border: 1px solid rgba(209, 122, 134, 0.2);
   border-radius: 18px;
   min-width: 43mm;
-  padding: 8.5mm 9mm;
+  min-height: 38mm;
+  padding: 7.5mm 8mm;
   text-align: center;
   box-shadow: 0 10px 20px rgba(209, 122, 134, 0.14);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .one-page-sheet.export-image-copy .one-page-date {
   min-width: 40mm;
-  padding: 8mm 7mm;
+  min-height: 38mm;
+  padding: 7.5mm 6.5mm;
+  justify-self: center;
+  align-self: start;
+  transform: translate(-3.5mm, 3mm);
 }
 
 .one-page-date strong {
   display: block;
+  width: 100%;
   color: var(--primary-color);
   font-size: 1.82rem;
+  line-height: 1.08;
+  letter-spacing: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .one-page-date span {
+  display: block;
+  width: 100%;
   font-weight: 700;
   font-size: 1.16rem;
+  line-height: 1.25;
+  text-align: center;
 }
 
 .one-page-organizer {
@@ -236,6 +260,7 @@
   display: grid;
   align-content: start;
   gap: 4.2mm;
+  position: relative;
 }
 
 .one-page-schedule-row {
@@ -260,14 +285,22 @@
 
 .one-page-break {
   color: #5f7f3c;
-  background: rgba(141, 163, 114, 0.2);
-  border: 1px solid rgba(95, 127, 60, 0.22);
+  background: #eef2e7;
+  border: 1px solid rgba(95, 127, 60, 0.2);
   border-radius: 999px;
   padding: 2.8mm 4.8mm;
   font-size: 0.96rem;
   font-weight: 800;
   text-align: center;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.48);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.one-page-break::before,
+.one-page-break::after {
+  content: none;
 }
 
 .one-page-end {
