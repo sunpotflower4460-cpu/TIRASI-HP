@@ -112,9 +112,13 @@
 }
 
 .one-page-sheet.export-image-copy .one-page-title-row > div:first-child {
-  padding-left: 3.8mm;
+  width: 112mm;
+  max-width: 112mm;
+  justify-self: center;
+  padding-left: 0;
   padding-right: 0;
-  transform: translateX(1.4mm);
+  transform: translateX(3mm);
+  text-align: center;
 }
 
 .one-page-title-row h1 {
@@ -174,7 +178,7 @@
   padding: 7.5mm 6.5mm;
   justify-self: center;
   align-self: start;
-  transform: translate(-3.5mm, 3mm);
+  transform: translate(-7mm, 5mm);
 }
 
 .one-page-date strong {
@@ -204,8 +208,12 @@
 }
 
 .one-page-sheet.export-image-copy .one-page-organizer {
+  width: 112mm;
+  max-width: 112mm;
+  margin: 3.2mm auto 0;
+  transform: translateX(3mm);
   font-size: 1.1rem;
-  margin-top: 3.2mm;
+  text-align: center;
 }
 
 .one-page-badges {
@@ -225,7 +233,11 @@
 }
 
 .one-page-sheet.export-image-copy .one-page-badges {
-  margin-top: 3.3mm;
+  width: 112mm;
+  max-width: 112mm;
+  justify-content: center;
+  margin: 3.3mm auto 0;
+  transform: translateX(3mm);
 }
 
 .one-page-sheet.export-image-copy .one-page-badges span {
@@ -244,10 +256,13 @@
 }
 
 .one-page-sheet.export-image-copy .one-page-note {
+  width: 112mm;
+  max-width: 112mm;
+  margin: 2.1mm auto 0;
+  transform: translateX(3mm);
   font-size: 0.76rem;
   line-height: 1.34;
-  margin-top: 2.1mm;
-  max-width: 116mm;
+  text-align: center;
 }
 
 .one-page-main-grid {
