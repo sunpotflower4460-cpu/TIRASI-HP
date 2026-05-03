@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
+import { getThemeClassName } from "../../data/themes";
 import type { EventData, ScheduleItem } from "../../types/event";
 import "../../styles/one-page-flyer.css";
 
@@ -55,9 +56,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number) {
   });
 }
 
-function createExportClone(sheet: HTMLElement) {
+function createExportClone(sheet: HTMLElement, themeClassName: string) {
   const stage = document.createElement("div");
-  stage.className = "one-page-export-stage";
+  stage.className = `one-page-export-stage ${themeClassName}`;
 
   const clone = sheet.cloneNode(true) as HTMLElement;
   clone.classList.add("exporting-for-image", "export-image-copy");
@@ -114,6 +115,7 @@ async function shareOrOpenPng(blob: Blob, setNotice: (message: string) => void) 
 export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onPrint: () => void }) {
   const [notice, setNotice] = useState("");
   const sheetRef = useRef<HTMLElement | null>(null);
+  const themeClassName = getThemeClassName(eventData.themeId);
 
   const handlePrint = () => {
     setNotice("印刷画面を開きます。反応しない場合は、共有ボタンからSafari/ブラウザで開いてPDF保存してください。");
@@ -130,13 +132,13 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
       setNotice("PNGを書き出しています。共有画面が開くまで少しお待ちください。");
       await document.fonts?.ready;
 
-      const exportClone = createExportClone(sheet);
+      const exportClone = createExportClone(sheet, themeClassName);
       stage = exportClone.stage;
       await waitForFrame();
 
       const canvas = await withTimeout(
         html2canvas(exportClone.clone, {
-          backgroundColor: "#fff9fa",
+          backgroundColor: null,
           scale: 3,
           useCORS: true,
           logging: false,
