@@ -98,6 +98,14 @@
   margin-bottom: 3.5mm;
 }
 
+.one-page-sheet.export-image-copy .one-page-kicker {
+  width: 112mm;
+  max-width: 112mm;
+  margin: 0 auto 3.5mm;
+  transform: translateX(3mm);
+  text-align: center;
+}
+
 .one-page-title-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -294,6 +302,11 @@
   font-family: "Zen Maru Gothic", sans-serif;
   font-size: 1.45rem;
   margin-bottom: 5mm;
+}
+
+.one-page-sheet.export-image-copy .one-page-access h2 {
+  width: 100%;
+  text-align: center;
 }
 
 .one-page-schedule-list {
