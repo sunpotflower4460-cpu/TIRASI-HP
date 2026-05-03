@@ -30,6 +30,28 @@
   border: 1px solid rgba(242, 156, 156, 0.34);
 }
 
+.public-data-card {
+  border-color: rgba(141, 163, 114, 0.28);
+  background: linear-gradient(135deg, rgba(141, 163, 114, 0.12), rgba(255, 255, 255, 0.72));
+}
+
+.public-data-card p {
+  color: #675c5f;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+
+.public-data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.public-data-actions button {
+  flex: 1 1 190px;
+}
+
 .row-actions {
   display: flex;
   gap: 6px;
@@ -63,7 +85,8 @@
     width: 100%;
   }
 
-  .editor-actions button {
+  .editor-actions button,
+  .public-data-actions button {
     flex: 1 1 auto;
   }
 }
