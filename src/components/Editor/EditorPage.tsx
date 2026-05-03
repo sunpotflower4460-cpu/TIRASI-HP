@@ -65,6 +65,42 @@ function makeExportFileName(eventData: EventData) {
   return `${safeTitle || "event-flyer"}.json`;
 }
 
+function makeDefaultEventFileName(eventData: EventData) {
+  const safeTitle = `${eventData.title}-${eventData.volume}`.replace(/[\\/:*?"<>|\s]+/g, "-").toLowerCase();
+  return `default-event-${safeTitle || "public"}.json`;
+}
+
+function getPublicEventJson(eventData: EventData) {
+  return JSON.stringify(normalizeEventData(eventData), null, 2);
+}
+
+function downloadJson(json: string, fileName: string) {
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function copyTextFallback(text: string) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const didCopy = document.execCommand("copy");
+  textarea.remove();
+  return didCopy;
+}
+
 export function EditorPage({
   eventData,
   setEventData,
@@ -169,18 +205,34 @@ export function EditorPage({
   };
 
   const downloadEventJson = () => {
-    const json = JSON.stringify(eventData, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-
-    anchor.href = url;
-    anchor.download = makeExportFileName(eventData);
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    downloadJson(getPublicEventJson(eventData), makeExportFileName(eventData));
     setNotice("JSONを書き出しました。");
+  };
+
+  const copyPublicEventJson = async () => {
+    const json = getPublicEventJson(eventData);
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(json);
+        setNotice("公開用データをコピーしました。このチャットに貼れば、公開用データへ反映できます。");
+        return;
+      }
+    } catch {
+      // Fall back to the older clipboard method below.
+    }
+
+    const didCopy = copyTextFallback(json);
+    setNotice(
+      didCopy
+        ? "公開用データをコピーしました。このチャットに貼れば、公開用データへ反映できます。"
+        : "コピーできませんでした。defaultEvent用JSONを書き出して、その内容を共有してください。"
+    );
+  };
+
+  const downloadDefaultEventJson = () => {
+    downloadJson(getPublicEventJson(eventData), makeDefaultEventFileName(eventData));
+    setNotice("defaultEvent用JSONを書き出しました。この内容をGitHubの公開データへ反映できます。");
   };
 
   const importEventJson = (event: ChangeEvent<HTMLInputElement>) => {
@@ -246,6 +298,17 @@ export function EditorPage({
             <strong>A4注意:</strong> スケジュール項目が多いため、印刷時に下部が詰まる可能性があります。A4画面で収まりを確認してください。
           </div>
         ) : null}
+
+        <section className="editor-card public-data-card">
+          <h2>公開用データ</h2>
+          <p>
+            管理画面の編集内容は、このブラウザ内に保存されています。サイトを見た全員へ反映したい時は、ここから公開用データをコピーして共有してください。
+          </p>
+          <div className="public-data-actions">
+            <button type="button" onClick={copyPublicEventJson}>公開用データをコピー</button>
+            <button type="button" onClick={downloadDefaultEventJson}>defaultEvent用JSONを書き出し</button>
+          </div>
+        </section>
 
         <section className="editor-card">
           <h2>基本情報</h2>
