@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
+import { getThemeClassName } from "../../data/themes";
 import type { EventData, ScheduleItem } from "../../types/event";
 import "../../styles/one-page-flyer.css";
 
@@ -55,9 +56,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number) {
   });
 }
 
-function createExportClone(sheet: HTMLElement) {
+function createExportClone(sheet: HTMLElement, themeClassName: string) {
   const stage = document.createElement("div");
-  stage.className = "one-page-export-stage";
+  stage.className = `one-page-export-stage ${themeClassName}`;
 
   const clone = sheet.cloneNode(true) as HTMLElement;
   clone.classList.add("exporting-for-image", "export-image-copy");
@@ -66,6 +67,13 @@ function createExportClone(sheet: HTMLElement) {
   document.body.appendChild(stage);
 
   return { stage, clone };
+}
+
+function makePngFileName(eventData: EventData) {
+  const safeTitle = `${eventData.title}-${eventData.subtitle}-${eventData.volume}`
+    .replace(/[\\/:*?"<>|\s]+/g, "-")
+    .toLowerCase();
+  return `${safeTitle || "event-flyer"}.png`;
 }
 
 function downloadBlob(blob: Blob, fileName: string) {
@@ -79,12 +87,12 @@ function downloadBlob(blob: Blob, fileName: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
-async function shareOrOpenPng(blob: Blob, setNotice: (message: string) => void) {
-  const fileName = "namane-acoustic-live-vol5.png";
+async function shareOrOpenPng(blob: Blob, eventData: EventData, setNotice: (message: string) => void) {
+  const fileName = makePngFileName(eventData);
   const file = new File([blob], fileName, { type: "image/png" });
   const shareData: ShareFileData = {
     files: [file],
-    title: "生音 Acoustic Live vol.5",
+    title: `${eventData.title} ${eventData.subtitle} ${eventData.volume}`,
     text: "A4チラシPNG"
   };
   const nav = navigator as NavigatorWithFileShare;
@@ -114,6 +122,7 @@ async function shareOrOpenPng(blob: Blob, setNotice: (message: string) => void) 
 export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onPrint: () => void }) {
   const [notice, setNotice] = useState("");
   const sheetRef = useRef<HTMLElement | null>(null);
+  const themeClassName = getThemeClassName(eventData.themeId);
 
   const handlePrint = () => {
     setNotice("印刷画面を開きます。反応しない場合は、共有ボタンからSafari/ブラウザで開いてPDF保存してください。");
@@ -130,13 +139,13 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
       setNotice("PNGを書き出しています。共有画面が開くまで少しお待ちください。");
       await document.fonts?.ready;
 
-      const exportClone = createExportClone(sheet);
+      const exportClone = createExportClone(sheet, themeClassName);
       stage = exportClone.stage;
       await waitForFrame();
 
       const canvas = await withTimeout(
         html2canvas(exportClone.clone, {
-          backgroundColor: "#fff9fa",
+          backgroundColor: null,
           scale: 3,
           useCORS: true,
           logging: false,
@@ -156,7 +165,7 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
         }
 
         try {
-          await shareOrOpenPng(blob, setNotice);
+          await shareOrOpenPng(blob, eventData, setNotice);
         } catch {
           setNotice("共有処理中にエラーが発生しました。Safariで開くか、スクリーンショット保存をお試しください。");
         }
