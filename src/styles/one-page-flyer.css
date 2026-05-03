@@ -140,6 +140,7 @@
   font-size: 4.96rem;
   line-height: 0.94;
   letter-spacing: -0.035em;
+  transform: translateX(2mm);
 }
 
 .one-page-subtitle {
@@ -158,6 +159,7 @@
   font-size: 1.92rem;
   margin-top: 1.6mm;
   letter-spacing: -0.03em;
+  transform: translateX(4mm);
 }
 
 .one-page-sheet.export-image-copy .one-page-subtitle span {
@@ -186,7 +188,7 @@
   padding: 7.5mm 6.5mm;
   justify-self: center;
   align-self: start;
-  transform: translate(-7mm, 5mm);
+  transform: translate(-6mm, 2mm);
 }
 
 .one-page-date strong {
