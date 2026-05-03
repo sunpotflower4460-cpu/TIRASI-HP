@@ -69,6 +69,13 @@ function createExportClone(sheet: HTMLElement, themeClassName: string) {
   return { stage, clone };
 }
 
+function makePngFileName(eventData: EventData) {
+  const safeTitle = `${eventData.title}-${eventData.subtitle}-${eventData.volume}`
+    .replace(/[\\/:*?"<>|\s]+/g, "-")
+    .toLowerCase();
+  return `${safeTitle || "event-flyer"}.png`;
+}
+
 function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -80,12 +87,12 @@ function downloadBlob(blob: Blob, fileName: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
-async function shareOrOpenPng(blob: Blob, setNotice: (message: string) => void) {
-  const fileName = "namane-acoustic-live-vol5.png";
+async function shareOrOpenPng(blob: Blob, eventData: EventData, setNotice: (message: string) => void) {
+  const fileName = makePngFileName(eventData);
   const file = new File([blob], fileName, { type: "image/png" });
   const shareData: ShareFileData = {
     files: [file],
-    title: "生音 Acoustic Live vol.5",
+    title: `${eventData.title} ${eventData.subtitle} ${eventData.volume}`,
     text: "A4チラシPNG"
   };
   const nav = navigator as NavigatorWithFileShare;
@@ -158,7 +165,7 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
         }
 
         try {
-          await shareOrOpenPng(blob, setNotice);
+          await shareOrOpenPng(blob, eventData, setNotice);
         } catch {
           setNotice("共有処理中にエラーが発生しました。Safariで開くか、スクリーンショット保存をお試しください。");
         }
