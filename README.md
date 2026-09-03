@@ -64,3 +64,17 @@ Vercelでは以下の設定で動きます。
 - Framework Preset: Vite
 - Build Command: `npm run build`
 - Output Directory: `dist`
+
+## Cloudflare Pages
+
+GitHub Actions (`.github/workflows/deploy-cloudflare.yml`) から `main` ブランチへの push で自動デプロイします。
+
+事前に以下をリポジトリの GitHub Secrets に登録してください。
+
+- `CLOUDFLARE_API_TOKEN`: Cloudflare の API トークン（Cloudflare Pages の編集権限が必要）
+- `CLOUDFLARE_ACCOUNT_ID`: Cloudflare のアカウントID
+
+初回は Cloudflare 側で Pages プロジェクト名 `tirasi-hp` を事前作成しておくとスムーズです（未作成でも `wrangler pages deploy` が自動作成します）。
+
+- Build Command: `npm run build`
+- Output Directory: `dist`
