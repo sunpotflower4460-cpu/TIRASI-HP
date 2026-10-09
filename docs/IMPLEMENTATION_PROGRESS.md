@@ -1,9 +1,10 @@
 # IMPLEMENTATION PROGRESS — TIRASI-HP v2
 
 最終更新: 2026-10-09  
-区分: 設計反映済み / 実装は未着手  
+区分: **第2次設計監査と契約補強を反映済み** / 実装は未着手  
 設計: docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md  
 実装手順: docs/HAIKU55_EXECUTION_PLAYBOOK.md  
+第2次監査: docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md  
 Claude Code入口: CLAUDE.md
 
 ## 基準main SHA / 現在ブランチ / 現在コミット
@@ -18,8 +19,8 @@ Claude Code入口: CLAUDE.md
 
 ## 現在工程
 
-PREP-DONE: GitHubコード・データ・スタイル・PR履歴・CIを調査して設計化。  
-NEXT（明示的な実装依頼後）: A0（ベースラインのローカル実測と回帰テストの準備）→ A1から実装。  
+PREP-DONE + AUDIT-2: GitHubコード・データ・スタイル・PR履歴・CIを調査して設計化、外部仕様を照合してDA-01〜DA-17の監査補足を導入。  
+NEXT（明示的な実装依頼後）: 第2次監査DA-01〜DA-17を受入条件へ取り込み、A0（ベースラインのローカル実測と回帰テストの準備）→ A1から実装。  
 PR-A: 未着手。PR-B: 未着手。
 
 ## 今回確定した事実
@@ -37,7 +38,7 @@ PR-A: 未着手。PR-B: 未着手。
 ## 完成した実装
 
 - なし。既存アプリコード、CI、公開データは変更していない。
-- 総合設計・長期自走手順・進捗管理の3文書と、READMEリンク、Claude Code向けルート `CLAUDE.md` を追加した。
+- 総合設計・第2次監査契約・長期自走手順・進捗管理の4文書と、READMEリンク、Claude Code向けルート `CLAUDE.md` を追加・相互連携した。
 
 ## テスト結果
 
@@ -62,7 +63,7 @@ PR-A: 未着手。PR-B: 未着手。
 
 ## 次の着手点（優先順）
 
-1. 最新main/PR状態を取得、git status確認。設計文書の追加のみで機能差分がないことを確認。
+1. 最新main/PR状態を取得、git status確認。設計文書の追加のみで機能差分がないことを確認。DA-01〜DA-17を受入表へ移す。
 2. 実装用長期ブランチ feature/tirasi-v2-reliability を作成。
 3. npm install/npm run build、ブラウザで/, /editor, /flyer、PNG、printの現状ベースラインを採取する。
 4. schema v2, migrationと不正JSONテストを先行追加。
@@ -118,3 +119,12 @@ PR-A: 未着手。PR-B: 未着手。
 - `CLAUDE.md` に実装開始前の必読ファイルと安全な長期自走ループを配置した。
 - GitHub比較（元main aa95ef74... → 2026-10-09時点のmain 495fbc260dbfb8af66e0337158bcc60eb1c498a7）で差分は `CLAUDE.md`, `README.md`, `docs/HAIKU55_EXECUTION_PLAYBOOK.md`, `docs/IMPLEMENTATION_PROGRESS.md`, `docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md` の5文書ファイルのみ。アプリ実装コードは未変更、open PRなし。
 - 実装着手にはユーザーからの明示指示が必要。着手後はPR-A/Bの二本にまとめ、マージ/デプロイは手動承認待ち。
+
+## 第2次設計監査（2026-10-09）
+
+- 必読: `docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md`。設計不足DA-01〜DA-17を確認・補正。主要補正は Event と CreativeDocument の分離（event-flyer/free-flyer/image-treatment）、公開/下書きプレビューの専用経路、screen/PNG/printの描画能力契約、実際のpx・印刷寸法の区別、バックアップと移行の整合性、20×4画像出力の最終ゲート。
+- `docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md`、`docs/HAIKU55_EXECUTION_PLAYBOOK.md`、`CLAUDE.md`、`README.md` に監査文書への入口と実装に必要な補正を反映した。
+- 参考にした外部仕様: html2canvasのCSS描画制限、CORSのcanvas制約、Web Shareの一時activation、ブラウザストレージの退避可能性、印刷背景、Viteビルド時メタ処理、WCAG。外部仕様の確認であり実機アプリテストではない。
+- 追加の設計境界: アプリのデータをローカルで処理することは、現行Google Fontsや外部画像への通信が不要であるという意味ではない。オフライン保証は実装・検証してから示す。
+- ブラウザ実機/PNG比較/物理印刷/新規ビルド: **未実施**。現状の新機能: **未実装**。今回もmainへの変更はdocs/README/CLAUDE.mdに限定。
+- PR-AとPR-Bは原則2つの大型PR。PR-Aレビュー待ちなら積み重ねbranchによるPR-B開発を許可、細かいPRを作成しない。今回のドキュメント追加は実装開始承認を意味しない。
