@@ -64,3 +64,14 @@ Vercelでは以下の設定で動きます。
 - Framework Preset: Vite
 - Build Command: `npm run build`
 - Output Directory: `dist`
+
+
+## v2 長期改良の設計（2026-10-09）
+
+現在の公開アプリとは別に、信頼性向上・データ公開/下書き分離・1980年代風を含む多様なチラシデザイン拡張の設計が用意されています。**設計書は追加済みですが、v2の機能実装はまだ始まっていません。**
+
+- [v2 総合設計書（不具合、構成、20テンプレート、出力品質とテスト）](docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md)
+- [Haiku 5.5 長期自走プレイブック（原則2つの大型PRと回復手順）](docs/HAIKU55_EXECUTION_PLAYBOOK.md)
+- [進捗/再開地点](docs/IMPLEMENTATION_PROGRESS.md)
+
+実装者はこの3ファイルを先に読み、最新mainと照合してから進めてください。小修正ごとのPRを量産せず、**PR-A: 安定化 / PR-B: チラシスタジオ拡張**を基本とします。実装を本番に自動公開することや、mainへ自動マージすることはありません。
