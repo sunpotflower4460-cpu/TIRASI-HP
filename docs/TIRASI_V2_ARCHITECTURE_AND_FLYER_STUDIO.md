@@ -1,10 +1,10 @@
 # TIRASI-HP v2 設計書：安定化・多様なチラシ制作スタジオ
 
-状態: IMPLEMENTATION-READY DESIGN / 2026-10-09  
+状態: SECOND-PASS REVIEWED DESIGN — DA-01〜DA-17の必須補足契約を適用 / 2026-10-09  
 基準: main / aa95ef74df2d709d2de6555d7aad715ae9a41457  
 目的: 現在の公開イベントHPとA4チラシ作成を守りながら、制作体験を大幅に拡張する。  
 実装担当: Claude Code Haiku 5.5（高 effort 想定）  
-関連: docs/HAIKU55_EXECUTION_PLAYBOOK.md、docs/IMPLEMENTATION_PROGRESS.md
+関連: docs/HAIKU55_EXECUTION_PLAYBOOK.md、docs/IMPLEMENTATION_PROGRESS.md、**docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md（必読の監査・実装契約）**
 
 ## 0. 設計の原則
 
@@ -90,15 +90,17 @@ package-lock.json未追跡、CIはnpm installとbuildのみ。単体テスト/E2
 
 - PublishedEvent: リポジトリにコミットされた公開用ソース（静的JSON/TS）。/ と通常の /flyer はこれのみ読む。
 - EventWorkspace: 編集者端末のイベント一覧（draft、activeDraftId、更新時刻、schemaVersion）。
-- PreviewMode: 編集画面から明示的に開くローカル下書きプレビュー。公開済み画面との差異を見分けられる。
-- FlyerDesign: どのイベントにも紐づけられる表現設定（templateId、paletteId、sizeId、typographyId、decorations、画像アセット参照、セクション表示設定）。
+- PreviewMode: 編集画面から明示的に開くローカル下書きプレビュー。公開済み画面との差異を見分けられる。公開用 /flyer には遷移させず、draft専用のプレビューを用意する（DA-03）。
+- CreativeDocument: event-flyer / free-flyer / image-treatment の判別可能な制作物。イベントに紐づかない自由制作と既存画像加工も扱える（DA-01）。
+- FlyerDesign: 制作物に紐づく表現設定（templateId、paletteId、sizeId、typographyId、decorations、画像アセット参照、セクション表示設定）。
 - AssetStore: 大きな画像はIndexedDBに格納、一覧メタデータと参照IDだけをworkspaceに持つ。localStorageにbase64画像を詰めない。
 - PublicationExport: 「公開用データを書き出す」はあくまでGitHub反映のためのファイル生成。公開完了と誤表示しない。サーバー自動更新なし。
 
 ### 2.2 推奨型（概念）
 
 - EventContent: id, title, subtitle, edition, dateISO, timezone, startTime, description, venue, admission, organizer, schedule[], performers[], openMic, socials[]。
-- EventDraft: schemaVersion=2, id, name, content, design, updatedAt, publishedSourceRevision?。
+- EventDraft: schemaVersion=2, id, name, content, design, updatedAt, publishedSourceRevision?。Eventの事実と個々の制作物のデザインを分離する移行用の概念型。
+- CreativeDocument: schemaVersion, id, kind(event-flyer/free-flyer/image-treatment), name, contentBlocks, eventBinding?, design, assetRefs, updatedAt。イベントのOpen Micやscheduleを自由制作に強制しない。
 - FlyerDesign: templateId, paletteId, canvasSizeId, fontSetId, visibility, textOverrides?, background, illustrationAssets?, printOptions?。
 - TemplateDefinition: id, displayName, family, preview, supportedSizes, layoutKey, sectionCapabilities, minFontSize, safeArea, decorationKind, defaultPalette, defaultFonts。
 - AssetMetadata: id, name, mime, width, height, bytes, updatedAt, alt?。
@@ -111,14 +113,14 @@ package-lock.json未追跡、CIはnpm installとbuildのみ。単体テスト/E2
 2. FlyerDesign + canvasSize → TemplateDefinitionを選択。
 3. TemplateRenderer: 共通のデータ入力に対し、実際に異なるレイアウトレシピを描画する。
 4. FlyerCanvas: CSSで固定の物理/ピクセル寸法を管理。画面プレビューは外側コンテナを縮小表示するのみ。内部の紙面寸法をviewportに応じて変更しない。
-5. ExportRenderer: 画面と同一Canvas DOM/HTML/SVGを使い、フォント・画像のreadyを待つ。印刷も同じレイアウトと@page設定を基礎にする。
+5. ExportRenderer: 画面/PNG/印刷で同一のレイアウト**仕様**とデータを共有する。ブラウザやhtml2canvasのCSS非対応を考慮し、DOM/SVG/Canvas 2D/印刷CSSの別adapterを許容する。機能別capabilityMatrixを持ち、フォント/画像を準備してから描画する（DA-06）。
 6. OverflowDiagnostics: 実DOM境界・行幅・安全領域・描画完了後のサイズを計測。エラーを可視化。必要時は紙面複数ページ/密度プリセット/セクション短縮を提案。
 7. 共通印刷パスは最初にA4で確立し、その後別サイズへ展開。テーマ切替時に旧A4互換を検証。
 
 ### 2.4 UIの基本フロー
 
 ホーム: 公開中イベントを表示。  
-編集: イベント選択 → 本文入力 → デザイン選択 → 仕上げ調整 → プレビュー → 書き出し。  
+編集: 「イベントチラシを作る / 自由制作チラシを作る / 既存画像を加工する」を選ぶ → 必要な本文・画像入力 → デザイン選択 → 調整 → **下書き専用**プレビュー → 書き出し。  
 デザイン: 「時代/雰囲気」「レイアウト」「配色」「文字」「装飾」「サイズ」を独立選択できる。選択直後にプレビュー反映。  
 書き出し: 「PNG生成」→完了後「保存」「共有」、「PDF/印刷」。失敗時は原因と代替操作を示す。  
 公開: 公開データ出力 → 手動でGitHub反映 → CI/プレビューで検証 → 必要時に手動デプロイ。公開をクリックだけで完了したように見せない。
@@ -131,7 +133,7 @@ package-lock.json未追跡、CIはnpm installとbuildのみ。単体テスト/E2
 
 ### 3.2 最終必須テンプレート一覧：20種、8ファミリー
 
-※数量は「UI選択肢が実際に見える」ことをもって完成とする。全て同じ見た目の色違いはカウントしない。
+※数量はUI選択肢の数だけでは合格としない。20種類すべてについて固有の構図・代表画像・対応出力サイズ・欠け検査の証跡を残す。色違いや未接続の仮置きはカウントしない（DA-09）。
 
 - 80s / Retro（4）
   1. 1985 Japanese Live House：大胆な手組みタイポ、コピー機質感、白黒+蛍光差し色、余白の少ない縦組/横組の混合。
@@ -202,7 +204,7 @@ package-lock.json未追跡、CIはnpm installとbuildのみ。単体テスト/E2
 
 ### 3.5 用紙・画面サイズ
 
-- 第1目標: A4縦（210x297mm）、SNS縦（1080x1350）、SNS正方形（1080x1080）、ストーリー（1080x1920）。
+- 必須4出力: A4縦（210×297mm; PNG 300dpiは2480×3508pxを基準）、SNS縦（1080×1350px）、SNS正方形（1080×1080px）、ストーリー（1080×1920px）。SNSはPNG、A4はPNGとブラウザ印刷/PDF保存の導線を保証。
 - A5とA4横は拡張目標。サイズが変わる場合は単なるscaleではなくセクション再配置ルールを指定する。
 - PNGは意図したpx寸法を明記し、PDF/印刷は実寸・余白・背景色・裁ち落としの扱いを明示。
 - 文字の可読最小サイズとセーフエリアをレシピごとに定義。情報が多い場合、見えないまま切り捨てない。
@@ -299,7 +301,7 @@ T17: 大きな写真、読込失敗、極端な縦横比、スマホのメモリ
 
 ### PR-B: Flyer Studio & Template Expansion
 
-含む: template registry、20種類のレイアウト、12以上のパレット、タイプ/装飾オプション、サイズ選択、画像取り込み、既存画像の80年代風/レトロ加工モード、プレビューとPNG/印刷、UX、テスト・視覚比較。PR-Aの機能を壊さない。複数コミット・進捗更新で一つのPRにまとめる。
+含む: CreativeDocumentの3制作モード（イベントチラシ/自由制作/既存画像加工）、template registry、20種類のレイアウト、12以上のパレット、タイプ/装飾オプション、サイズ選択、画像取り込み、既存画像の80年代風/レトロ加工モード、プレビューとPNG/印刷、UX、テスト・視覚比較。PR-Aの機能を壊さない。複数コミット・進捗更新で一つのPRにまとめる。
 
 完了条件: 20テンプレートが選択でき、色替えではなくレイアウトが実際に変わり、最低6種類の画像レトロ加工プリセットも使え、少なくとも指定4サイズで出力できる。長文・画像・SNS/印刷で欠けや破綻がない。README/操作説明/制限を更新。
 
@@ -319,4 +321,19 @@ T17: 大きな写真、読込失敗、極端な縦横比、スマホのメモリ
 
 ## 8. 実装者への読込指示
 
-まず本書、docs/HAIKU55_EXECUTION_PLAYBOOK.md、docs/IMPLEMENTATION_PROGRESS.mdを読み、main最新SHAとPR状態を照合する。実際のコード・旧PRで本書の事実が変わっていれば差分と修正案を進捗に記録してから進める。実装はPR-A → PR-B、作業中断前に検証結果と次の一手を必ず残す。
+まず本書、docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md、docs/HAIKU55_EXECUTION_PLAYBOOK.md、docs/IMPLEMENTATION_PROGRESS.mdを読み、main最新SHAとPR状態を照合する。実際のコード・旧PRで本書の事実が変わっていれば差分と修正案を進捗に記録してから進める。実装はPR-A → PR-B、作業中断前に検証結果と次の一手を必ず残す。
+
+
+## 9. 第2次監査での必須補足（2026-10-09）
+
+上の本文にある「共通の出力」「保存」「テンプレート」という抽象表現は、**docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md の DA-01〜DA-17** を具体的な実装契約とする。特に以下を必須とする。
+
+1. Event と CreativeDocument（event-flyer / free-flyer / image-treatment）を分離し、一般チラシにイベント専用項目を強制しない。
+2. 公開HPと編集下書き、下書き専用プレビューのルート/状態を分ける。編集用A4ボタンが公開版を開く回帰を禁止。
+3. screen/PNG/printは同一のlayout specificationとデータを共有するが、html2canvasが完全対応するとは仮定せず、描画adapterの違いを許容し検証する。
+4. A4物理印刷とSNS向けピクセル出力を区別。ブラウザの印刷設定が紙面背景を変更し得る制約を明示。
+5. v1保存データを安全な段階的移行で守る。IndexedDB等の消去可能性に備え、完全な画像同梱バックアップと実際の復元テストを行う。
+6. 20独立テンプレート×4画像出力サイズを少なくとも一巡テスト。境界データと画面比較を追加し、未検証を合格扱いにしない。
+7. 旧機能の安定化PR-AとStudio拡張PR-Bの原則2PR方針を維持する。ユーザーの明示指示前にコード実装・マージ・公開を行わない。
+
+設計の妥当性を実機で確認するフェーズがまだ必要であり、「設計修正完了」は「機能完成」「全ブラウザ動作保証」ではない。
