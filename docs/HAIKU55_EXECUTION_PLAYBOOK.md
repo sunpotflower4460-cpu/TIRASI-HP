@@ -2,7 +2,7 @@
 
 基準設計: docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md  
 必読の第2次監査: docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md
-実装具体化の補足: docs/V2_DESIGN_AUDIT_AND_DECISIONS.md（DA-01〜DA-17が優先、実装方法を選ぶ時の参考）  
+実装具体化の補足: docs/V2_DESIGN_AUDIT_AND_DECISIONS.md（DA-01〜DA-23が優先、実装方法を選ぶ時の参考）  
 状態管理: docs/IMPLEMENTATION_PROGRESS.md  
 初期記録日: 2026-10-09  
 原則: PRを細分化せず、原則PR-AとPR-Bの2本に集約する。途中はコミットと記録で継続する。
@@ -188,4 +188,17 @@ docs/IMPLEMENTATION_PROGRESS.mdを次の見出しで毎チェックポイント�
 
 ## 12. 第2次監査の必須ゲート
 
-実装フェーズ開始前に `docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md` の DA-01〜DA-17 を要件表へ取り込み、Event/CreativeDocumentの3モード、下書き専用ルート、非破壊データ移行、完全バックアップ、screen/PNG/print別adapterの検証契約を確定。PR数を増やさずPR-A/Bの内部ゲートへ反映。未検証はpass扱いしない。
+実装フェーズ開始前に `docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md` の DA-01〜DA-23 を要件表へ取り込み、Event/CreativeDocumentの3モード、下書き専用ルート、非破壊データ移行、完全バックアップ、screen/PNG/print別adapterの検証契約を確定。PR数を増やさずPR-A/Bの内部ゲートへ反映。未検証はpass扱いしない。
+
+
+## 13. 最終整合監査の長期自走ゲート
+
+実装を始める前に正式監査DA-18〜DA-23を確認。以下をPR内で検証する（PR数は増やさない）。
+
+- **PR-A初期:** 旧localStorageが読込可能かを確認し、v2 IndexedDBへ移行する際は同じデータを2回移行しても複製されないこと、容量不足/中断/StrictModeでも旧データが消えないことをテスト。React状態遷移はイベント削除・複製・切替・保存が相互に干渉しないようにする。
+- **PR-A公開:** 公開データとして「選択されたイベント」を使い、コード上の過去イベントを勝手に現在の予定へ作り変えない。/flyerは公開版、編集A4ボタンは下書きプレビューのテストを追加。
+- **PR-B編集:** event-flyer/free-flyer/image-treatmentの判別子をデータ、スキーマ、UI、JSON、ZIP、テストで一致させる。イベント本文とデザイン内の上書き文言は別に保持する。テンプレート変更とサイズ変更でもレイアウト差分/アップロード元画像を守る。
+- **PR-B検証:** 正常fixtureの20テンプレート×4サイズ=80画像出力を全件確認。長文・出演者多数などはリスクに基づき追加検証し、目視未実施は未実施と記録。
+- **記録:** `docs/IMPLEMENTATION_PROGRESS.md`へ工程、branch/SHA、合否、PR-A/Bの未完項目、次の3手を残す。実装の基礎設計と受入要件を消して辻褄を合わせない。
+
+補助資料 `docs/V2_DESIGN_AUDIT_AND_DECISIONS.md` は参考メモであり、正式契約 `docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md` に矛盾する場合は後者を優先する。
