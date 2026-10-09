@@ -72,7 +72,10 @@ Vercelでは以下の設定で動きます。
 
 - [v2 総合設計書（不具合、構成、20テンプレート、出力品質とテスト）](docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md)
 - [第2次設計監査・実装契約（データ構造・保存・画像出力・品質保証）](docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md)
+- [追加の実装具体化メモ（Scene/ブロック編集、保存・出力、テスト細則）](docs/V2_DESIGN_AUDIT_AND_DECISIONS.md)
 - [Haiku 5.5 長期自走プレイブック（原則2つの大型PRと回復手順）](docs/HAIKU55_EXECUTION_PLAYBOOK.md)
 - [進捗/再開地点](docs/IMPLEMENTATION_PROGRESS.md)
 
 実装者は上記4ファイルを先に読み、最新mainと照合してから進めてください。小修正ごとのPRを量産せず、**PR-A: 安定化 / PR-B: チラシスタジオ拡張**を基本とします。実装を本番に自動公開することや、mainへ自動マージすることはありません。
+
+第2次設計監査（DA-01〜DA-17）が具体的な要件の正本です。追加メモは実装候補の補足であり、矛盾があればDA契約が優先されます。
