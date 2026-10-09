@@ -170,6 +170,7 @@ IndexedDB等のWebストレージはユーザー削除、プライベートモ�
 - **CORS canvas**: クロスオリジン画像でcanvasが汚染されるとtoBlob等がSecurityError。公式: https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/CORS_enabled_image
 - **Web Share**: HTTPSとユーザー操作での一時的activationが必要で、ファイル共有可否はブラウザ依存。公式: https://developer.mozilla.org/en-US/docs/Web/API/Web_Share_API
 - **local persistence**: IndexedDB等は容量や削除の影響を受ける。公式: https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria
+- **オフライン境界**: 現行 src/styles/global.css は Google Fonts の外部URLを @import している。『データがブラウザローカル』と『ネットワーク無しで全機能が使える』は別の主張。フォント取得失敗の代替描画を必須とし、完全オフラインを表示するなら、許諾済みフォント/素材をローカル同梱してオフライン実測を行う。リモートの出演者画像URLもネットワークアクセスすることを説明する。
 - **print colors**: \`print-color-adjust:exact\` はユーザー/ブラウザの印刷設定を強制しない。公式: https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/print-color-adjust
 - **Vite HTML metadata**: Vite \`transformIndexHtml\`などでビルド時のメタ生成は実現できるが、クライアント編集中のSEO/OGPは更新されない。公式: https://vite.dev/guide/api-plugin
 - **text contrast**: WCAG 2.2 AA の一般本文4.5:1、大文字3:1。公式: https://www.w3.org/TR/wcag/
