@@ -4,11 +4,12 @@
 
 This repository is a React/TypeScript/Vite event website and flyer generator. Its v2 plan improves reliability and adds genuinely different flyer layouts, including 1980s Japanese live-house / city-pop / neon-stage / risograph styles.
 
-**Before making changes, read these three documents in full:**
+**Before making changes, read these four documents in full:**
 
 1. [Architecture, requirements, bug review, test criteria](docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md)
-2. [Long-running execution playbook for Haiku 5.5](docs/HAIKU55_EXECUTION_PLAYBOOK.md)
-3. [Implementation status and session handoff](docs/IMPLEMENTATION_PROGRESS.md)
+2. [Second-pass design audit and mandatory implementation contracts](docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md)
+3. [Long-running execution playbook for Haiku 5.5](docs/HAIKU55_EXECUTION_PLAYBOOK.md)
+4. [Implementation status and session handoff](docs/IMPLEMENTATION_PROGRESS.md)
 
 If these documents conflict with repository code, investigate and update the status log with evidence; do not silently discard requirements. Re-check current `origin/main`, open PRs, working-tree changes and CI before implementation.
 
@@ -20,6 +21,8 @@ If these documents conflict with repository code, investigate and update the sta
 - Within each PR, commit at meaningful checkpoints and update `docs/IMPLEMENTATION_PROGRESS.md` with branch/HEAD, changed files, test results, remaining risks and the next action.
 - A pending review/merge for PR-A is **not** a reason to abandon PR-B: create a stacked branch based on PR-A when safe, keep the dependency clear and reconcile it after PR-A merges. Do not auto-merge or auto-deploy.
 - Preserve all existing event information, current web pages, legacy event-library JSON, local drafts and the existing A4 design while migrating.
+- The Studio must support three document modes: `event-flyer`, `free-flyer`, and `image-treatment`. Never make Open Mic/schedule mandatory for a free-form flyer. Keep an explicit draft-preview route separate from published `/flyer`.
+- The **shared layout contract**, not necessarily a single DOM renderer, is the source of truth across preview, PNG and print; HTML-to-canvas CSS support is incomplete. Respect renderer capability flags, output dimensions, and storage/backup safeguards from DA-01..DA-17.
 - **Drafts are not published pages**. Do not imply a browser-local edit changes the public site.
 - **Client-side passcodes are not real authentication**. Never represent them as a security boundary.
 - No paid AI APIs, hosted DB, new auth service, external image storage, automated deployment or secrets unless the user explicitly approves.
