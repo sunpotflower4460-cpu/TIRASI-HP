@@ -1,17 +1,17 @@
-# TIRASI-HP v2.1 追加設計監査・決定事項
+# TIRASI-HP v2.1 追加設計監査・実装具体化メモ
 
 監査日: 2026-10-09
 監査対象: v2総合設計、長期自走手順、進捗、React/TypeScriptソース、CI。
 設計確認の基準main: 37871bb8ad4868ac5b697c66567e252177260c6c（実装前に最新SHAを再取得）。
 状態: 追加監査完了・設計上の決定。アプリ本体の改修・ブラウザ操作・実機印刷は未実施。
 
-**仕様の優先順:** 本書に明記した訂正事項 → TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md → HAIKU55_EXECUTION_PLAYBOOK.md → README。矛盾の発見時は進捗ファイルに残し、無言で片方を捨てない。
+**重要:** 同時期に別の第2次監査が反映されたため、必須要件の正本は [V2_DESIGN_AUDIT_AND_CONTRACTS.md](./V2_DESIGN_AUDIT_AND_CONTRACTS.md) の DA-01〜DA-17 とする。本書はその下位の具体化メモ。仕様の優先順は、現行実装の観測事実 / DA-01〜DA-17の明示契約 → マスター設計 → 本書の追加実装案 → Playbookの手順例。本書が先行監査と矛盾すれば先行監査を優先し、進捗に記録する。
 
 ## 1. 今回の監査で明らかになった不足と処理
 
 | ID | 重要度 | 不足/懸念 | 設計決定 |
 | --- | --- | --- | --- |
-| AUD-01 | P0 | イベント専用EventDataでは汎用チラシが作りにくい | イベント・自由制作・画像加工の3モードを判別共用体で分離する |
+| AUD-01 | P0 | EventDataでは汎用チラシが作りにくい | DA-01のevent-flyer/free-flyer/image-treatment判別共用体を実装時に具体化する |
 | AUD-02 | P0 | 文字・画像・図形の任意配置が未定義 | ページとブロックのシーンモデルを定義し、デザインと保存を共通化 |
 | AUD-03 | P0 | 「全4サイズ」「supportedSizes」「非対応表示」に不整合 | PR-B完了条件は20テンプレート×4サイズの80組。部分対応は未完成 |
 | AUD-04 | P0 | 同一DOMがPNG/印刷で完全一致する前提が強すぎる | 同一sceneを元にレンダラー別検証。ピクセル完全一致を保証しない |
@@ -33,23 +33,23 @@
 
 ## 2. 制作機能は3モードに分ける
 
-1. event: 従来のEventContentを出典にしたイベント告知。HPの公開データと紐付けできる。デザイン変更で本文は変えない。
-2. free: イベント以外のチラシやポスターを簡単に自由制作する。空ページまたは既定レイアウトから作り、テキスト・画像・図形を配置する。
+1. event-flyer: 従来のEventContentを出典にしたイベント告知。DA-02に従いEventのIDを参照し、linked/snapshotを区別する。デザイン変更でイベント本文は変えない。
+2. free-flyer: イベント以外のチラシやポスターを簡単に自由制作する。空ページまたは既定レイアウトから作り、テキスト・画像・図形を配置する。
 3. image-treatment: 持ち込んだ既存ポスター/写真を非破壊で加工。元画像バイナリと加工recipeを保存する。画素の内容を意味的に描き直すAI生成機能ではない。
 
-**freeの最小完成範囲:** 文字・画像・図形の追加、文字修正、移動、拡大縮小、前後関係、表示/ロック、複製、削除、現在セッション内のUndo/Redo、保存、PNG書出し。動画、共同編集、AIによる再描画、Figma相当の高度なベクター作図などは対象外とする。
+**free-flyerの追加具体化案:** 文字・画像・図形の追加、文字修正、移動、拡大縮小、前後関係、表示/ロック、複製、削除、現在セッション内のUndo/Redo、保存、PNG書出し。動画、共同編集、AIによる再描画、Figma相当の高度なベクター作図などは対象外とする。
 
 これにより20テンプレートを「色替えだけ」ではない個別のレイアウトとして提供しつつ、簡単な操作で自分のチラシへ発展させられる。
 
 ## 3. データモデルの決定
 
-文書のschemaVersion=2はアプリ保存全体のプロジェクト形式を指す。概念モデル：
+文書のschemaVersionはCreativeDocument、イベント一覧、完全バックアップmanifestなどの**対象ごとに定義する**（DA-04）。初期移行の目標形式はv2とするが、単一versionをすべてのファイルの共通形式と誤認しない。概念モデル：
 
-- Project = EventProject | FreeProject | ImageTreatmentProject。必須識別子 kind = event / free / image-treatment。
-- 共通: projectId, schemaVersion, title, updatedAt, assets[]。
-- event: EventContent、pages[]、design。公開用EventContentと編集下書きは異なる保存場所・異なる役割。
-- free: pages[]、design。イベント固有の必須項目を押し付けない。
-- image-treatment: sourceAssetId、editRecipe、outputSettings。原本画像を上書きしない。
+- CreativeDocument = EventFlyerDocument | FreeFlyerDocument | ImageTreatmentDocument。kind = event-flyer / free-flyer / image-treatment。DA-01の命名・型を正本とする。
+- 共通: id, name, kind, schemaVersion, content, design, assetRefs, updatedAt（DA-01）。projectId等の別名を独立形式として実装しない。
+- event-flyer: eventId + contentBinding(linked/snapshot) + pages[] + design。公開用Eventと編集下書きは別の状態。
+- free-flyer: pages[]、design。イベント固有の必須項目を押し付けない。
+- image-treatment: sourceAssetId、editRecipe、outputSettings。原本画像を上書きしない。DA-11のエフェクト順序に従う。
 - Page: pageId、sizeId、background、safeArea、scene[]。
 - SceneBlock: id、kind（text/image/shape/event-section/decoration）、bounds、rotation、zIndex、visible、locked、style、contentまたはassetRef、任意のsourceBinding。
 - Design: templateId、paletteId、fontSetId、decorations、sizeVariants、overlayOverrides。イベント本文は含めない。
@@ -58,7 +58,7 @@
 
 **内容バインド:** タイトルなどをキャンバス側で変えたら「イベント情報を変更」か「このデザインだけ上書き」を区別。どちらが表示されるか可視化し、イベントHPとチラシの不一致を隠さない。
 
-**旧データ移行:** 旧EventData/一覧JSONからeventプロジェクトにlossless migration。元のthemeId、日付の文字表現、出演者、Open Mic、flyerOptions、SNS、未知の拡張情報を可能な限り保持。自動認識できない日付は原文を保持し、修正案を表示。複製時のIDは重複しない新規ID、画像は参照整合性を保つ。
+**旧データ移行（DA-04を補足）:** 旧EventData/一覧JSONからeventプロジェクトにlossless migration。元のthemeId、日付の文字表現、出演者、Open Mic、flyerOptions、SNS、未知の拡張情報を可能な限り保持。自動認識できない日付は原文を保持し、修正案を表示。複製時のIDは重複しない新規ID、画像は参照整合性を保つ。
 
 ## 4. 書き出しエンジンの決定
 
@@ -105,13 +105,13 @@ PR-B提出前:
 ## 7. 原則2本のPRは維持
 
 PR-A（安定化）: 旧データ移行、安全な保存、公開/下書き分離、固定イベント情報、OGP、URL処理、旧A4・PNG・PDF改善、テストとCIを統合する。
-PR-B（拡張）: Project/Sceneモデル、20テンプレート×4サイズ、12以上の配色、最低限のfree編集、既存画像のレトロ加工6種、画像アセット、完全バックアップ、UIと包括テストをまとめる。
+PR-B（拡張）: Project/Sceneモデル、20テンプレート×4サイズ、12以上の配色、最低限のfree-flyer編集、既存画像のレトロ加工6種、画像アセット、完全バックアップ、UIと包括テストをまとめる。
 
 内部フェーズは細かいコミットと進捗記録で管理し、別PRを量産しない。PR-A未マージ時はPR-Aを親としたstacked branchでPR-Bの作業を継続可能。各工程で実装数・テスト済み数・未実装数を分けて記録。自動マージ、本番デプロイ、課金/外部AIは明示承認なしに行わない。
 
 ## 8. Haiku 5.5への設計決定メモ
 
-- D01: event/free/image-treatmentは別mode。eventとfreeは共通Scene、画像加工はsourceAsset+recipe。
+- D01: kindの正本はevent-flyer/free-flyer/image-treatment（DA-01）。前2種は共通Scene、画像加工はsourceAsset+recipe。
 - D02: v1移行は全件検証と可逆バックアップ。無言の削除・一部復元・初期化禁止。
 - D03: 20種×4サイズが完了条件。未対応組合せは未完成として表示。
 - D04: sceneを共通ソースにして3経路で描画差分を検証。pixel-perfectを無根拠に約束しない。
@@ -122,3 +122,9 @@ PR-B（拡張）: Project/Sceneモデル、20テンプレート×4サイズ、12
 - D09: 設計文書の存在は実装開始許可ではない。実装開始後もmainへの自動マージ/公開は禁止。
 
 設計中の推奨値や実装技術は変更できるが、変更理由・根拠・受入基準への影響をdocs/IMPLEMENTATION_PROGRESS.mdへ記録する。単に開発を楽にするために本書の達成条件を静かに緩めない。
+
+## 9. 第2次監査との役割分担
+
+本書はDA-01〜DA-17を置き換える文書ではない。独自の追加価値は、(1) Page/SceneBlockの概念フィールドをまとめたこと、(2) 全件移行時のバックアップ/参照整合性を作業順序へ落としたこと、(3) HTML/PNG/printの生成ID・seed・Blob解放等の具体的実装候補、(4) 80組の回帰テストと自由制作操作の証跡を示した点。より厳しい情報保護・ZIPインポート防御・オフライン境界・印刷色・WCAG等は先行するDA-01〜DA-17を参照する。
+
+「自由配置」の具体的な操作範囲は、DA-01/DA-13の最小ブロック編集を優先する。完全なDTPツールへの拡大は行わない。TIRASI-HPが本当に使いやすいチラシスタジオになるための設計提案として本書を扱い、実装が困難なら進捗へ根拠を書き、無断の機能削除ではなく段階的な代替を提示する。
