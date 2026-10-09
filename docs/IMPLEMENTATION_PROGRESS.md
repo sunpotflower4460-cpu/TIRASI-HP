@@ -19,8 +19,8 @@ Claude Code入口: CLAUDE.md
 
 ## 現在工程
 
-PREP-DONE + AUDIT-2: GitHubコード・データ・スタイル・PR履歴・CIを調査して設計化、外部仕様を照合してDA-01〜DA-17の監査補足を導入。  
-NEXT（明示的な実装依頼後）: 第2次監査DA-01〜DA-17を受入条件へ取り込み、A0（ベースラインのローカル実測と回帰テストの準備）→ A1から実装。  
+PREP-DONE + AUDIT-2: GitHubコード・データ・スタイル・PR履歴・CIを調査して設計化、外部仕様を照合してDA-01〜DA-23の監査補足を導入。  
+NEXT（明示的な実装依頼後）: 第2次監査DA-01〜DA-23を受入条件へ取り込み、A0（ベースラインのローカル実測と回帰テストの準備）→ A1から実装。  
 PR-A: 未着手。PR-B: 未着手。
 
 ## 今回確定した事実
@@ -63,7 +63,7 @@ PR-A: 未着手。PR-B: 未着手。
 
 ## 次の着手点（優先順）
 
-1. 最新main/PR状態を取得、git status確認。設計文書の追加のみで機能差分がないことを確認。DA-01〜DA-17を受入表へ移す。
+1. 最新main/PR状態を取得、git status確認。設計文書の追加のみで機能差分がないことを確認。DA-01〜DA-23を受入表へ移す。
 2. 実装用長期ブランチ feature/tirasi-v2-reliability を作成。
 3. npm install/npm run build、ブラウザで/, /editor, /flyer、PNG、printの現状ベースラインを採取する。
 4. schema v2, migrationと不正JSONテストを先行追加。
@@ -122,7 +122,7 @@ PR-A: 未着手。PR-B: 未着手。
 
 ## 第2次設計監査（2026-10-09）
 
-- 必読: `docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md`。設計不足DA-01〜DA-17を確認・補正。主要補正は Event と CreativeDocument の分離（event-flyer/free-flyer/image-treatment）、公開/下書きプレビューの専用経路、screen/PNG/printの描画能力契約、実際のpx・印刷寸法の区別、バックアップと移行の整合性、20×4画像出力の最終ゲート。
+- 必読: `docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md`。設計不足DA-01〜DA-23を確認・補正。主要補正は Event と CreativeDocument の分離（event-flyer/free-flyer/image-treatment）、公開/下書きプレビューの専用経路、screen/PNG/printの描画能力契約、実際のpx・印刷寸法の区別、バックアップと移行の整合性、20×4画像出力の最終ゲート。
 - `docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md`、`docs/HAIKU55_EXECUTION_PLAYBOOK.md`、`CLAUDE.md`、`README.md` に監査文書への入口と実装に必要な補正を反映した。
 - 参考にした外部仕様: html2canvasのCSS描画制限、CORSのcanvas制約、Web Shareの一時activation、ブラウザストレージの退避可能性、印刷背景、Viteビルド時メタ処理、WCAG。外部仕様の確認であり実機アプリテストではない。
 - 追加の設計境界: アプリのデータをローカルで処理することは、現行Google Fontsや外部画像への通信が不要であるという意味ではない。オフライン保証は実装・検証してから示す。
@@ -131,11 +131,24 @@ PR-A: 未着手。PR-B: 未着手。
 
 ## 第3次照合：設計の二重化・優先順位調整（2026-10-09）
 
-- 現在の設計は総合設計 + 必読の規範監査 `V2_DESIGN_AUDIT_AND_CONTRACTS.md`（DA-01〜DA-17）を正本とする。
+- 現在の設計は総合設計 + 必読の規範監査 `V2_DESIGN_AUDIT_AND_CONTRACTS.md`（DA-01〜DA-23）を正本とする。
 - 補助的な実装具体化 `V2_DESIGN_AUDIT_AND_DECISIONS.md`（AUD-01〜09）を追加した。主な具体化はPage/SceneBlockの編集操作・非破壊エフェクトの生成ID/seed/後始末・80組の検証・JSON/ZIP復元手順である。
 - 2つの監査文書で判別子名が衝突しないよう、下位メモを `event-flyer/free-flyer/image-treatment` に統一した。
-- **優先順位:** DA-01〜DA-17を優先し、下位の補足メモを理由に要件を自動追加・縮小しない。自由制作は単純なブロック編集を基本とし、Figma相当の高度な編集は約束しない。
+- **優先順位:** DA-01〜DA-23を優先し、下位の補足メモを理由に要件を自動追加・縮小しない。自由制作は単純なブロック編集を基本とし、Figma相当の高度な編集は約束しない。
 - 総合設計/CLAUDE.md/README/プレイブックに設計の関係と入口を明記した。PRは原則2本、途中はコミットと進捗更新で継続する。
 - 技術仕様で確認した制約: html2canvasのDOM再描画差、IndexedDBのstorage eviction、Web Shareのtransient activation、Canvas最大寸法、OGPの画像metadata。外部仕様の確認であり実機アプリ動作の保証ではない。
 - 未実施: 実装コード変更、ローカルbuild、ブラウザPNG/PDF、物理印刷、完成デザインの視覚検証。デザイン20/配色12/レトロ加工6/4出力サイズはまだ全て計画状態。
 - **次の着手点:** userの明示的な実装開始指示後、現状main/PR差分を取得 → A0 baseline/fixtures → PR-A安定化 → PR-B（必要ならstack）へ。
+
+
+## 最終整合監査 DA-18〜DA-23（2026-10-09）
+
+- **正式な仕様の正本:** `docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md` のDA-01〜DA-23。 `docs/V2_DESIGN_AUDIT_AND_DECISIONS.md` は補足メモ。kindはevent-flyer/free-flyer/image-treatmentの3名称へ統一。
+- **DA-18** v1 localStorageとv2 IndexedDBの間で単一atomic commitができるとは仮定しない。元データ退避、新領域staging、commit、世代切替、故障注入テストを実装する。
+- **DA-19** イベント本文/チラシ上書きテキスト/ユーザー配置差分/サイズ別シーンを分離。テンプレートを変更しても黙って編集内容を失わせない。
+- **DA-20** 公開 `/flyer` と編集用下書きプレビューを混同しない。URLへ下書き本文や秘密情報を載せない。
+- **DA-21** 既存 `useEventData.ts` の削除中の交差state更新、Storage読み書き例外、StrictMode二重初期化は追加テスト対象。これは静的検出したリスクであり実機再現確認ではない。
+- **DA-22** 正常fixtureで20テンプレート×4サイズ=80PNG出力を全検査し、長文などの境界fixtureはリスク別に追加。画像品質の目視/紙印刷は引き続き別ゲート。
+- **DA-23** コード上のvol.6/2026年5月9日は現在予定の『最新イベント』とは限らない。公開イベントを独自判断で入れ替えない。
+- **実装状態:** 現時点でv2機能実装なし、実装PRなし。今回もドキュメントのみ更新。今回の新たなnpm build/画面PNG/印刷/バックアップの復元試験は**未実施**。
+- **次の具体的な工程:** 実装開始指示後、mainの最新SHA/PR差分を確認 → A0基準動作とv1旧データfixtures → PR-A → PR-B（レビュー待ちならstacked branch）。細かなPR増殖、main自動マージ、本番自動デプロイはしない。
