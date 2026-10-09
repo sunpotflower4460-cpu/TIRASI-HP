@@ -128,3 +128,14 @@ PR-A: 未着手。PR-B: 未着手。
 - 追加の設計境界: アプリのデータをローカルで処理することは、現行Google Fontsや外部画像への通信が不要であるという意味ではない。オフライン保証は実装・検証してから示す。
 - ブラウザ実機/PNG比較/物理印刷/新規ビルド: **未実施**。現状の新機能: **未実装**。今回もmainへの変更はdocs/README/CLAUDE.mdに限定。
 - PR-AとPR-Bは原則2つの大型PR。PR-Aレビュー待ちなら積み重ねbranchによるPR-B開発を許可、細かいPRを作成しない。今回のドキュメント追加は実装開始承認を意味しない。
+
+## 第3次照合：設計の二重化・優先順位調整（2026-10-09）
+
+- 現在の設計は総合設計 + 必読の規範監査 `V2_DESIGN_AUDIT_AND_CONTRACTS.md`（DA-01〜DA-17）を正本とする。
+- 補助的な実装具体化 `V2_DESIGN_AUDIT_AND_DECISIONS.md`（AUD-01〜09）を追加した。主な具体化はPage/SceneBlockの編集操作・非破壊エフェクトの生成ID/seed/後始末・80組の検証・JSON/ZIP復元手順である。
+- 2つの監査文書で判別子名が衝突しないよう、下位メモを `event-flyer/free-flyer/image-treatment` に統一した。
+- **優先順位:** DA-01〜DA-17を優先し、下位の補足メモを理由に要件を自動追加・縮小しない。自由制作は単純なブロック編集を基本とし、Figma相当の高度な編集は約束しない。
+- 総合設計/CLAUDE.md/README/プレイブックに設計の関係と入口を明記した。PRは原則2本、途中はコミットと進捗更新で継続する。
+- 技術仕様で確認した制約: html2canvasのDOM再描画差、IndexedDBのstorage eviction、Web Shareのtransient activation、Canvas最大寸法、OGPの画像metadata。外部仕様の確認であり実機アプリ動作の保証ではない。
+- 未実施: 実装コード変更、ローカルbuild、ブラウザPNG/PDF、物理印刷、完成デザインの視覚検証。デザイン20/配色12/レトロ加工6/4出力サイズはまだ全て計画状態。
+- **次の着手点:** userの明示的な実装開始指示後、現状main/PR差分を取得 → A0 baseline/fixtures → PR-A安定化 → PR-B（必要ならstack）へ。
