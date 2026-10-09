@@ -1,6 +1,7 @@
 # Haiku 5.5 長期自走プレイブック（TIRASI-HP）
 
 基準設計: docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md  
+必読の第2次監査: docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md  
 状態管理: docs/IMPLEMENTATION_PROGRESS.md  
 初期記録日: 2026-10-09  
 原則: PRを細分化せず、原則PR-AとPR-Bの2本に集約する。途中はコミットと記録で継続する。
@@ -12,8 +13,9 @@
 必ず次の順で読む：
 1. 本プレイブック
 2. docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md
-3. docs/IMPLEMENTATION_PROGRESS.md
-4. README、現行ソース、CI設定、main/既存PR
+3. docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md
+4. docs/IMPLEMENTATION_PROGRESS.md
+5. README、現行ソース、CI設定、main/既存PR
 
 本設計が書かれた基準コミットはaa95ef74df2d709d2de6555d7aad715ae9a41457。実装時の最新mainが異なれば新旧差分を調査し、先に進捗を更新する。
 実装は小分けのPRにしない。PR-A Reliability & Data Separation、PR-B Flyer Studio & Template Expansionという大きな成果単位にまとめ、各PR内で小さめのチェックポイントコミットを積む。
@@ -51,10 +53,10 @@
 
 A0. ベースライン: 現行画面/PNG/A4プレビューのスクリーンショット採取、既知データのバックアップ、既存ビルド実測。ブラウザが使えない場合は「未実施」と記録。
 A1. スキーマ: unknown→validate→migrate→typed EventWorkspace。legacy保存値の扱いをテストで固定。破損/半端なJSONによるクラッシュを防ぐ。
-A2. 保存: localStorageの読み書き失敗時UI、イベント移動・複製・削除・一覧復元、複数タブ競合。公開と下書きを分ける。
+A2. 保存: localStorageの読み書き失敗時UI、イベント移動・複製・削除・一覧復元、複数タブ競合。公開と下書きを分ける。**下書きプレビュー専用route**を定義し、編集からのA4ボタンが公開版を表示する回帰を防ぐ（DA-03）。
 A3. 公開整合: 直書きの前回案内を排除、publishedEventを単一公開ソース化し、vol.6とSEO/OGP/JSON-LDの一致テストを追加。
 A4. 外部リンク: http/https URLバリデーション、SNS/会場/出演者画像のフォールバック、最低限のアクセシビリティ。
-A5. 出力: A4トグル反映、共通の紙面Canvasに寄せる、文字溢れの検知、PNGの段階分離とshare/download失敗回復、既存4テーマで回帰確認。
+A5. 出力: A4トグル反映、共通の**レイアウト仕様と出力capabilityMatrix**（DOMとCanvas実装は分離可）、文字溢れの検知、PNGの段階分離とshare/download失敗回復、既存4テーマで回帰確認。A4実寸/PNG pixelとbrowser printを区別（DA-06〜08）。
 A6. 品質: lockfile導入、npm ci、単体/ブラウザスモーク、代表fixture、PR説明と検証画像。READMEと使用方法更新。
 
 A1〜A5はコードの依存により順序変更可。ただしデータ消失リスクのある箇所は最初にテストを書く。A0が終わらないままUI全面作り直しを始めない。
@@ -71,21 +73,21 @@ PR-Aの提出条件:
 ## 4. PR-B内部の工程（ひとつの大きなPRのまま）
 
 B0. PR-Aの最新変更を取り込み、既存デザインが同じデータを表示する回帰確認。
-B1. registryと型/renderer/API/デザイン保存。サイズとpaletteがレイアウト本体から独立して切り替え可能な骨格を作る。
+B1. **CreativeDocumentの3種類（event-flyer, free-flyer, image-treatment）**、Eventとは独立したcontentBlocks・design・assets/参照契約（DA-01/02）、registryと型/renderer/API/デザイン保存。サイズとpaletteがレイアウト本体から独立して切り替え可能な骨格を作る。
 B2. 紙面計測とrender consistency。A4で画面/PNG/印刷を同じベースにし、診断を取得できることを先に確立。
 B3. 80s 4種+Information Firstの5種を先行実装。単なるCSS変数違いでないことを画像比較で確認。
 B4. 残り15種をファミリー単位で作成。各テンプレートに短い仕様テスト、一覧サムネイル、代表イベントの画像。
 B5. パレット12種以上、フォントセット、装飾。CSS namespaceと色コントラストを検証。
 B6. PNG/JPEG/WebPアップロード、IndexedDB、画像無しフォールバック、バックアップパッケージ。加えて「既存の写真・チラシを取り込み、元の文字・構図を維持して加工するモード」を実装し、1985新品印刷/1985経年/昭和コピー機/リソ2色刷り/ネオンライブ/フィルム写真の最低6プリセットと強度調整・Before/After・PNG書き出し・再編集をテストする。外部画像CORSも適切に通知。これは20レイアウトとは別機能として数え、生成AIによるimage-to-image再描画を実装済みと誤表示しない。
-B7. サイズ（A4、SNS縦、SNS正方形、Story）と安全領域、情報密度オプション。追加A5/A4横は品質と工数が許す場合に実装。
+B7. サイズ（A4: 210×297mmとPNG 2480×3508px@300dpi、SNS縦1080×1350px、SNS正方形1080×1080px、Story1080×1920px）と安全領域、情報密度オプション。**SNSはPNG、A4だけをbrowser印刷**の基本契約とする。追加A5/A4横は品質と工数が許す場合に実装。
 B8. UI: デザインギャラリー/プレビュー/スタイル切替/詳細カスタマイズ/書き出し/スマホ操作を統合。
-B9. 全20種×代表fixtureの自動＋目視テスト、ブラウザE2E、PNG寸法確認、ドキュメント・PR準備。
+B9. 最低20レイアウト×4サイズ=80基本組合せと境界fixtureで自動＋目視テスト。非対応効果は検出し、画面/PNG差異を確認。ブラウザE2E、PNG寸法、完全バックアップ復元、ドキュメント・PR準備（DA-09/15）。
 
 PR-Bの提出条件:
 - UIで20個の独立したテンプレートを選べる
 - 同じイベント内容でレイアウトが確実に変わる
 - カラーパレット12種以上/装飾の組み合わせが成立
-- 画像アップロード有無で動作、保存・復元、既存画像の6種類以上の非破壊レトロ加工が元文字・構図を保持して再現できる
+- **free-flyer** がschedule/Open Mic/会場未入力でも成立、画像アップロード有無で動作、保存・復元、既存画像の6種類以上の非破壊レトロ加工が元文字・構図を保持して再現できる
 - A4・SNS縦・正方形・StoryのPNG/印刷可能な範囲と制限が明示される
 - 最大情報量ケースで紙面外欠落を無警告に出力しない
 - 過去イベントと現行公開HPが壊れない
@@ -180,4 +182,8 @@ docs/IMPLEMENTATION_PROGRESS.mdを次の見出しで毎チェックポイント�
 
 ## 11. 自走再開用ワンショット指示
 
-「TIRASI-HPの開発を継続してください。最初にdocs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md、docs/HAIKU55_EXECUTION_PLAYBOOK.md、docs/IMPLEMENTATION_PROGRESS.md、git status、open PRを確認し、進捗の次の工程から再開してください。PRは安定化とスタジオ拡張の原則2本に集約し、途中はコミットと進捗ファイルで管理。安全に進められる作業がある限り続行し、テスト・視覚確認の実測を残してください。mainマージ・公開デプロイは行わないでください。」
+「TIRASI-HPの開発を継続してください。最初にdocs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md、docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md、docs/HAIKU55_EXECUTION_PLAYBOOK.md、docs/IMPLEMENTATION_PROGRESS.md、git status、open PRを確認し、進捗の次の工程から再開してください。PRは安定化とスタジオ拡張の原則2本に集約し、途中はコミットと進捗ファイルで管理。安全に進められる作業がある限り続行し、テスト・視覚確認の実測を残してください。mainマージ・公開デプロイは行わないでください。」
+
+## 12. 第2次監査の必須ゲート
+
+実装フェーズ開始前に `docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md` の DA-01〜DA-17 を要件表へ取り込み、Event/CreativeDocumentの3モード、下書き専用ルート、非破壊データ移行、完全バックアップ、screen/PNG/print別adapterの検証契約を確定。PR数を増やさずPR-A/Bの内部ゲートへ反映。未検証はpass扱いしない。
