@@ -1,7 +1,8 @@
 # Haiku 5.5 長期自走プレイブック（TIRASI-HP）
 
 基準設計: docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md  
-必読の第2次監査: docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md  
+必読の第2次監査: docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md
+実装具体化の補足: docs/V2_DESIGN_AUDIT_AND_DECISIONS.md（DA-01〜DA-17が優先、実装方法を選ぶ時の参考）  
 状態管理: docs/IMPLEMENTATION_PROGRESS.md  
 初期記録日: 2026-10-09  
 原則: PRを細分化せず、原則PR-AとPR-Bの2本に集約する。途中はコミットと記録で継続する。
@@ -15,7 +16,8 @@
 2. docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md
 3. docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md
 4. docs/IMPLEMENTATION_PROGRESS.md
-5. README、現行ソース、CI設定、main/既存PR
+5. docs/V2_DESIGN_AUDIT_AND_DECISIONS.md（必要な個別操作・Sceneモデルの具体化を参照。DA契約との衝突時はDAを優先）
+6. README、現行ソース、CI設定、main/既存PR
 
 本設計が書かれた基準コミットはaa95ef74df2d709d2de6555d7aad715ae9a41457。実装時の最新mainが異なれば新旧差分を調査し、先に進捗を更新する。
 実装は小分けのPRにしない。PR-A Reliability & Data Separation、PR-B Flyer Studio & Template Expansionという大きな成果単位にまとめ、各PR内で小さめのチェックポイントコミットを積む。
