@@ -1,0 +1,102 @@
+# IMPLEMENTATION PROGRESS — TIRASI-HP v2
+
+最終更新: 2026-10-09  
+区分: 設計反映済み / 実装は未着手  
+設計: docs/TIRASI_V2_ARCHITECTURE_AND_FLYER_STUDIO.md  
+実装手順: docs/HAIKU55_EXECUTION_PLAYBOOK.md
+
+## 基準main SHA / 現在ブランチ / 現在コミット
+
+- 調査対象のmain: aa95ef74df2d709d2de6555d7aad715ae9a41457
+- 設計書の書込先: main（ドキュメントのみ）
+- 書込済み設計コミット: 7966f162584f71b4ba796291edf94609271d00c1 と fcdeaf884e38c66968c62c005427b8faee577c2a
+- 実装ブランチ: 未作成
+- PR-A/PR-B: 未作成
+
+※このファイル自身とREADMEのコミットを含めた最新main SHAは実装開始時に必ず再取得する。ここに古いSHAが書かれていてもそれを強制的にresetしない。
+
+## 現在工程
+
+PREP-DONE: GitHubコード・データ・スタイル・PR履歴・CIを調査して設計化。  
+NEXT: A0（ベースラインのローカル実測と回帰テストの準備）→ A1から実装。  
+PR-A: 未着手。PR-B: 未着手。
+
+## 今回確定した事実
+
+- React 19 / TypeScript / Vite / html2canvas。
+- 公開初期イベントはvol.6・2026-05-09・14:30。
+- HomePage/VisitorInfo/index.html/og-image.svgにvol.5以前または開始時刻/季節の固定情報が残る。
+- showPerformerProfilesトグルはOnePageFlyerの現行表示に接続されていない。
+- localStorage下書きが公開経路でも同じコンポーネントへ渡される。
+- URL入力、JSON読込、localStorage失敗、PNG shareには検証/回復余地がある。
+- 旧PR #21（未マージ）は安全なURL処理と公開導線整理の参照素材になる。
+- 最新mainのCI build成功はGitHub Actionsで確認。これは画面/PNG/印刷の動作成功証明ではない。
+- 現在open PR/open Issueは見つからない（本調査時点）。
+
+## 完成した実装
+
+- なし。既存アプリコード、CI、公開データは変更していない。
+- 設計書2本を追加した。
+
+## テスト結果
+
+- GitHub Actions直近mainビルド: success（過去CIの確認であり、今回新規に走らせたテストではない）。
+- ローカルnpm ci/npm run build: 未実施。
+- 単体テスト/E2E: 未実施（現状scriptなし）。
+- iPhone/Safari/Chrome/印刷/PNG実機: 未実施。
+- 上記未実施をpassと記載しない。
+
+## 目視確認
+
+- 旧コードとCSSの静的レビュー済み。
+- 画面の実機操作/ブラウザスクリーンショット: 未実施。
+- 今後、PR-AにレガシーA4のbefore/after、PR-Bに20テンプレートのギャラリー比較を添付する。
+
+## 既知の不具合・未検証事項
+
+- R01〜R12: 詳細は総合設計書参照。特に公開/下書き分離、無効JSON、A4出演者トグル、古い公開情報を優先。
+- モバイル共有API、印刷オーバーフロー、実表示のズレは再現確認待ち。
+- Node/依存パッケージの脆弱性監査は未実施。
+- 本番配信先（VercelかCloudflare等）の正式判断は未確認。自動デプロイ禁止。
+
+## 次の着手点（優先順）
+
+1. 最新main/PR状態を取得、git status確認。設計文書の追加のみで機能差分がないことを確認。
+2. 実装用長期ブランチ feature/tirasi-v2-reliability を作成。
+3. npm install/npm run build、ブラウザで/, /editor, /flyer、PNG、printの現状ベースラインを採取する。
+4. schema v2, migrationと不正JSONテストを先行追加。
+5. publishedEvent vs draft workspaceを分離し、表示差異をテストで固定。
+6. 細分化PRは作らず、同じPR-Aブランチ内でR01〜R12の安定化を続ける。
+7. PR-Aのマージが認められた後、feature/tirasi-v2-flyer-studioで20種拡張PR-Bを開始する。
+
+## 作業再開の最初のコマンド
+
+- git status --short --branch
+- git fetch --prune
+- git log -5 --oneline
+- npm install
+- npm run build
+
+新規作業ブランチは最新mainから作成すること。既存の未コミット変更を消さないこと。
+
+## ブロッカー
+
+- ドキュメント設計時点では実装ブロッカーなし。
+- 本番公開・外部クラウド画像ストレージ・真の管理者認証などは別途ユーザー承認が必要。
+- 実機/ブラウザテスト環境が用意できない場合は検証未完として明記。
+
+## 仕様変更の決定ログ
+
+2026-10-09:
+- ユーザーの希望で細かなPR連発を避ける。
+- 先に設計をリポジトリmainへ直接追加し、実装はドキュメント完了後に開始。
+- 自走は作業ログと再開可能な進捗ファイルを用い、原則2本の大型PRにまとめる。
+- 80年代風は単一の色合いでなく、4つの異なるデザイン方式を含める。
+- 既存のイベント情報・公開HP・旧チラシとバックアップを壊さない。
+
+## PR URL / レビュー待ち状況
+
+- PR-A: 未作成
+- PR-B: 未作成
+- mainマージ（実装）: なし
+- 本番デプロイ: 実施していない
