@@ -4,7 +4,7 @@
 基準: main / aa95ef74df2d709d2de6555d7aad715ae9a41457  
 目的: 現在の公開イベントHPとA4チラシ作成を守りながら、制作体験を大幅に拡張する。  
 実装担当: Claude Code Haiku 5.5（高 effort 想定）  
-関連: docs/HAIKU55_EXECUTION_PLAYBOOK.md、docs/IMPLEMENTATION_PROGRESS.md、**docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md（必読の監査・実装契約）**
+関連: docs/HAIKU55_EXECUTION_PLAYBOOK.md、docs/IMPLEMENTATION_PROGRESS.md、**docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md（必読の規範監査DA-01〜DA-17）**、docs/V2_DESIGN_AUDIT_AND_DECISIONS.md（下位の実装具体化メモ）
 
 ## 0. 設計の原則
 
@@ -164,7 +164,7 @@ package-lock.json未追跡、CIはnpm installとbuildのみ。単体テスト/E2
 - Utility（1）
   20. Information First：最多情報量対応、白地、可読性と印刷品質を最優先。
 
-実装順: 安定化後、まず基盤 + 80s 4種 + Information First を完成し、続いて他15種を同じ大型拡張PRに積む。完了判定は20種すべてでデータ表示・A4/PNG・エラー処理が確認できること。工数制限が現れた場合は数量を水増しせず、実装済み数と残作業を進捗に記録する。
+実装順: 安定化後、まず基盤 + 80s 4種 + Information First を完成し、続いて他15種を同じ大型拡張PRに積む。完了判定は20種すべてでデータ表示・A4とSNS3サイズの計4サイズ（20×4=80組）・PNG/エラー処理が確認できること。工数制限が現れた場合は数量を水増しせず、実装済み数と残作業を進捗に記録する。
 
 ### 3.3 カラーパレット、フォント、仕上げ
 
