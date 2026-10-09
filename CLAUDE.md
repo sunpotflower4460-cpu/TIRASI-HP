@@ -11,6 +11,8 @@ This repository is a React/TypeScript/Vite event website and flyer generator. It
 3. [Long-running execution playbook for Haiku 5.5](docs/HAIKU55_EXECUTION_PLAYBOOK.md)
 4. [Implementation status and session handoff](docs/IMPLEMENTATION_PROGRESS.md)
 
+**Implementation detail supplement:** [v2.1 concrete scene/export/migration proposals](docs/V2_DESIGN_AUDIT_AND_DECISIONS.md). Read when implementing corresponding modules. It does not override the canonical DA-01..DA-17 contracts. If the two audits disagree, follow the DA contracts, record the contradiction, and do not silently change scope.
+
 If these documents conflict with repository code, investigate and update the status log with evidence; do not silently discard requirements. Re-check current `origin/main`, open PRs, working-tree changes and CI before implementation.
 
 **As of 2026-10-09, only design documents have been added. v2 code implementation has NOT started.** The presence of this file is not an instruction to begin implementation without an explicit user request.
