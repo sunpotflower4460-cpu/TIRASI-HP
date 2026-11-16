@@ -1,3 +1,4 @@
+import { getThemeClassName } from "../../data/themes";
 import { useEffect, useRef, useState } from "react";
 import { eventDay } from '../../domain/date';
 import { canvasBlob, withTimeout } from '../../export/files';
@@ -67,7 +68,7 @@ export function OnePageFlyer({ eventData, onPrint, thumbnail = false, extraError
     return canvasBlob(output);
   };
   return (
-    <main className="one-page-flyer-page">
+    <main className={`one-page-flyer-page ${getThemeClassName(eventData.themeId)}`}>
       {!thumbnail && <ExportActions generate={generate} source={eventData} name={`${eventData.title}-${eventData.volume}`} errors={[...errors, ...extraErrors]} onPrint={onPrint} />}
       <SheetViewport width={793.7} height={1122.52}>
       <article className="one-page-sheet" ref={sheetRef}>

@@ -346,11 +346,11 @@
   .sheet-transform { position: static; width: 210mm !important; height: auto !important; transform: none !important; }
   .one-page-sheet { width: 210mm; height: 297mm; padding: 9.5mm; margin: 0; box-shadow: none !important; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
-.theme-night .one-page-date, .theme-night .one-page-schedule, .theme-night .one-page-access { background: #faf6f0; color: #24233d; }
-.theme-night .one-page-date strong, .theme-night .one-page-schedule h2, .theme-night .one-page-access h2, .theme-night .one-page-time { color: #655017; }
-.theme-night .one-page-open-mic { color: #24233d; }
-.theme-night .one-page-open-mic h2, .theme-night .one-page-badges span { color: #24233d; }
-.theme-night .one-page-note, .theme-night .one-page-footer { color: #f3edf0; }
+.one-page-flyer-page.theme-night .one-page-date, .one-page-flyer-page.theme-night .one-page-schedule, .one-page-flyer-page.theme-night .one-page-access { background: #faf6f0; color: #24233d; }
+.one-page-flyer-page.theme-night .one-page-date strong, .one-page-flyer-page.theme-night .one-page-schedule h2, .one-page-flyer-page.theme-night .one-page-access h2, .one-page-flyer-page.theme-night .one-page-time { color: #655017; }
+.one-page-flyer-page.theme-night .one-page-open-mic { color: #24233d; }
+.one-page-flyer-page.theme-night .one-page-open-mic h2, .one-page-flyer-page.theme-night .one-page-badges span { color: #24233d; }
+.one-page-flyer-page.theme-night .one-page-note, .one-page-flyer-page.theme-night .one-page-footer { color: #f3edf0; }
 
 .one-page-kicker, .one-page-end { color: var(--primary-color); }
 .one-page-main-grid:has(> .one-page-side:only-child) { grid-template-columns: 1fr; }

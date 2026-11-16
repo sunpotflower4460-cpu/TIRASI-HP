@@ -102,6 +102,16 @@ export function StudioPage({
     setHistoryVersion((v) => v + 1);
   };
   const addDocument = (next: CreativeDocument) => {
+    if (
+      currentWorkspace.current.documents.some(
+        (document) => document.id === next.id,
+      )
+    ) {
+      setWorkspace((state) => ({ ...state, activeDocumentId: next.id }));
+      setDeletedDoc(undefined);
+      setNotice("この制作物はすでに復元されています。");
+      return;
+    }
     if (currentWorkspace.current.documents.length >= 100) {
       setNotice(
         "制作物は100件まで保存できます。バックアップしてから不要な制作物を削除してください。",
@@ -530,7 +540,16 @@ export function StudioPage({
       >
         {notice}
       </p>
-      <BackupPanel workspace={workspace} restore={restore} />
+      <BackupPanel
+        workspace={workspace}
+        restore={async (value, assets) => {
+          await restore(value, assets);
+          history.current.clear();
+          setDeletedDoc(undefined);
+          setPendingTemplate(undefined);
+          setHistoryVersion((version) => version + 1);
+        }}
+      />
       <footer className="studio-footer print-hidden">
         <p>TIRASI STUDIO · 端末内で、自由に。</p>
         <button onClick={() => navigate("/editor")}>イベント情報を編集</button>

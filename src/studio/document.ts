@@ -8,6 +8,7 @@ import {
   string,
   ValidationError,
 } from "../domain/validation";
+import type { EventRecord } from "../domain/workspace";
 import { newId } from "../domain/workspace";
 export type ContentBlock = {
   id: string;
@@ -444,4 +445,14 @@ export function mapBlocks(
     ...doc,
     content: { ...doc.content, blocks: fn(doc.content.blocks) },
   };
+}
+
+export function eventForDocument(
+  doc: Extract<CreativeDocument, { kind: "event-flyer" }>,
+  events: EventRecord[],
+): EventData {
+  return doc.contentBinding === "linked"
+    ? (events.find((event) => event.id === doc.eventId)?.eventData ??
+        doc.snapshot)
+    : doc.snapshot;
 }

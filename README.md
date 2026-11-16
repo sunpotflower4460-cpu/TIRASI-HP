@@ -39,7 +39,7 @@
 - **JSONのみ保存**: 原画像を含みません（上限4MB）。画像不足を検知した復元は現在の保存データを上書きしません。
 - **直前の保存を確認 / 移行前の原JSONを退避**: 保存直前の状態や旧データを取り出せます。
 
-画像の検証・完全バックアップにはHTTPSまたはlocalhostを使用してください。PNG / JPEG / WebPは8MB・1600万画素・長辺8192pxまで。SVG・HEICには対応していません。画像は実際にデコードして検証し、元画像を勝手に加工・削除しません。原本のEXIF等も完全バックアップに含まれる場合があります。
+画像の検証・完全バックアップにはHTTPSまたはlocalhostを使用してください。PNG / JPEG / WebPは8MB・1600万画素・長辺8192pxまで。SVG・HEICには対応していません。画像は実際にデコードして検証し、元画像を勝手に加工・削除しません。サムネイルは縮小した画像を共有し、原寸画像は書き出し時に読み込みます。原本のEXIF等も完全バックアップに含まれる場合があります。
 
 ブラウザデータはユーザー削除・容量制限の影響を受けます。重要な制作物は端末へのバックアップを確認してください。保存失敗時は内容をメモリに保持し、別タブとの競合では上書きを停止します。
 
@@ -72,7 +72,7 @@ npm run test:e2e
 
 Node.js 22.12以上を使用してください。Vercel: Vite / Build `npm run build` / Output `dist`。
 
-- 単体32件、Chromium E2E 14件（新20構図×4サイズ=80 PNGを含む）。
+- 単体35件、Chromium E2E 17件（新20構図×4サイズ=80 PNGを含む）。
 - v1移行の4段階中断、同時初期化、保存失敗、競合、入れ子の不正JSON、完全バックアップの別コンテキスト復元、原画像の保持と6加工の再現性を検証。
 - 比較画像: [デザイン20種](docs/evidence/template-contact-sheet.png) / [旧版4配色](docs/evidence/legacy-palette-contact-sheet.png) / [6加工](docs/evidence/effect-contact-sheet.png)。[実測結果](docs/evidence/render-matrix.json) / [デザインレビュー](docs/DESIGN_QUALITY_REVIEW.md)。
 - 実iPhone/SafariのOS共有UIと物理印刷は未検証。Chromiumの390px画面とA4ブラウザPDF（1ページ）は検証済みです。

@@ -2,7 +2,7 @@ import type { ScheduleItem } from "../types/event";
 import { eventDay } from "../domain/date";
 import type { EventRecord } from "../domain/workspace";
 import type { CreativeDocument } from "./document";
-import { defaultPlacement } from "./document";
+import { defaultPlacement, eventForDocument } from "./document";
 import { paletteById, sizes, templateById } from "./registry";
 import type { Palette, ModernTemplateId } from "./registry";
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -289,8 +289,7 @@ export function composeScene(
       errors.push(
         "参照するイベントが見つかりません。固定コピーに切り替えるかイベントを選んでください。",
       );
-    const event =
-      doc.contentBinding === "linked" && bound ? bound.eventData : doc.snapshot;
+    const event = eventForDocument(doc, events);
     title = doc.content.titleOverride ?? event.title;
     subtitle =
       doc.content.subtitleOverride ??

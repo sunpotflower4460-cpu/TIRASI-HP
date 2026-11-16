@@ -1,3 +1,4 @@
+import { onAssetsStored } from "../../src/storage/assetEvents";
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { openDatabase, initializeWorkspace, readWorkspace, saveWorkspace, readRecovery } from '../../src/storage/database';
@@ -34,11 +35,12 @@ describe('asset-aware workspace commits', () => {
   it('does not commit a workspace with missing original images or leave newly staged assets behind', async () => {
     const state = await initializeWorkspace(storage);
     const { createDocument } = await import('../../src/studio/document');
+    const notifications: string[][] = []; const unsubscribe = onAssetsStored(ids => notifications.push([...ids]));
     const doc = createDocument('free-flyer'); doc.assetRefs = ['asset-missing', 'asset-provided'];
     await expect(saveWorkspace({ ...state, documents: [doc] }, state.revision, [{ id: 'asset-provided', blob: new Blob(['original']) }])).rejects.toThrow('元画像');
     expect(await readWorkspace()).toEqual(state);
     const db = await openDatabase();
     const asset = await new Promise(resolve => { const req = db.transaction('assets').objectStore('assets').get('asset-provided'); req.onsuccess = () => resolve(req.result); });
-    expect(asset).toBeUndefined();
+    expect(asset).toBeUndefined(); expect(notifications).toEqual([]); unsubscribe();
   });
 });

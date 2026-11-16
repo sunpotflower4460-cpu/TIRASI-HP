@@ -5,7 +5,7 @@
 ## 基準main SHA / 現在ブランチ / 現在コミット
 
 - 基準main: `a270aee55b0fc27fe313ab113b25b55b8bc39803`。作業開始時のopen PR/変更なし。最終fetchでもmainは同じ。
-- PR-A: `feature/tirasi-v2-reliability` / `11bbac43916f859c58fe11ba4d8062ed5e99456f`。
+- PR-A: `feature/tirasi-v2-reliability` / 最新レビュー修正 `4249a09db01a6bc255112eba89e83a3f27d553de`（初回 `11bbac4`）。
 - PR-B: `feature/tirasi-v2-flyer-studio`。PR-Aを基点にstack。機能コミット `c559b48274aa96626ca11acd8e7848ae83506336`。最終HEADは検証記録の整理を含む。
 
 ## 現在工程
@@ -43,11 +43,11 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 
 ## テスト結果 / 目視確認
 
-- 単体32件: schema/migration/reducer/CAS/保存失敗/素材参照のatomic abort/構図と配色/バインディング/非破壊切替等。
-- Chromium 159 / LinuxのE2E 14件: 公開/下書き、旧版選択、10回切替・Undo/Redo、画像位置と元コピー保持、リロード、完全バックアップの別コンテキスト復元、改ざん拒否、6加工の再現性、元画像不変、長文/出演者8名、390px操作、A4 PNG/PDF。
+- 単体35件: schema/migration/reducer/CAS/保存失敗/素材参照のatomic abort/構図と配色/バインディング/非破壊切替等。
+- Chromium 159 / LinuxのE2E 17件: 公開/下書き、旧版選択、10回切替・Undo/Redo、画像位置と元コピー保持、リロード、完全バックアップの別コンテキスト復元、改ざん拒否、6加工の再現性、元画像不変、長文/出演者8名、390px操作、A4 PNG/PDF。
 - 新20×4=80 PNG全件: PNGデコード、指定px、必須情報、安全域と文字衝突を検査。`docs/evidence/render-matrix.json` に80組の要約。全測定と必須文字はCI artifactの `test-results/render-matrix-full.json` に保存。
 - 比較画像: `template-contact-sheet.png`, `legacy-selected.png`, `effect-contact-sheet.png`, `studio-mobile.png`, `treatment-restored.png`。旧/新の構図と主要文字・配色を目視確認。
-- ローカル `npm run build`, `npm run test`, `npm run test:e2e`, `git diff --check`: pass。最終再実行も32 unit / 14 E2Eでpass。旧版4配色の実PNGと、印刷用2480×3508 Canvasの画素が生成PNGと一致することも検証。CI結果は提出後に追記する。
+- ローカル `npm run build`, `npm run test`, `npm run test:e2e`, `git diff --check`: pass。最終再実行も35 unit / 17 E2Eでpass。旧版4配色の実PNGと、印刷用2480×3508 Canvasの画素が生成PNGと一致することも検証。CI結果は提出後に追記する。
 - `npm audit --audit-level=high`: 0 vulnerabilities。
 - A4のブラウザPDFはpdfinfoでA4・1ページ。実際の印刷とは区別する。
 - PR-A GitHub Actions: success、run `43850253039`。
@@ -71,7 +71,7 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 ## 次の着手点 / 再開コマンド
 
 1. 提出済みPR-A #36 / PR-B #37のレビューを確認する（自動マージ・デプロイなし）。
-2. GitHub Actionsの完了を確認して結果を追記する。
+2. 最新のGitHub Actionsの結果は各PRのChecksを参照する。
 3. レビュー時はA→Bの順で確認。実機共有・紙面は運用者が確認する。
 
 `git status --short --branch`, `git log -3 --oneline`, `npm ci`, `npm run test`, `npm run build`, `npm run test:e2e`。
@@ -85,4 +85,11 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 ## 追加レビュー対応（2026-11-16）
 
 - PR-A `4249a09db01a6bc255112eba89e83a3f27d553de`: 退避Workspaceのイベント復元と、URLで指定されたpreviewの配色を修正。unit23 / E2E7を確認。
-- PR-B: サムネイルの原画像デコード共有・縮小、固定snapshotと編集欄の一致、旧版の配色スコープ、復元後の削除Undoを追加検証する。
+- PR-B: 上記A修正をmergeし、サムネイルは共有する長辺256px、主プレビューは長辺1000pxへ縮小。原寸画像はPNG/印刷時にだけ展開し、完了後に解放する。
+- 1600万画素の実PNGで、20サムネイルが1回の256px decodeを共有することをブラウザで確認。参照カウント・最後の解放・失敗後の再試行をunitで検査。
+- snapshotの解決を共通関数に統一し、固定後にイベントを編集しても入力欄と紙面が一致することを確認。
+- 旧版は自身のテーマを持ち、Nightの祖先CSSの影響を避ける。Nightイベントのまま旧版Springを選ぶ回帰を検査。
+- 復元成功時に履歴・削除Undoを初期化し、同一IDの再追加も防止。削除→復元→再編集・保存の回帰を検査。
+- 欠損画像と同じhashの原本を再アップロードした際にも、保存完了通知でプレビューを再取得。復元後の画像欠損→同じ原本の再選択をE2Eで確認。
+- レビュー対応後の最終ローカル検証: unit35 / Chromium E2E17（新80 PNG、旧4配色、印刷PNG一致を含む）/ build / diff checkがpass。
+- PR-Bの初回機能・検証記録コミットのCIはsuccess（run 43860859246 / 43861166039）。追加レビュー対応の最終CIは各PRのChecksを参照。

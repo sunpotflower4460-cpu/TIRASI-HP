@@ -1,3 +1,4 @@
+import { onAssetsStored } from "../../storage/assetEvents";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CreativeDocument } from "../../studio/document";
 import type { EventRecord } from "../../domain/workspace";
@@ -5,13 +6,15 @@ import { composeScene } from "../../studio/scene";
 import { renderScene, scenePng } from "../../studio/render";
 import type { RenderResult } from "../../studio/render";
 import { renderTreatment } from "../../studio/treatment";
-import { loadImages } from "../../studio/assets";
+import { acquireImages, loadImages } from "../../studio/assets";
+import type { ImageLease } from "../../studio/assets";
 import { sizes } from "../../studio/registry";
 import { errorMessage } from "../../domain/validation";
 import { ExportActions } from "../../export/ExportActions";
 import "../../styles/studio.css";
 import { OnePageFlyer } from "../Flyer/OnePageFlyer";
 import { getThemeClassName } from "../../data/themes";
+import { eventForDocument } from "../../studio/document";
 function CanvasDocumentPreview({
   document: doc,
   events,
@@ -28,23 +31,34 @@ function CanvasDocumentPreview({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderGeneration = useRef(0);
   const [images, setImages] = useState<Map<string, ImageBitmap>>(new Map());
+  const [assetEpoch, setAssetEpoch] = useState(0);
+  const [sourcePixels, setSourcePixels] = useState(0);
   const [assetError, setAssetError] = useState("");
   const [assetsReady, setAssetsReady] = useState(false);
   const [result, setResult] = useState<RenderResult>();
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
-  const refs = doc.assetRefs.join("|");
+  const refs = JSON.stringify(doc.assetRefs);
+  useEffect(
+    () =>
+      onAssetsStored((ids) => {
+        if (ids.some((id) => doc.assetRefs.includes(id)))
+          setAssetEpoch((value) => value + 1);
+      }),
+    [refs],
+  );
   useEffect(() => {
     let cancelled = false;
-    let loaded: Map<string, ImageBitmap> | undefined;
+    let loaded: ImageLease | undefined;
     setAssetsReady(false);
     setAssetError("");
-    loadImages(doc.assetRefs)
+    acquireImages(doc.assetRefs, thumbnail ? 256 : 1000)
       .then((value) => {
         loaded = value;
-        if (cancelled) value.forEach((image) => image.close());
+        if (cancelled) value.release();
         else {
-          setImages(value);
+          setImages(value.images);
+          setSourcePixels(value.sourcePixels);
           setAssetsReady(true);
         }
       })
@@ -57,9 +71,9 @@ function CanvasDocumentPreview({
       });
     return () => {
       cancelled = true;
-      loaded?.forEach((image) => image.close());
+      loaded?.release();
     };
-  }, [refs]);
+  }, [refs, thumbnail, assetEpoch]);
   useEffect(() => {
     let cancelled = false;
     renderGeneration.current++;
@@ -112,34 +126,44 @@ function CanvasDocumentPreview({
     if (assetError || error || !assetsReady)
       throw new Error(assetError || error || "画像の読み込み中です。");
     const factor = light && doc.design.sizeId === "a4" ? 0.5 : 1;
-    const generated =
-      doc.kind === "image-treatment"
-        ? renderTreatment(doc, images, false, light)
-        : await renderScene(
-            scene,
-            images,
-            Math.round(size.width * factor),
-            Math.round(size.height * factor),
-          );
-    return scenePng(generated);
+    const originals = await loadImages(doc.assetRefs);
+    try {
+      const generated =
+        doc.kind === "image-treatment"
+          ? renderTreatment(doc, originals, false, light)
+          : await renderScene(
+              scene,
+              originals,
+              Math.round(size.width * factor),
+              Math.round(size.height * factor),
+            );
+      return await scenePng(generated);
+    } finally {
+      originals.forEach((image) => image.close());
+    }
   };
   const print = async () => {
     const generation = renderGeneration.current;
-    const generated =
-      doc.kind === "image-treatment"
-        ? renderTreatment(doc, images)
-        : await renderScene(scene, images, size.width, size.height);
-    if (generation !== renderGeneration.current)
-      throw new Error(
-        "編集内容が変わったため、印刷を中断しました。もう一度印刷ボタンを押してください。",
-      );
-    if (generated.errors.length) throw new Error(generated.errors.join("\n"));
-    const target = canvasRef.current;
-    if (!target) throw new Error("印刷用の紙面が見つかりません。");
-    target.width = generated.canvas.width;
-    target.height = generated.canvas.height;
-    target.getContext("2d")!.drawImage(generated.canvas, 0, 0);
-    window.print();
+    const originals = await loadImages(doc.assetRefs);
+    try {
+      const generated =
+        doc.kind === "image-treatment"
+          ? renderTreatment(doc, originals)
+          : await renderScene(scene, originals, size.width, size.height);
+      if (generation !== renderGeneration.current)
+        throw new Error(
+          "編集内容が変わったため、印刷を中断しました。もう一度印刷ボタンを押してください。",
+        );
+      if (generated.errors.length) throw new Error(generated.errors.join("\n"));
+      const target = canvasRef.current;
+      if (!target) throw new Error("印刷用の紙面が見つかりません。");
+      target.width = generated.canvas.width;
+      target.height = generated.canvas.height;
+      target.getContext("2d")!.drawImage(generated.canvas, 0, 0);
+      window.print();
+    } finally {
+      originals.forEach((image) => image.close());
+    }
   };
   const errors = [
     assetError,
@@ -155,14 +179,7 @@ function CanvasDocumentPreview({
           name={doc.name}
           generate={generate}
           memoryEstimateMB={Math.ceil(
-            ((size.width * size.height * 3 +
-              [...images.values()].reduce(
-                (pixels, image) => pixels + image.width * image.height,
-                0,
-              )) *
-              4) /
-              1024 /
-              1024,
+            ((size.width * size.height * 3 + sourcePixels) * 4) / 1024 / 1024,
           )}
           canPrint={size.print}
           onPrint={print}
@@ -231,8 +248,7 @@ function LegacyDocumentPreview({
   thumbnail?: boolean;
 }) {
   const bound = events.find((event) => event.id === doc.eventId);
-  const event =
-    doc.contentBinding === "linked" && bound ? bound.eventData : doc.snapshot;
+  const event = eventForDocument(doc, events);
   const data = useMemo(
     () => ({
       ...event,

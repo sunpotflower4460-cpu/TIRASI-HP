@@ -1,3 +1,4 @@
+import { notifyAssetsStored } from "../storage/assetEvents";
 import { completed, openDatabase, request } from "../storage/database";
 import { withTimeout } from "../export/files";
 export const MAX_ASSET_BYTES = 8 * 1024 * 1024;
@@ -131,18 +132,20 @@ export async function validateAsset(
     bitmap.close();
     throw new Error("画像を読み込めませんでした。");
   }
-  const hash = await sha256(blob);
-  const metadata = {
-    id: `asset-${hash}`,
-    name,
-    mime: header.mime,
-    width: bitmap.width,
-    height: bitmap.height,
-    bytes: blob.size,
-    hash,
-  };
-  bitmap.close();
-  return metadata;
+  try {
+    const hash = await sha256(blob);
+    return {
+      id: `asset-${hash}`,
+      name,
+      mime: header.mime,
+      width: bitmap.width,
+      height: bitmap.height,
+      bytes: blob.size,
+      hash,
+    };
+  } finally {
+    bitmap.close();
+  }
 }
 export async function storeAsset(
   blob: Blob,
@@ -155,6 +158,7 @@ export async function storeAsset(
   tx.objectStore("assets").put(blob, metadata.id);
   tx.objectStore("assets").put(metadata, `meta:${metadata.id}`);
   await done;
+  notifyAssetsStored([metadata.id]);
   return metadata;
 }
 export async function getAssetBlob(id: string): Promise<Blob | undefined> {
@@ -164,29 +168,160 @@ export async function getAssetBlob(id: string): Promise<Blob | undefined> {
   );
   return value instanceof Blob ? value : undefined;
 }
+type DecodedAsset = { image: ImageBitmap; sourcePixels: number };
+async function decodeAsset(
+  id: string,
+  maxDimension?: number,
+): Promise<DecodedAsset> {
+  const blob = await getAssetBlob(id);
+  if (!blob)
+    throw new Error(
+      `元画像が見つかりません（${id.slice(0, 18)}）。画像入りバックアップを復元してください。`,
+    );
+  const header = imageHeader(new Uint8Array(await blob.arrayBuffer()));
+  if (
+    !header.width ||
+    !header.height ||
+    header.width > 8192 ||
+    header.height > 8192 ||
+    header.width * header.height > MAX_ASSET_PIXELS
+  )
+    throw new Error("画像は1600万画素以内、長辺8192px以内にしてください。");
+  const metadata = await getAssetMetadata(id);
+  const sourcePixels = header.width * header.height;
+  const decode = (source: Blob | ImageBitmap, options: ImageBitmapOptions) =>
+    withTimeout(createImageBitmap(source, options), 20000, (image) =>
+      image.close(),
+    );
+  if (!maxDimension)
+    return {
+      image: await decode(blob, { imageOrientation: "from-image" }),
+      sourcePixels,
+    };
+  if (
+    metadata &&
+    Number.isFinite(metadata.width) &&
+    Number.isFinite(metadata.height) &&
+    metadata.width > 0 &&
+    metadata.height > 0 &&
+    metadata.width * metadata.height === sourcePixels
+  ) {
+    const ratio = Math.min(
+      1,
+      maxDimension / Math.max(metadata.width, metadata.height),
+    );
+    return {
+      image: await decode(blob, {
+        imageOrientation: "from-image",
+        resizeWidth: Math.max(1, Math.round(metadata.width * ratio)),
+        resizeHeight: Math.max(1, Math.round(metadata.height * ratio)),
+        resizeQuality: "high",
+      }),
+      sourcePixels,
+    };
+  }
+  const original = await decode(blob, { imageOrientation: "from-image" });
+  try {
+    const ratio = Math.min(
+      1,
+      maxDimension / Math.max(original.width, original.height),
+    );
+    return {
+      image: await decode(original, {
+        resizeWidth: Math.max(1, Math.round(original.width * ratio)),
+        resizeHeight: Math.max(1, Math.round(original.height * ratio)),
+        resizeQuality: "high",
+      }),
+      sourcePixels,
+    };
+  } finally {
+    original.close();
+  }
+}
+
+// Full-resolution bitmaps belong to a single export and are closed by that caller.
 export async function loadImages(
   ids: string[],
 ): Promise<Map<string, ImageBitmap>> {
   const images = new Map<string, ImageBitmap>();
   try {
-    for (const id of ids) {
-      const blob = await getAssetBlob(id);
-      if (!blob)
-        throw new Error(
-          `元画像が見つかりません（${id.slice(0, 18)}）。画像入りバックアップを復元してください。`,
-        );
-      images.set(
-        id,
-        await withTimeout(
-          createImageBitmap(blob, { imageOrientation: "from-image" }),
-          20000,
-          (image) => image.close(),
-        ),
-      );
-    }
+    for (const id of ids) images.set(id, (await decodeAsset(id)).image);
     return images;
   } catch (error) {
     images.forEach((image) => image.close());
+    throw error;
+  }
+}
+
+type CacheEntry = {
+  refs: number;
+  promise: Promise<DecodedAsset>;
+  decoded?: DecodedAsset;
+};
+const previewCache = new Map<string, CacheEntry>();
+export type ImageLease = {
+  images: Map<string, ImageBitmap>;
+  sourcePixels: number;
+  release: () => void;
+};
+export async function acquireImages(
+  ids: string[],
+  maxDimension: number,
+): Promise<ImageLease> {
+  const entries = [...new Set(ids)].map((id) => {
+    const key = JSON.stringify([id, maxDimension]);
+    let entry = previewCache.get(key);
+    if (!entry) {
+      const created: CacheEntry = {
+        refs: 0,
+        promise: decodeAsset(id, maxDimension),
+      };
+      created.promise = created.promise.then(
+        (decoded) => {
+          created.decoded = decoded;
+          if (!created.refs) {
+            decoded.image.close();
+            if (previewCache.get(key) === created) previewCache.delete(key);
+          }
+          return decoded;
+        },
+        (error) => {
+          if (previewCache.get(key) === created) previewCache.delete(key);
+          throw error;
+        },
+      );
+      previewCache.set(key, created);
+      entry = created;
+    }
+    entry.refs++;
+    return { id, key, entry };
+  });
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    for (const { key, entry } of entries) {
+      entry.refs--;
+      if (!entry.refs && entry.decoded) {
+        entry.decoded.image.close();
+        if (previewCache.get(key) === entry) previewCache.delete(key);
+      }
+    }
+  };
+  try {
+    const values = await Promise.all(entries.map(({ entry }) => entry.promise));
+    return {
+      images: new Map(
+        entries.map(({ id }, index) => [id, values[index].image]),
+      ),
+      sourcePixels: values.reduce(
+        (total, value) => total + value.sourcePixels,
+        0,
+      ),
+      release,
+    };
+  } catch (error) {
+    release();
     throw error;
   }
 }

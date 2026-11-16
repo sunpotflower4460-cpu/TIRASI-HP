@@ -1,4 +1,4 @@
-import { mapBlocks } from "../../studio/document";
+import { mapBlocks, eventForDocument } from "../../studio/document";
 import { newId } from "../../domain/workspace";
 import type { Dispatch, SetStateAction } from "react";
 import type { Workspace } from "../../domain/workspace";
@@ -31,8 +31,7 @@ export function ContentPanel({
   const tab = "content";
   const boundEvent =
     doc.kind === "event-flyer"
-      ? (workspace.events.find((event) => event.id === doc.eventId)
-          ?.eventData ?? doc.snapshot)
+      ? eventForDocument(doc, workspace.events)
       : undefined;
   return (
     <>

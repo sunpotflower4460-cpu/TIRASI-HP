@@ -1,3 +1,4 @@
+import { notifyAssetsStored } from "./assetEvents";
 import { initialWorkspace, LEGACY_KEYS, parseWorkspace } from '../domain/workspace';
 import type { Workspace } from '../domain/workspace';
 export const DB_NAME = 'tirasi-studio-v2';
@@ -71,6 +72,7 @@ export async function saveWorkspace(workspace: Workspace, expectedRevision: numb
     }
   };
   try { await done; } catch (e) { if (conflict) throw new ConflictError(); if (missingAsset) throw new Error('元画像が欠損しています。完全バックアップか元画像を読み込んでください。現在の保存内容は変更していません。'); throw e; }
+  notifyAssetsStored(assets.map(asset => asset.id));
   return next;
 }
 export async function readRecovery(): Promise<Workspace | undefined> {

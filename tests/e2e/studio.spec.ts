@@ -95,7 +95,16 @@ test("free creation, all gallery choices, undo and per-size settings preserve co
 test("legacy A4 is selectable beside the 20 new layouts and produces the original layout", async ({
   page,
 }) => {
-  await page.goto("/studio");
+  await page.goto("/editor");
+  await page
+    .getByRole("combobox", { name: "テーマ", exact: true })
+    .selectOption("night");
+  await expect
+    .poll(async () => (await savedWorkspace(page)).events[0].eventData.themeId)
+    .toBe("night");
+  await page
+    .getByRole("button", { name: "チラシスタジオを開く", exact: true })
+    .click();
   await page.getByRole("button", { name: /01 \/ EVENT/ }).click();
   await expect(page.getByRole("button", { name: /^デザイン:/ })).toHaveCount(
     21,
@@ -122,6 +131,14 @@ test("legacy A4 is selectable beside the 20 new layouts and produces the origina
     path: "docs/evidence/legacy-selected.png",
     fullPage: true,
   });
+  await page
+    .getByLabel("配色（構図と独立して変更）", { exact: true })
+    .selectOption("spring");
+  expect(
+    await page
+      .locator(".studio-preview-panel .one-page-note")
+      .evaluate((element) => getComputedStyle(element).color),
+  ).toBe("rgb(109, 96, 98)");
   for (const palette of ["spring", "summer", "autumn", "night"]) {
     await page
       .getByLabel("配色（構図と独立して変更）", { exact: true })
@@ -176,12 +193,28 @@ test("image placement survives size switching and a template change protects the
   page,
 }) => {
   await page.goto("/studio");
+  await page.evaluate(() => {
+    const calls: { width: number | null; height: number | null }[] = [];
+    Object.defineProperty(window, "__tirasiDecodeCalls", { get: () => calls });
+    window.createImageBitmap = new Proxy(window.createImageBitmap, {
+      apply(target, thisArg, args) {
+        calls.push({
+          width: args[1]?.resizeWidth ?? null,
+          height: args[1]?.resizeHeight ?? null,
+        });
+        return Reflect.apply(target, thisArg, args);
+      },
+    });
+  });
   await page.getByRole("button", { name: /02 \/ FREE/ }).click();
   await page.getByRole("tab", { name: "画像・配置", exact: true }).click();
   await page.getByLabel("チラシの画像ファイル").setInputFiles({
     name: "poster.png",
     mimeType: "image/png",
-    buffer: await fixtureImage(),
+    buffer: await sharp(await fixtureImage())
+      .resize(4000, 4000)
+      .png()
+      .toBuffer(),
   });
   await expect(
     page.getByText("「poster.png」をこのブラウザに保存しました", {
@@ -195,6 +228,28 @@ test("image placement survives size switching and a template change protects the
       .getByRole("slider", { name: /画像の左右位置/ })
       .press("ArrowLeft");
   await page.getByRole("tab", { name: "デザイン", exact: true }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          Reflect.get(window, "__tirasiDecodeCalls").filter(
+            (call: { width: number; height: number }) =>
+              call.width === 256 && call.height === 256,
+          ).length,
+      ),
+    )
+    .toBe(1);
+  const decodes = await page.evaluate(
+    () =>
+      Reflect.get(window, "__tirasiDecodeCalls") as {
+        width: number | null;
+        height: number | null;
+      }[],
+  );
+  expect(
+    decodes.filter((call) => call.width === 1000 && call.height === 1000),
+  ).toHaveLength(1);
+  expect(decodes.filter((call) => call.width === null)).toHaveLength(1);
   await page.getByLabel("出力サイズ", { exact: true }).selectOption("story");
   await page.getByLabel("出力サイズ", { exact: true }).selectOption("a4");
   await page
@@ -298,6 +353,32 @@ test("original image plus treatment recipe can be backed up and restored in a fr
     path: "docs/evidence/treatment-restored.png",
     fullPage: true,
   });
+  // Restoring the exact same source hash refreshes a previously missing preview without a page reload.
+  await restored.evaluate(async (id) => {
+    const modulePath = "/src/storage/database.ts";
+    const { openDatabase, completed } = await import(modulePath);
+    const db = await openDatabase();
+    const tx = db.transaction("assets", "readwrite");
+    const done = completed(tx);
+    tx.objectStore("assets").delete(id);
+    await done;
+  }, state.documents[0].assetRefs[0]);
+  await restored.reload();
+  await expect(
+    restored.getByText("元画像が見つかりません", { exact: false }).first(),
+  ).toBeVisible();
+  await restored.getByRole("tab", { name: "画像・加工", exact: true }).click();
+  await restored
+    .getByLabel("チラシの画像ファイル")
+    .setInputFiles({
+      name: "original.png",
+      mimeType: "image/png",
+      buffer: original,
+    });
+  await expect(restored.getByTestId("document-canvas")).toHaveAttribute(
+    "data-errors",
+    "0",
+  );
   // A broken package must be rejected before replacing the workspace.
   backed.assets[0].hash = "0".repeat(64);
   await restored.getByLabel("完全バックアップファイル").setInputFiles({
@@ -378,4 +459,79 @@ test("mobile studio fits the viewport and exports a custom free flyer as A4 PNG 
   });
   await writeFile("test-results/studio-a4.pdf", pdf);
   expect(pdf.toString("latin1").match(/\/Type\s*\/Page\b/g)?.length).toBe(1);
+});
+test("frozen event content stays consistent between the editor and rendered flyer after its source changes", async ({
+  page,
+}) => {
+  await page.goto("/studio");
+  await page.getByRole("button", { name: /01 \/ EVENT/ }).click();
+  await page.getByRole("tab", { name: "本文", exact: true }).click();
+  await page
+    .getByLabel("イベントとの反映方法", { exact: true })
+    .selectOption("snapshot");
+  await page
+    .getByRole("button", { name: "イベント自体を編集", exact: true })
+    .click();
+  await page.getByLabel("イベント名", { exact: true }).fill("変更後のイベント");
+  await page
+    .getByRole("button", { name: "チラシスタジオを開く", exact: true })
+    .click();
+  await page.getByRole("tab", { name: "本文", exact: true }).click();
+  await expect(
+    page.getByLabel("このチラシだけのタイトル", { exact: true }),
+  ).toHaveValue("生音");
+  await expect(page.getByTestId("document-canvas")).toHaveAttribute(
+    "data-measurements",
+    /生音/,
+  );
+  await page
+    .getByLabel("このチラシだけのタイトル", { exact: true })
+    .fill("紙面だけの名前");
+  await page.getByRole("button", { name: "取り消す", exact: true }).click();
+  await expect(
+    page.getByLabel("このチラシだけのタイトル", { exact: true }),
+  ).toHaveValue("生音");
+  await expect
+    .poll(async () => (await savedWorkspace(page)).events[0].eventData.title)
+    .toBe("変更後のイベント");
+});
+test("restoring a deleted document clears deletion undo and remains saveable", async ({
+  page,
+}) => {
+  await page.goto("/studio");
+  await page.getByRole("button", { name: /02 \/ FREE/ }).click();
+  await expect
+    .poll(async () => (await savedWorkspace(page)).documents.length)
+    .toBe(1);
+  const first = (await savedWorkspace(page)).documents[0];
+  const pending = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "画像入り完全バックアップ", exact: true })
+    .click();
+  await (await pending).saveAs("test-results/deleted-document-backup.json");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "削除", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "削除を取り消す", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("完全バックアップファイル")
+    .setInputFiles("test-results/deleted-document-backup.json");
+  await page
+    .getByRole("button", { name: "確認した内容で復元する", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "削除を取り消す", exact: true }),
+  ).toHaveCount(0);
+  await expect
+    .poll(async () => (await savedWorkspace(page)).documents.length)
+    .toBe(1);
+  expect((await savedWorkspace(page)).documents[0].id).toBe(first.id);
+  await page.getByRole("tab", { name: "本文", exact: true }).click();
+  await page
+    .getByLabel("チラシのタイトル", { exact: true })
+    .fill("復元後も保存できます");
+  await expect
+    .poll(async () => (await savedWorkspace(page)).documents[0].content.title)
+    .toBe("復元後も保存できます");
 });
