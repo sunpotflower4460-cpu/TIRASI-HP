@@ -1,2 +1,4 @@
 import { defineConfig } from '@playwright/test';
-export default defineConfig({ testDir: './tests/e2e', timeout: 60000, workers: 1, use: { baseURL: 'http://127.0.0.1:5173', headless: true }, webServer: { command: 'npm run dev -- --host 0.0.0.0', url: 'http://127.0.0.1:5173', reuseExistingServer: !process.env.CI } });
+const testPort = Number(process.env.TIRASI_TEST_PORT ?? 5173);
+const testOrigin = `http://127.0.0.1:${testPort}`;
+export default defineConfig({ testDir: './tests/e2e', timeout: 60000, workers: 1, use: { baseURL: testOrigin, headless: true }, webServer: { command: `npm run dev -- --host 0.0.0.0 --port ${testPort}`, url: testOrigin, reuseExistingServer: !process.env.CI } });

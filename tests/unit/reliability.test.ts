@@ -56,3 +56,11 @@ describe('publication and dates', () => {
     expect(eventWarnings({ ...defaultEvent, schedule: [{ type: 'act', time: '14:00-15:00', name: 'a' }, { type: 'act', time: '14:30-15:30', name: 'b' }] }).join()).toContain('重なって');
   });
 });
+describe('emergency recovery', () => {
+  it('restores the raw workspace downloaded by the storage-error banner without dropping event edits', () => {
+    const workspace = initialWorkspace(); workspace.events[0].eventData.title = 'UNSAVED RECOVERY';
+    const records = parseLibrary(JSON.stringify(workspace));
+    expect(records[0].eventData.title).toBe('UNSAVED RECOVERY'); expect(records).toHaveLength(workspace.events.length);
+    expect(() => parseLibrary(JSON.stringify({ ...workspace, documents: [{ id: 'future-document' }] }))).toThrow('制作物を含む');
+  });
+});

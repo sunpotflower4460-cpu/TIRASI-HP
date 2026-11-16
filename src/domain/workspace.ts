@@ -38,6 +38,10 @@ export function parseLibrary(text: string): EventRecord[] {
   const value = parseJson(text);
   if (Array.isArray(value)) return parseRecords(value);
   const envelope = object(value);
+  if (envelope.schemaVersion === 2 && envelope.kind === undefined && Array.isArray(envelope.events)) {
+    if (Array.isArray(envelope.documents) && envelope.documents.length) throw new ValidationError('制作物を含むワークスペースJSONです。スタジオの「JSONのみ復元」を使ってください。');
+    return parseWorkspace(envelope).events;
+  }
   if (envelope.schemaVersion !== 2 || envelope.kind !== 'event-library') throw new ValidationError('未対応の一覧形式です。');
   return parseRecords(envelope.records);
 }
