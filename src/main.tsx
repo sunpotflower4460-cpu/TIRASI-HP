@@ -1,4 +1,6 @@
 import "@fontsource/zen-maru-gothic/700.css";
+import "@fontsource/barlow-condensed/700.css";
+import "@fontsource/cormorant-garamond/700.css";
 import "@fontsource/noto-serif-jp/700.css";
 import "@fontsource/noto-sans-jp/400.css";
 import "@fontsource/noto-sans-jp/700.css";

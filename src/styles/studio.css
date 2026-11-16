@@ -357,13 +357,13 @@
   letter-spacing: 0.05em;
 }
 .template-card strong {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
   margin: 4px 0;
 }
 .template-card small {
-  font-size: 9px;
-  color: #63705f;
+  font-size: 10px;
+  color: #465844;
   line-height: 1.7;
 }
 .studio-preview-panel {

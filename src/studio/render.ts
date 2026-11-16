@@ -1,4 +1,6 @@
-import type { Scene, SceneNode, TextNode, Rect } from "./scene";
+import type { Scene, SceneNode, TextNode, FlowNode, Rect } from "./scene";
+import { drawArtwork } from "./artwork";
+import { balanceHeadline } from "./typography";
 import { defaultPlacement } from "./document";
 import { canvasBlob, withTimeout } from "../export/files";
 export type Measurement = {
@@ -68,10 +70,22 @@ export function measureText(
       node.w,
     );
     if (
+      lines.length <= (node.maxLines ?? Infinity) &&
       lines.length * size * (node.lineHeight ?? 1.42) <= node.h &&
       lines.every((line) => ctx.measureText(line).width <= node.w + 0.5)
-    )
-      return { lines, size, fits: true };
+    ) {
+      const fittedLines =
+        node.balanced && !node.vertical
+          ? balanceHeadline(
+              node.text,
+              node.w,
+              (value) => ctx.measureText(value).width,
+              lines,
+              true,
+            )
+          : lines;
+      if (fittedLines.length) return { lines: fittedLines, size, fits: true };
+    }
   }
   size = node.minSize;
   ctx.font = `${node.italic ? "italic " : ""}${node.weight ?? 400} ${size}px ${node.family}`;
@@ -109,274 +123,58 @@ function shape(
     ctx.stroke();
   }
 }
-function art(
+export function layoutFlow(
   ctx: CanvasRenderingContext2D,
-  node: Extract<SceneNode, { kind: "art" }>,
-) {
-  const { x, y, w, h, color, soft, ink } = node;
-  const full = w > 900;
-  const fill = (c: string, px: number, py: number, pw: number, ph: number) => {
-    ctx.fillStyle = c;
-    ctx.fillRect(x + px * w, y + py * h, pw * w, ph * h);
-  };
-  const circle = (c: string, px: number, py: number, r: number) => {
-    ctx.beginPath();
-    ctx.arc(x + px * w, y + py * h, r * w, 0, Math.PI * 2);
-    ctx.fillStyle = c;
-    ctx.fill();
-  };
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(x, y, w, h);
-  ctx.clip();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-  switch (node.art) {
-    case "livehouse":
-      fill(ink, 0.02, 0.02, 0.96, 0.025);
-      fill(color, 0.02, 0.07, 0.018, 0.86);
-      for (let i = 0; i < 8; i++)
-        fill(soft, 0.02 + i * 0.12, 0.965, 0.07, 0.018);
-      if (!full)
-        for (let i = 0; i < 20; i++)
-          fill(i % 3 ? ink : color, i / 20, 0, 0.025, 1);
-      break;
-    case "citypop": {
-      if (full) {
-        fill(soft, 0, 0, 1, 0.025);
-        fill(color, 0, 0.975, 1, 0.025);
-      } else {
-        const gradient = ctx.createLinearGradient(x, y, x, y + h);
-        gradient.addColorStop(0, color);
-        gradient.addColorStop(1, soft);
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x, y, w, h);
-        circle("#fff1ce", 0.55, 0.39, 0.25);
-        for (let i = 0; i < 9; i++)
-          fill(soft, 0, 0.57 + i * 0.055, 1, 0.008 + i * 0.001);
-        for (let i = 0; i < 8; i++)
-          fill(ink, i * 0.15, 0.8 - (i % 3) * 0.06, 0.1, 0.3);
-      }
-      break;
-    }
-    case "neon":
-      for (let i = 0; i < 5; i++) {
-        ctx.strokeStyle = i % 2 ? soft : color;
-        ctx.lineWidth = i === 0 ? 8 : 2;
-        ctx.beginPath();
-        ctx.ellipse(
-          x + w / 2,
-          y + h * 0.2,
-          w * (0.44 - i * 0.025),
-          h * (0.18 - i * 0.012),
-          0,
-          Math.PI,
-          2 * Math.PI,
-        );
-        ctx.stroke();
-      }
-      fill(color, 0.02, 0.025, 0.015, 0.93);
-      fill(color, 0.965, 0.025, 0.015, 0.93);
-      break;
-    case "riso":
-      circle(soft, full ? 0.16 : 0.46, full ? 0.2 : 0.48, full ? 0.11 : 0.37);
-      ctx.globalAlpha = 0.8;
-      circle(color, full ? 0.17 : 0.51, full ? 0.2 : 0.51, full ? 0.09 : 0.3);
-      ctx.globalAlpha = 1;
-      for (let i = 0; i < 100; i++) {
-        ctx.fillStyle = ink;
-        const px = ((i * 47) % 97) / 97;
-        const py = ((i * 31) % 89) / 89;
-        ctx.fillRect(x + px * w, y + py * h, 1.3, 1.3);
-      }
-      break;
-    case "acoustic":
-      if (full) {
-        for (let i = 0; i < 10; i++) fill(soft, 0.02 + i * 0.1, 0, 0.001, 1);
-      } else {
-        circle(ink, 0.5, 0.5, 0.47);
-        for (let i = 1; i <= 5; i++) {
-          ctx.beginPath();
-          ctx.arc(
-            x + w * 0.5,
-            y + h * 0.5,
-            w * (0.1 + i * 0.06),
-            0,
-            Math.PI * 2,
-          );
-          ctx.strokeStyle = soft;
-          ctx.stroke();
-        }
-        circle(color, 0.5, 0.5, 0.13);
-        circle(soft, 0.5, 0.5, 0.025);
-      }
-      break;
-    case "indie":
-      fill(color, 0, 0, 0.025, 0.7);
-      fill(soft, 0.35, 0.02, 0.63, 0.012);
-      fill(color, 0.88, 0.95, 0.1, 0.03);
-      if (!full) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + w, y);
-        ctx.lineTo(x + w * 0.7, y + h);
-        ctx.lineTo(x, y + h);
-        ctx.fill();
-      }
-      break;
-    case "festival":
-      fill(color, 0, 0, 1, 0.028);
-      fill(soft, 0, 0.31, 1, 0.055);
-      for (let i = 0; i < 12; i++) {
-        circle(i % 2 ? soft : color, 0.04 + i * 0.083, 0.972, 0.012);
-      }
-      break;
-    case "botanical":
-      for (const right of [false, true])
-        for (let i = 0; i < 8; i++) {
-          ctx.fillStyle = i % 2 ? soft : color;
-          ctx.beginPath();
-          ctx.ellipse(
-            x + w * (right ? 0.975 - (i % 2) * 0.016 : 0.025 + (i % 2) * 0.016),
-            y + h * (0.07 + i * 0.07),
-            w * 0.016,
-            h * 0.025,
-            right ? -0.6 : 0.6,
-            0,
-            Math.PI * 2,
-          );
-          ctx.fill();
-        }
-      break;
-    case "forest":
-      if (full) {
-        fill(soft, 0, 0.97, 1, 0.03);
-      } else {
-        ctx.fillStyle = soft;
-        ctx.fillRect(x, y, w, h);
-        for (let i = 0; i < 5; i++) {
-          ctx.fillStyle = i % 2 ? color : ink;
-          ctx.beginPath();
-          ctx.moveTo(x + (i * w) / 5 - w * 0.15, y + h);
-          ctx.lineTo(
-            x + (i * w) / 5 + w * 0.12,
-            y + h * (0.05 + (i % 2) * 0.2),
-          );
-          ctx.lineTo(x + (i * w) / 5 + w * 0.35, y + h);
-          ctx.fill();
-        }
-      }
-      break;
-    case "watercolor":
-      for (let i = 0; i < 8; i++) {
-        ctx.globalAlpha = 0.18;
-        circle(
-          i % 2 ? color : soft,
-          i % 2 ? 0.96 : 0.04,
-          0.1 + i * 0.13,
-          0.1 + (i % 3) * 0.03,
-        );
-      }
-      ctx.globalAlpha = 1;
-      break;
-    case "swiss":
-      fill(color, 0.02, 0.025, 0.08, 0.015);
-      fill(ink, 0.02, 0.34, 0.96, 0.002);
-      fill(soft, 0.02, 0.97, 0.96, 0.008);
-      ctx.beginPath();
-      ctx.moveTo(x + w * 0.56, y + h * 0.36);
-      ctx.lineTo(x + w * 0.56, y + h * 0.97);
-      ctx.stroke();
-      break;
-    case "gallery":
-      fill(color, 0.02, 0.02, 0.06, 0.004);
-      fill(color, 0.02, 0.98, 0.06, 0.004);
-      if (!full) {
-        fill(soft, 0, 0, 1, 1);
-        circle(color, 0.45, 0.45, 0.23);
-        fill(ink, 0.62, 0.45, 0.16, 0.45);
-      }
-      break;
-    case "magazine":
-      fill(ink, 0.02, 0.02, 0.96, 0.008);
-      fill(color, 0.02, 0.35, 0.96, 0.006);
-      if (!full) {
-        fill(soft, 0, 0, 1, 1);
-        for (let i = 0; i < 5; i++)
-          fill(i % 2 ? color : ink, i * 0.2, 0.1 + i * 0.1, 0.12, 0.9);
-      }
-      break;
-    case "showa":
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 4;
-      ctx.strokeRect(x + 15, y + 15, w - 30, h - 30);
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x + 24, y + 24, w - 48, h - 48);
-      circle(soft, 0.28, 0.16, 0.16);
-      break;
-    case "washi":
-      if (full) {
-        for (let i = 0; i < 7; i++) fill(soft, 0.02 + i * 0.16, 0, 0.001, 1);
-      } else {
-        for (let i = 0; i < 7; i++) {
-          ctx.globalAlpha = 0.12;
-          fill(ink, 0.2 + i * 0.035, 0.03 + i * 0.008, 0.22, 0.9 - i * 0.01);
-        }
-        ctx.globalAlpha = 1;
-      }
-      break;
-    case "sticker":
-      circle(soft, 0.91, 0.31, 0.08);
-      circle(color, 0.09, 0.95, 0.035);
-      fill(soft, 0.02, 0.025, 0.65, 0.018);
-      if (!full) {
-        fill(soft, 0, 0, 1, 1);
-        for (let i = 0; i < 6; i++) fill(color, i * 0.17, 0.1, 0.07, 0.8);
-      }
-      break;
-    case "party":
-      ctx.setLineDash([4, 7]);
-      ctx.strokeRect(x + 22, y + 22, w - 44, h - 44);
-      ctx.setLineDash([]);
-      for (let i = 0; i < 12; i++) {
-        ctx.fillStyle = i % 2 ? color : soft;
-        ctx.beginPath();
-        ctx.moveTo(x + (i * w) / 12, y + 15);
-        ctx.lineTo(x + ((i + 1) * w) / 12, y + 15);
-        ctx.lineTo(x + ((i + 0.5) * w) / 12, y + 45);
-        ctx.fill();
-      }
-      break;
-    case "deco":
-      for (let i = 0; i < 3; i++) {
-        ctx.lineWidth = i === 0 ? 3 : 1;
-        ctx.strokeRect(
-          x + 16 + i * 10,
-          y + 16 + i * 10,
-          w - 32 - i * 20,
-          h - 32 - i * 20,
-        );
-      }
-      for (let i = 0; i < 8; i++) {
-        ctx.beginPath();
-        ctx.moveTo(x + w * 0.5 - i * 12, y + 12);
-        ctx.lineTo(x + w * 0.5, y + 45 + i * 2);
-        ctx.lineTo(x + w * 0.5 + i * 12, y + 12);
-        ctx.stroke();
-      }
-      break;
-    case "serif":
-      fill(color, 0.05, 0.025, 0.9, 0.001);
-      fill(color, 0.05, 0.97, 0.9, 0.001);
-      circle(color, 0.5, 0.985, 0.004);
-      break;
-    case "information":
-      fill(color, 0, 0, 1, 0.018);
-      fill(soft, 0, 0.98, 1, 0.02);
+  node: FlowNode,
+): { nodes: TextNode[]; fits: boolean } {
+  let reduction = 0;
+  let items: {
+    block: FlowNode["blocks"][number];
+    size: number;
+    height: number;
+  }[] = [];
+  let total = 0;
+  for (; reduction <= 40; reduction++) {
+    items = node.blocks.map((block) => {
+      const size = Math.max(block.minSize, block.size - reduction);
+      ctx.font = `${block.weight ?? 400} ${size}px ${block.family}`;
+      const lines = wrapText(ctx, block.text, node.w);
+      return {
+        block,
+        size,
+        height: lines.length * size * (block.lineHeight ?? 1.4),
+      };
+    });
+    total = items.reduce(
+      (sum, item, index) =>
+        sum + item.height + (index ? (item.block.gapBefore ?? 7) : 0),
+      0,
+    );
+    if (
+      total <= node.h ||
+      items.every((item) => item.size === item.block.minSize)
+    )
       break;
   }
-  ctx.restore();
+  let y = node.y;
+  return {
+    fits: total <= node.h + 0.5,
+    nodes: items.map((item, index): TextNode => {
+      y += index ? (item.block.gapBefore ?? 7) : 0;
+      const result: TextNode = {
+        ...item.block,
+        kind: "text",
+        x: node.x,
+        y,
+        w: node.w,
+        h: item.height + 0.05,
+        size: item.size,
+        minSize: item.size,
+      };
+      y += item.height;
+      return result;
+    }),
+  };
 }
 export function drawImageInBox(
   ctx: CanvasRenderingContext2D,
@@ -417,7 +215,9 @@ export async function renderScene(
   await withTimeout(
     Promise.all(
       scene.nodes
-        .filter((n): n is TextNode => n.kind === "text")
+        .flatMap((n) =>
+          n.kind === "text" ? [n] : n.kind === "flow" ? n.blocks : [],
+        )
         .map((n) =>
           document.fonts.load(
             `${n.italic ? "italic " : ""}${n.weight ?? 400} ${n.size}px ${n.family}`,
@@ -439,7 +239,18 @@ export async function renderScene(
   ctx.fillRect(0, 0, scene.width, scene.height);
   const errors = [...scene.errors];
   const measurements: Measurement[] = [];
-  for (const node of scene.nodes) {
+  const resolvedNodes: Exclude<SceneNode, FlowNode>[] = scene.nodes.flatMap(
+    (node): Exclude<SceneNode, FlowNode>[] => {
+      if (node.kind !== "flow") return [node];
+      const laidOut = layoutFlow(ctx, node);
+      if (!laidOut.fits)
+        errors.push(
+          "会場・詳細が収まりません。文章を短くするか、別の構図や大きなサイズを選んでください。",
+        );
+      return laidOut.nodes;
+    },
+  );
+  for (const node of resolvedNodes) {
     if (node.kind === "text") {
       ctx.save();
       const result = measureText(ctx, node);
@@ -470,11 +281,21 @@ export async function renderScene(
         ctx.shadowOffsetX = node.shadow === "registration" ? 2 : 0;
         ctx.shadowOffsetY = node.shadow === "registration" ? 1 : 0;
       }
+      const textY =
+        node.valign === "center"
+          ? node.y +
+            Math.max(
+              0,
+              (node.h -
+                result.lines.length * result.size * (node.lineHeight ?? 1.42)) /
+                2,
+            )
+          : node.y;
       result.lines.forEach((line, index) =>
         ctx.fillText(
           line,
           x,
-          node.y + index * result.size * (node.lineHeight ?? 1.42),
+          textY + index * result.size * (node.lineHeight ?? 1.42),
         ),
       );
       const usedWidth = Math.max(
@@ -488,7 +309,7 @@ export async function renderScene(
             : node.align === "right"
               ? x - usedWidth
               : x,
-        y: node.y,
+        y: textY,
         w: usedWidth,
         h: result.lines.length * result.size * (node.lineHeight ?? 1.42),
       };
@@ -507,7 +328,7 @@ export async function renderScene(
         ctx.lineWidth = 3;
         ctx.strokeRect(node.x, node.y, node.w, node.h);
       }
-    } else if (node.kind === "art") art(ctx, node);
+    } else if (node.kind === "art") drawArtwork(ctx, node);
     else if (node.kind === "image") {
       const image = images.get(node.assetId);
       if (image)
@@ -540,6 +361,25 @@ export async function renderScene(
           `「${first.id}」と「${second.id}」の文字が重なっています。配置を初期値に戻すか別の構図を選んでください。`,
         );
     }
+  const photographs = resolvedNodes.filter((node) => node.kind === "image");
+  for (const measurement of measurements) {
+    const text = measurement.usedBounds;
+    if (
+      photographs.some(
+        (photo) =>
+          Math.min(text.x + text.w, photo.x + photo.w) -
+            Math.max(text.x, photo.x) >
+            2 &&
+          Math.min(text.y + text.h, photo.y + photo.h) -
+            Math.max(text.y, photo.y) >
+            2,
+      )
+    ) {
+      errors.push(
+        "画像と文字が重なっています。タイトルの位置を戻すか、別の構図を選んでください。",
+      );
+    }
+  }
   return { canvas, errors: [...new Set(errors)], measurements };
 }
 export async function scenePng(result: RenderResult): Promise<Blob> {

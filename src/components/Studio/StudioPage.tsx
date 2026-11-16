@@ -62,7 +62,10 @@ export function StudioPage({
   const [notice, setNotice] = useState("");
   const [uploading, setUploading] = useState(false);
   const [compare, setCompare] = useState(false);
-  const [pendingTemplate, setPendingTemplate] = useState<TemplateId>();
+  const [pendingTemplate, setPendingTemplate] = useState<{
+    id: TemplateId;
+    paletteId?: string;
+  }>();
   const [deletedDoc, setDeletedDoc] = useState<CreativeDocument>();
   const history = useRef(
     new Map<string, { undo: CreativeDocument[]; redo: CreativeDocument[] }>(),
@@ -154,13 +157,27 @@ export function StudioPage({
     if (doc)
       mutate(doc.id, (d) => ({ ...d, design: { ...d.design, ...patch } }));
   };
-  const chooseTemplate = (id: TemplateId) => {
-    if (!doc || id === doc.design.templateId) return;
+  const chooseTemplate = (id: TemplateId, useRecommendedPalette = true) => {
+    if (!doc) return;
+    const paletteId = useRecommendedPalette
+      ? templateById(id).palette
+      : undefined;
+    if (id === doc.design.templateId) {
+      if (paletteId && paletteId !== doc.design.paletteId)
+        setDesign({ paletteId });
+      return;
+    }
     const moved = Object.values(doc.design.placements).some(
       (p) => p && JSON.stringify(p) !== JSON.stringify(defaultPlacement),
     );
-    if (moved) setPendingTemplate(id);
-    else mutate(doc.id, (d) => changeTemplate(d, id));
+    if (moved) setPendingTemplate({ id, paletteId });
+    else
+      mutate(doc.id, (d) => {
+        const next = changeTemplate(d, id);
+        return paletteId
+          ? { ...next, design: { ...next.design, paletteId } }
+          : next;
+      });
   };
   const upload = async (file: File) => {
     if (!doc || uploading) return;
@@ -516,16 +533,25 @@ export function StudioPage({
       {pendingTemplate && doc && (
         <LayoutChangeDialog
           onKeep={() => {
-            setDesign({ paletteId: templateById(pendingTemplate).palette });
+            setDesign({ paletteId: templateById(pendingTemplate.id).palette });
             setPendingTemplate(undefined);
           }}
           onCopy={() => {
-            const next = changeTemplate(structuredClone(doc), pendingTemplate);
+            const next = changeTemplate(
+              structuredClone(doc),
+              pendingTemplate.id,
+            );
             addDocument({
               ...next,
               id: newId(),
-              name: `${doc.name} / ${templateById(pendingTemplate).label}`,
-              design: { ...next.design, placements: {} },
+              name: `${doc.name} / ${templateById(pendingTemplate.id).label}`,
+              design: {
+                ...next.design,
+                ...(pendingTemplate.paletteId
+                  ? { paletteId: pendingTemplate.paletteId }
+                  : {}),
+                placements: {},
+              },
             });
             setPendingTemplate(undefined);
           }}

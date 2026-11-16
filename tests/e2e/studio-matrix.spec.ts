@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import sharp from "sharp";
 import type { Measurement } from "../../src/studio/render";
 import { defaultEvent } from "../../src/data/defaultEvent";
@@ -164,20 +165,39 @@ test("all 20 compositions × 4 sizes produce decodable PNGs with every measured 
     ),
   );
   expect(failures).toEqual([]);
+  const fontfile = createRequire(import.meta.url).resolve(
+    "@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-700-normal.woff2",
+  );
   const tiles = await Promise.all(
     templates.map(async (t, index) => ({
       input: await sharp(`test-results/matrix/${t.id}-a4.png`)
-        .resize(250, 354)
+        .resize(300, 425)
         .png()
         .toBuffer(),
-      left: (index % 4) * 270 + 10,
-      top: Math.floor(index / 4) * 374 + 10,
+      left: (index % 4) * 330 + 15,
+      top: Math.floor(index / 4) * 470 + 15,
+    })),
+  );
+  const labels = await Promise.all(
+    templates.map(async (template, index) => ({
+      input: await sharp({
+        text: {
+          text: template.label,
+          font: "Noto Sans JP Thin Bold 14",
+          fontfile,
+          rgba: true,
+        },
+      })
+        .png()
+        .toBuffer(),
+      left: (index % 4) * 330 + 17,
+      top: Math.floor(index / 4) * 470 + 447,
     })),
   );
   await sharp({
-    create: { width: 1080, height: 1870, channels: 3, background: "#e7e8e0" },
+    create: { width: 1320, height: 2350, channels: 3, background: "#e9e9e3" },
   })
-    .composite(tiles)
+    .composite([...tiles, ...labels])
     .png()
     .toFile("docs/evidence/template-contact-sheet.png");
 });

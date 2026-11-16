@@ -5,7 +5,7 @@
 ## 基準main SHA / 現在ブランチ / 現在コミット
 
 - 基準main: `a270aee55b0fc27fe313ab113b25b55b8bc39803`。作業開始時のopen PR/変更なし。最終fetchでもmainは同じ。
-- PR-A: `feature/tirasi-v2-reliability` / 最新レビュー修正 `4249a09db01a6bc255112eba89e83a3f27d553de`（初回 `11bbac4`）。
+- PR-A: `feature/tirasi-v2-reliability` / 最新レビュー修正 `889cbcfe125ede082590da08b01f8d087a8ff672`（初回 `11bbac4`）。
 - PR-B: `feature/tirasi-v2-flyer-studio`。PR-Aを基点にstack。機能コミット `c559b48274aa96626ca11acd8e7848ae83506336`。最終HEADは検証記録の整理を含む。
 
 ## 現在工程
@@ -43,11 +43,11 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 
 ## テスト結果 / 目視確認
 
-- 単体40件: schema/migration/reducer/CAS/保存失敗/素材参照のatomic abort/構図と配色/バインディング/非破壊切替/件数上限と復元/OG日本語字形等。
-- Chromium 159 / LinuxのE2E 18件: 公開/下書き、旧版選択、10回切替・Undo/Redo、画像位置と元コピー保持、リロード、完全バックアップの別コンテキスト復元、改ざん拒否、6加工の再現性、元画像不変、長文/出演者8名、390px操作、A4 PNG/PDF、件数上限での編集・保存・復元。
+- 単体44件: schema/migration/reducer/CAS/保存失敗/素材参照のatomic abort/構図と配色/バインディング/非破壊切替/件数上限と復元/OG日本語字形等。
+- Chromium 159 / LinuxのE2E 20件: 公開/下書き、旧版選択、10回切替・Undo/Redo、画像位置と元コピー保持、リロード、完全バックアップの別コンテキスト復元、改ざん拒否、6加工の再現性、元画像不変、長文/出演者8名、390px操作、A4 PNG/PDF、件数上限での編集・保存・復元。
 - 新20×4=80 PNG全件: PNGデコード、指定px、必須情報、安全域と文字衝突を検査。`docs/evidence/render-matrix.json` に80組の要約。全測定と必須文字はCI artifactの `test-results/render-matrix-full.json` に保存。
 - 比較画像: `template-contact-sheet.png`, `legacy-selected.png`, `effect-contact-sheet.png`, `studio-mobile.png`, `treatment-restored.png`。旧/新の構図と主要文字・配色を目視確認。
-- ローカル `npm run build`, `npm run test`, `npm run test:e2e`, `git diff --check`: pass。最終再実行も40 unit / 18 E2Eでpass。旧版4配色の実PNGと、印刷用2480×3508 Canvasの画素が生成PNGと一致することも検証。最新CIは各PRのChecksを参照する。
+- ローカル `npm run build`, `npm run test`, `npm run test:e2e`, `git diff --check`: pass。デザイン再制作後の再実行も44 unit / 20 E2Eでpass。旧版4配色の実PNGと、印刷用2480×3508 Canvasの画素が生成PNGと一致することも検証。最新CIは各PRのChecksを参照する。
 - `npm audit --audit-level=high`: 0 vulnerabilities。
 - A4のブラウザPDFはpdfinfoでA4・1ページ。実際の印刷とは区別する。
 - PR-A GitHub Actions: success、run `43850253039`。
@@ -102,3 +102,20 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 - 日本語OGの同梱フォント描画をPR-Aへ移し、両PRに別々の漢字の字形を比較する回帰試験を追加。1200×630 PNGの日本語を目視確認。
 - 統合後の最終ローカル検証はunit40件 / Chromium E2E18件 / build / diff checkがpass。新80 PNG・旧4配色・画素一致・原画像と完全バックアップの検証を含む。
 - branchは`feature/tirasi-v2-flyer-studio`、直前HEADは`bce96566ba1b72abc80de6feec4e20a5c38888da`。この統合をPR-B #37へ反映し、最新CIとレビューの対応済み状態を確認する。main / 本番は変更しない。
+
+
+## デザイン品質の再制作（2026-11-16、ユーザーの追加依頼）
+
+- 基準main `a270aee55b0fc27fe313ab113b25b55b8bc39803`、PR-Bの直前HEAD `b8d1a11a3fe41d4864beafc15f50d04e016a17d4`。開始時にremote/PR #37を再照会し、未マージ・差分なしを確認。現在の作業枝は`feature/tirasi-v2-flyer-studio`。
+- B4/B5/B8/B9を再実施。前版の「小さな装飾と似た二段組」を批評し、DESIGN_POLISH_BRIEF.mdを先に記録。公開OSSのfrontend-designスキルを読んで、主役・題材・文字の階層・実画像の批評手順を適用。
+- `layouts.ts`に20構図とサイズ別reflow、`artwork.ts`にオリジナルの夕景・ギター・マイク・植物・版画・円相等を実装。主役の絵には固有縦横比を与え、正方形でも楽器や植物をつぶさない。アップロード写真は文字から独立した領域へ置き、手動移動での交差も出力前に検出する。
+- `scene.ts` / `render.ts`に階層付きflow組版。会場名・住所・主催・注意書き・Open Micを役割別の大きさと間隔で配置し、実際に計測した行長から全体を再配置。最小文字サイズ以下への縮小や全文の切捨てはしない。
+- Google BudouX v0.10.4のpure parserと日本語モデルを、著作権表示・Apache-2.0・出典付きで同梱。見出しを文節単位で均衡させ、明示改行を尊重。npm入口を実測した際は他言語/DOM処理も入り719.64kBになったため、必要部分だけの同梱へ変更。最終の初期JSは367.67kB / gzip122.78kB（以前336.75kB / gzip107.57kB）。
+- Barlow Condensed / Cormorant GaramondのOFLフォントを追加。全5書体を自己配信。ギャラリーは320px Canvas、共有する画像Bitmapは従来通り256px。おすすめ配色の同時適用はチェックで解除でき、Undoで元に戻る。
+- 単体44件 / Chromium E2E20件 / buildがpass。通常80 PNG、画像入りイベント・自由制作160 PNG、旧4配色、画像共有decode、原画像/完全バックアップ、印刷PNG一致、390px操作を検査。和文改行4件と配色の選択・Undo、160出力の画像と文字の非交差を追加。
+- 画像証跡は`docs/evidence/`に再生成。前版は`designs-before-polish.png`として保持。A4/正方形/Storyと自由制作を別のproof scriptでも描画し、一覧と代表原寸で批評する。scriptのPNGは診断エラーがあっても保存し、成功扱いにせず終了コード1を返す。
+- 実iPhone/SafariのOS共有、物理印刷、全実機のメモリ上限は引き続き未検証。美的な最終判断と機械的な合否は区別する。自動マージ・本番デプロイは行わない。
+- 原寸批評の追補: 幅の細い見出しは文節が収まるまで文字サイズも再探索。実フォントで「週末の、 / よりみち。」の2行を検証。アールデコの下端装飾は安全領域の外へ下げ、出演者名を横切らせない。
+- 仕上げ後の重点再実行はE2E5件（通常80 PNGと画像入り160 PNG、6加工、長文、配色Undo、文節改行）、さらに通常マトリクス1件がpass。全体E2E20件も前段の再制作確認でpass。最終headの全体CIはPRのChecksで確認する。
+- 比較のため直前HEADの隔離checkoutも同じ1000px幅・同じ本文で20枚再描画。`assemble-design-evidence.mjs`で未検証/失敗レコードを拒否して比較と数値を作成。`design-polish-summary.json`に通常80 / 画像入り80+80 / 写真と文字の交差0 / 和文2行を記録。
+- 次の3手: 同じPR-B #37へcommit/push → 最新CIを確認 → URLと未検証範囲を報告。PRを追加しない。

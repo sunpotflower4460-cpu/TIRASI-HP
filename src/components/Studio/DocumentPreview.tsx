@@ -91,9 +91,9 @@ function CanvasDocumentPreview({
           : await renderScene(
               scene,
               images,
-              thumbnail ? 220 : 1000,
+              thumbnail ? 320 : 1000,
               thumbnail
-                ? Math.round((220 * size.height) / size.width)
+                ? Math.round((320 * size.height) / size.width)
                 : Math.round(scene.height),
             );
       if (cancelled) return;
@@ -212,13 +212,15 @@ function CanvasDocumentPreview({
           <details className="scene-text print-hidden">
             <summary>表示内容をテキストで読む</summary>
             {scene.nodes
-              .filter((n) => n.kind === "text")
+              .flatMap((node) =>
+                node.kind === "text"
+                  ? [node]
+                  : node.kind === "flow"
+                    ? node.blocks
+                    : [],
+              )
               .map((n) => (
-                <p key={n.id}>
-                  <strong>{n.id}</strong>
-                  <br />
-                  {n.text}
-                </p>
+                <p key={n.id}>{n.text}</p>
               ))}
           </details>
         </>

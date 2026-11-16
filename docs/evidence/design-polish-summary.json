@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "baseline": "b8d1a11a3fe41d4864beafc15f50d04e016a17d4",
+  "renderer": "Chromium 159 / Linux",
+  "normalPngOutputs": 80,
+  "imageEventOutputs": 80,
+  "imageFreeOutputs": 80,
+  "measuredTextImageCrossings": 0,
+  "shiftedTitleOverlapBlocked": true,
+  "semanticHeadline": [
+    "週末の、",
+    "よりみち。"
+  ],
+  "noImageEventProofs": 60,
+  "noImageFreeProofs": 60,
+  "smallestNormalText": 18,
+  "beforeAfter": {
+    "templates": [
+      "citypop",
+      "acoustic",
+      "botanical",
+      "deco"
+    ],
+    "sourceWidth": 1000,
+    "displayedWidth": 500,
+    "fixture": "same defaultEvent; recommended palette per template"
+  },
+  "exhaustiveMeasurements": "CI artifact: test-results/render-matrix-full.json and test-results/design-polish/photo-layout-report.json"
+}

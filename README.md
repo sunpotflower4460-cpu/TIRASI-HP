@@ -14,6 +14,8 @@
 
 新デザインは、ライブハウス、シティポップ、ネオン、リソグラフ、アコースティック、インディー、フェス、ボタニカル、フォレスト、水彩、スイスグリッド、ギャラリー、マガジン、昭和ポップ、和紙、ステッカー、パーティー、アールデコ、セリフ、情報優先の**20構図**です。配色12種は構図と独立し、見出しのゴシック・明朝・丸ゴシックも変更できます。
 
+各構図を大きな題名とオリジナルの植物画・楽器・夕景・版画などで再設計しました。絵の縦横比を保ち、短い和文見出しは文節に合わせて改行します。会場、注意書き、Open Micは文字の大きさと間隔で読み分けられます。「選ぶとおすすめの配色も適用」を外せば、現在の配色を保って構図を選べます。
+
 本文ブロックの追加・順番・表示、チラシだけの文字上書き、画像位置、サイズ別の配置、取り消し・やり直しに対応します。調整済みの配置がある場合、新しい構図への変更は元の制作物を残すコピーとして行えます。
 
 ## 出力
@@ -72,11 +74,12 @@ npm run test:e2e
 
 Node.js 22.12以上を使用してください。Vercel: Vite / Build `npm run build` / Output `dist`。
 
-- 単体40件、Chromium E2E 18件（新20構図×4サイズ=80 PNGを含む）。
+- 単体44件、Chromium E2E 20件。新20構図×4サイズの80 PNGに加え、画像入りのイベント・自由制作160 PNGで寸法・文字・画像との交差を検証。
 - v1移行の4段階中断、同時初期化、保存失敗、競合、入れ子の不正JSON、完全バックアップの別コンテキスト復元、原画像の保持と6加工の再現性を検証。
 - 比較画像: [デザイン20種](docs/evidence/template-contact-sheet.png) / [旧版4配色](docs/evidence/legacy-palette-contact-sheet.png) / [6加工](docs/evidence/effect-contact-sheet.png)。[実測結果](docs/evidence/render-matrix.json) / [デザインレビュー](docs/DESIGN_QUALITY_REVIEW.md)。
+- 再制作前後: [以前の20種](docs/evidence/designs-before-polish.png) / [見比べる](docs/evidence/designs-before-after.png)。開発サーバー起動中に `node scripts/render-design-proof.mjs` でA4・正方形・Storyの比較画像を再生成できます。自由制作は `--fixture=free` を指定します。
 - 実iPhone/SafariのOS共有UIと物理印刷は未検証。Chromiumの390px画面とA4ブラウザPDF（1ページ）は検証済みです。
 
-フォントはFontsourceからローカル配信します（Noto Sans JP / Noto Serif JP / Zen Maru Gothic、OFL-1.1。ライセンスは `public/licenses`）。sharp（Apache-2.0）はビルド用OG画像生成専用です。Vitest（MIT）、Playwright（Apache-2.0）、fake-indexeddb（Apache-2.0）はテスト用でブラウザに配布しません。PNG用html2canvasは旧版の出力時に遅延読み込みします。
+フォントはFontsourceからローカル配信します（Noto Sans JP / Noto Serif JP / Zen Maru Gothic / Barlow Condensed / Cormorant Garamond、OFL-1.1。ライセンスは `public/licenses`）。和文見出しはGoogle BudouX v0.10.4（Apache-2.0）の純粋なparserと日本語モデルだけを同梱します。文節分割は端末内で行い、本文を外部に送信しません。出典・変更点は `src/vendor/budoux/NOTICE.md`。sharp（Apache-2.0）はOG画像と検証用比較画像の生成用です。Vitest（MIT）、Playwright（Apache-2.0）、fake-indexeddb（Apache-2.0）はテスト用でブラウザに配布しません。PNG用html2canvasは旧版の出力時に遅延読み込みします。
 
 仕様の正本: [DA-01〜DA-23](docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md)。[受入台帳](docs/ACCEPTANCE_LEDGER.md) / [進捗](docs/IMPLEMENTATION_PROGRESS.md)。実装は安定化PR-Aと拡張PR-Bの2本にまとめ、自動マージ・本番デプロイは行いません。

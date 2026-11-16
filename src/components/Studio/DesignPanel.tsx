@@ -1,4 +1,5 @@
 import type { Workspace } from "../../domain/workspace";
+import { useState } from "react";
 import type { CreativeDocument, Design } from "../../studio/document";
 import {
   templates,
@@ -7,7 +8,7 @@ import {
   sizes,
   templateById,
 } from "../../studio/registry";
-import type { TemplateId, SizeId } from "../../studio/registry";
+import type { Template, TemplateId, SizeId } from "../../studio/registry";
 import { DocumentPreview } from "./DocumentPreview";
 export function DesignPanel({
   doc,
@@ -22,11 +23,33 @@ export function DesignPanel({
   family: string;
   setFamily: (value: string) => void;
   setDesign: (patch: Partial<Design>) => void;
-  chooseTemplate: (id: TemplateId) => void;
+  chooseTemplate: (id: TemplateId, useRecommendedPalette: boolean) => void;
 }) {
+  const [useRecommendedPalette, setUseRecommendedPalette] = useState(true);
   const tab = "design";
   const visibleTemplates =
     doc.kind === "event-flyer" ? [legacyTemplate, ...templates] : templates;
+  const previewFor = (template: Template): CreativeDocument => {
+    const selected = template.id === doc.design.templateId;
+    const paletteId =
+      selected || !useRecommendedPalette
+        ? doc.design.paletteId
+        : template.palette;
+    return {
+      ...doc,
+      design: {
+        ...doc.design,
+        templateId: template.id,
+        ...(selected ? {} : { placements: {} }),
+        paletteId:
+          template.id === "legacy" &&
+          !["spring", "summer", "autumn", "night"].includes(paletteId)
+            ? "summer"
+            : paletteId,
+        ...(template.id === "legacy" ? { sizeId: "a4" } : {}),
+      },
+    };
+  };
   return (
     <>
       {" "}
@@ -138,6 +161,16 @@ export function DesignPanel({
                   ))}
                 </select>
               </label>
+              <label className="inline-check gallery-palette-choice">
+                <input
+                  type="checkbox"
+                  checked={useRecommendedPalette}
+                  onChange={(event) =>
+                    setUseRecommendedPalette(event.target.checked)
+                  }
+                />
+                選ぶとおすすめの配色も適用
+              </label>
               <p className="gallery-count">
                 新デザイン20種
                 {doc.kind === "event-flyer" ? "＋旧版A4" : ""} ·{" "}
@@ -157,29 +190,12 @@ export function DesignPanel({
                       className={`template-card ${doc.design.templateId === t.id ? "selected" : ""}`}
                       aria-pressed={doc.design.templateId === t.id}
                       aria-label={`デザイン: ${t.label}`}
-                      onClick={() => chooseTemplate(t.id)}
+                      onClick={() =>
+                        chooseTemplate(t.id, useRecommendedPalette)
+                      }
                     >
                       <DocumentPreview
-                        document={{
-                          ...doc,
-                          design: {
-                            ...doc.design,
-                            templateId: t.id,
-                            ...(t.id === "legacy"
-                              ? {
-                                  sizeId: "a4",
-                                  paletteId: [
-                                    "spring",
-                                    "summer",
-                                    "autumn",
-                                    "night",
-                                  ].includes(doc.design.paletteId)
-                                    ? doc.design.paletteId
-                                    : "summer",
-                                }
-                              : {}),
-                          },
-                        }}
+                        document={previewFor(t)}
                         events={workspace.events}
                         thumbnail
                       />
