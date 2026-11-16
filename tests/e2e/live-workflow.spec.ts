@@ -206,6 +206,9 @@ test("shared event edits undo together, stale undo cannot overwrite another desi
 }) => {
   await page.goto("/studio");
   await page.getByRole("button", { name: /01 \/ EVENT/ }).click();
+  const longName = "管".repeat(500);
+  await page.getByText("管理名を変更", { exact: true }).click();
+  await page.getByLabel("制作物の管理名", { exact: true }).fill(longName);
   await page
     .getByLabel("ライブタイトル", { exact: true })
     .fill("前回からの編集");
@@ -231,6 +234,9 @@ test("shared event edits undo together, stale undo cannot overwrite another desi
     .poll(async () => (await saved(page)).events[0].eventData.schedule[0].name)
     .toBe("別デザインからの編集");
   const copyId = (await saved(page)).activeDocumentId;
+  expect((await saved(page)).documents[0].name).toBe(longName);
+  expect((await saved(page)).documents[1].name).toHaveLength(500);
+  expect((await saved(page)).documents[1].name.endsWith(" コピー")).toBe(true);
   await page
     .getByRole("combobox", { name: "制作物を選ぶ", exact: true })
     .selectOption(originalId);
@@ -263,6 +269,15 @@ test("shared event edits undo together, stale undo cannot overwrite another desi
   await expect(page.getByLabel("ライブタイトル", { exact: true })).toHaveValue(
     "前回からの編集",
   );
+  await expect
+    .poll(async () => (await saved(page)).documents[1].snapshot.title)
+    .toBe("前回からの編集");
+  await page.reload();
+  await expect(page.getByLabel("ライブタイトル", { exact: true })).toHaveValue(
+    "前回からの編集",
+  );
+  expect((await saved(page)).documents[0].name).toBe(longName);
+  expect((await saved(page)).documents[1].name).toHaveLength(500);
 });
 
 test("names-only mode retains every artist and the original times through all 20 designs and 4 output sizes", async ({

@@ -136,6 +136,10 @@ export function defaultDesign(): Design {
     placements: {},
   };
 }
+export function documentNameWithSuffix(name: string, suffix: string): string {
+  return `${name.slice(0, Math.max(0, 500 - suffix.length))}${suffix}`;
+}
+
 export function createDocument(
   kind: CreativeDocument["kind"],
   event?: { id: string; eventData: EventData },

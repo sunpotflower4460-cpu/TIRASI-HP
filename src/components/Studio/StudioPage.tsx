@@ -28,6 +28,7 @@ import {
   changeTemplate,
   createDocument,
   defaultPlacement,
+  documentNameWithSuffix,
   starters,
   mapBlocks,
 } from "../../studio/document";
@@ -513,7 +514,7 @@ export function StudioPage({
                   addDocument({
                     ...structuredClone(doc),
                     id: newId(),
-                    name: `${doc.name} コピー`,
+                    name: documentNameWithSuffix(doc.name, " コピー"),
                     updatedAt: new Date().toISOString(),
                   })
                 }
@@ -722,7 +723,10 @@ export function StudioPage({
             addDocument({
               ...next,
               id: newId(),
-              name: `${doc.name} / ${templateById(pendingTemplate.id).label}`,
+              name: documentNameWithSuffix(
+                doc.name,
+                ` / ${templateById(pendingTemplate.id).label}`,
+              ),
               design: {
                 ...next.design,
                 ...(pendingTemplate.paletteId
