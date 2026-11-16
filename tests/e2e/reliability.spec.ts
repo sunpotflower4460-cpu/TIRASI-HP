@@ -32,6 +32,9 @@ test('mobile editor does not overflow and malformed imports leave existing conte
   await expect(page.getByText('venue: オブジェクトが必要です。')).toBeVisible();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('生音');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.getByLabel('テーマ', {exact:true}).selectOption('night');
+  await expect(page.getByLabel('イベント名', {exact:true})).toBeVisible();
+  expect(await page.getByLabel('イベント名', {exact:true}).evaluate(el => { const style = getComputedStyle(el); return style.color !== style.backgroundColor; })).toBe(true);
 });
 test('performer visibility is connected and overflow blocks export without clipping', async ({ page }) => {
   const performers = Array.from({ length: 5 }, (_, i) => ({ id: `p${i}`, name: `出演者 ${i}`, catchcopy: '紹介文', bio: '', imageUrl: '', linkUrl: '' }));

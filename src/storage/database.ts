@@ -18,9 +18,13 @@ export function openDatabase(): Promise<IDBDatabase> {
 }
 export const request = <T>(req: IDBRequest<T>) => new Promise<T>((resolve, reject) => { req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); });
 export const completed = (tx: IDBTransaction) => new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('保存を完了できませんでした。')); });
-export async function readWorkspace(): Promise<Workspace | undefined> {
+export async function readRawWorkspace(): Promise<unknown> {
   const db = await openDatabase();
   const raw = await request(db.transaction('workspaces').objectStore('workspaces').get('active'));
+  return raw;
+}
+export async function readWorkspace(): Promise<Workspace | undefined> {
+  const raw = await readRawWorkspace();
   return raw === undefined ? undefined : parseWorkspace(raw);
 }
 export type MigrationPoint = 'parse' | 'staging' | 'before-commit' | 'after-commit';
@@ -43,11 +47,12 @@ export async function initializeWorkspace(storage: Pick<Storage, 'getItem'>, fau
   fault?.('after-commit');
   return (await readWorkspace())!;
 }
-export async function saveWorkspace(workspace: Workspace, expectedRevision: number, assets: { id: string; blob: Blob }[] = []): Promise<Workspace> {
+export async function saveWorkspace(workspace: Workspace, expectedRevision: number, assets: { id: string; blob: Blob; metadata?: import('../studio/assets').AssetMetadata }[] = []): Promise<Workspace> {
   const db = await openDatabase();
   const next = parseWorkspace({ ...workspace, revision: expectedRevision + 1 });
   const tx = db.transaction(['workspaces', 'assets'], 'readwrite');
   let conflict = false;
+  let missingAsset = false;
   const done = completed(tx);
   const store = tx.objectStore('workspaces');
   const get = store.get('active');
@@ -55,10 +60,17 @@ export async function saveWorkspace(workspace: Workspace, expectedRevision: numb
     const previous = get.result as Workspace | undefined;
     if ((previous?.revision ?? 0) !== expectedRevision) { conflict = true; tx.abort(); return; }
     if (previous) store.put(previous, 'recovery');
-    assets.forEach(a => tx.objectStore('assets').put(a.blob, a.id));
+    assets.forEach(a => { tx.objectStore('assets').put(a.blob, a.id); if (a.metadata) tx.objectStore('assets').put(a.metadata, `meta:${a.id}`); });
     store.put(next, 'active');
+    const provided = new Set(assets.map(asset => asset.id));
+    const refs = [...new Set(next.documents.flatMap(doc => doc.assetRefs))];
+    for (const id of refs) {
+      if (provided.has(id)) continue;
+      const check = tx.objectStore('assets').get(id);
+      check.onsuccess = () => { if (!(check.result instanceof Blob)) { missingAsset = true; tx.abort(); } };
+    }
   };
-  try { await done; } catch (e) { if (conflict) throw new ConflictError(); throw e; }
+  try { await done; } catch (e) { if (conflict) throw new ConflictError(); if (missingAsset) throw new Error('元画像が欠損しています。完全バックアップか元画像を読み込んでください。現在の保存内容は変更していません。'); throw e; }
   return next;
 }
 export async function readRecovery(): Promise<Workspace | undefined> {

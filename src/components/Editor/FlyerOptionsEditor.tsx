@@ -43,7 +43,7 @@ export function FlyerOptionsEditor({ eventData, setEventData }: FlyerOptionsEdit
           </ul>
         </div>
       ) : (
-        <p className="a4-fit-ok">現在の内容はA4に収まりやすい構成です。</p>
+        <p className="a4-fit-ok">項目数からの目安です。実際の収まりは下書きA4プレビューで確認してください。</p>
       )}
     </section>
   );

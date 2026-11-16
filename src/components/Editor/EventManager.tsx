@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { EventRecord } from "../../hooks/useEventData";
-import { parseLibrary } from '../../domain/workspace';
+import { parseLibrary, newId } from '../../domain/workspace';
 import { errorMessage, readJsonFile } from '../../domain/validation';
 
 type EventManagerProps = {
@@ -65,7 +65,7 @@ export function EventManager({
   };
   const applyImport = (merge: boolean) => {
     if (!pending) return;
-    const records = merge ? [...eventRecords, ...pending.map(r => ({ ...r, id: crypto.randomUUID() }))] : pending;
+    const records = merge ? [...eventRecords, ...pending.map(r => ({ ...r, id: newId() }))] : pending;
     onReplaceEventLibrary(records); setPending(undefined); setNotice('イベント一覧を復元しました。');
   };
 

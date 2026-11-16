@@ -5,7 +5,7 @@ import type { EventData } from '../types/event';
 import { initialWorkspace, parseLibrary, parseRecords, recordFor, workspaceReducer } from '../domain/workspace';
 import type { Workspace } from '../domain/workspace';
 import { errorMessage, parseEvent } from '../domain/validation';
-import { ConflictError, initializeWorkspace, readWorkspace, saveWorkspace } from '../storage/database';
+import { ConflictError, initializeWorkspace, readWorkspace, readRawWorkspace, saveWorkspace } from '../storage/database';
 export type { EventRecord } from '../domain/workspace';
 export const normalizeEventData = parseEvent;
 export function safeParseEventLibrary(value: string | null) { try { return value ? parseLibrary(value) : null; } catch { return null; } }
@@ -16,31 +16,41 @@ export function useEventData() {
   const [saveStatus, setSaveStatus] = useState('保存領域を読み込んでいます…');
   const [storageError, setStorageError] = useState('');
   const [conflict, setConflict] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const current = useRef(workspace);
   current.current = workspace;
   const revision = useRef(0);
   const persisted = useRef<Workspace | undefined>(undefined);
   const saving = useRef(false);
   const dirty = useRef(false);
+  const recoveryBlocked = useRef(false);
   useEffect(() => {
     let cancelled = false;
     Promise.resolve().then(() => initializeWorkspace(window.localStorage)).then(value => {
       if (cancelled) return;
       revision.current = value.revision; persisted.current = value;
       setWorkspace(value); setReady(true); setSaveStatus('このブラウザに保存済み');
-    }).catch(error => {
+    }).catch(async error => {
       if (cancelled) return;
       // Keep the source untouched. Editing in memory and backup remain available.
       let legacyBackup: Record<string, string | null> = {};
       try { legacyBackup = Object.fromEntries(['tirasi-hp:event-library:v1', 'tirasi-hp:event-data:v1', 'tirasi-hp:active-event-id:v1'].map(key => [key, window.localStorage.getItem(key)])); } catch { /* Storage may be disabled. */ }
-      const fallback = { ...current.current, legacyBackup };
+      let unreadableV2Backup: unknown;
+      try { unreadableV2Backup = await readRawWorkspace(); } catch { /* The storage itself may be unavailable. */ }
+      if (cancelled) return;
+      if (unreadableV2Backup !== undefined) {
+        recoveryBlocked.current = true;
+        const savedRevision = (unreadableV2Backup as { revision?: unknown })?.revision;
+        revision.current = typeof savedRevision === 'number' && Number.isSafeInteger(savedRevision) ? savedRevision : 0;
+      }
+      const fallback = { ...current.current, legacyBackup, ...(unreadableV2Backup !== undefined ? { unreadableV2Backup } : {}) };
       persisted.current = fallback; setWorkspace(fallback);
       setReady(true); setStorageError(`未保存: ${errorMessage(error)} 旧データは削除していません。JSON保存で退避できます。`); setSaveStatus('未保存（メモリ内）');
     });
     return () => { cancelled = true; };
   }, []);
   const flush = async () => {
-    if (saving.current || conflict || !dirty.current) return;
+    if (saving.current || conflict || recoveryBlocked.current || !dirty.current) return;
     saving.current = true;
     try {
       while (dirty.current) {
@@ -71,14 +81,15 @@ export function useEventData() {
         if (other && other.revision > revision.current) { setConflict(true); setStorageError('別のタブで更新されました。現在の内容をJSON保存してから再読み込みしてください。'); setSaveStatus('保存を停止（競合）'); }
       } catch { /* The next explicit save surfaces storage errors. */ }
     };
-    const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('tirasi-workspace') : null;
+    let channel: BroadcastChannel | null = null;
+    try { if (typeof BroadcastChannel !== 'undefined') channel = new BroadcastChannel('tirasi-workspace'); } catch { /* Focus/revision checks remain available if notifications are blocked. */ }
     if (channel) channel.onmessage = () => void onChange();
     window.addEventListener('focus', onChange);
     const beforeUnload = (event: BeforeUnloadEvent) => { if (dirty.current || saving.current) { event.preventDefault(); event.returnValue = ''; } };
     window.addEventListener('beforeunload', beforeUnload);
     return () => { channel?.close(); window.removeEventListener('focus', onChange); window.removeEventListener('beforeunload', beforeUnload); };
   }, []);
-  const activeRecord = workspace.events.find(e => e.id === workspace.activeEventId)!;
+  const activeRecord = workspace.events.find(e => e.id === workspace.activeEventId) ?? workspace.events[0];
   const setEventData: Dispatch<SetStateAction<EventData>> = action => {
     const id = workspace.activeEventId;
     const updatedAt = new Date().toISOString();
@@ -90,7 +101,17 @@ export function useEventData() {
     });
   };
   return {
-    workspace, setWorkspace, ready, saveStatus, storageError, conflict,
+    workspace, setWorkspace, ready, saveStatus, storageError, conflict, restoring,
+    restoreWorkspace: async (value: Workspace, assets: { id: string; blob: Blob }[] = []) => {
+      if (saving.current || conflict) throw new Error('保存処理が終わってから再試行してください。競合時はバックアップ後に再読み込みしてください。');
+      saving.current = true; setRestoring(true);
+      try {
+        const saved = await saveWorkspace(value, revision.current, assets);
+        revision.current = saved.revision; persisted.current = saved; dirty.current = false; recoveryBlocked.current = false;
+        setWorkspace(saved); setStorageError(''); setSaveStatus('このブラウザに保存済み');
+        new BroadcastChannelSafe().notify(saved.revision);
+      } finally { saving.current = false; setRestoring(false); }
+    },
     retrySave: () => { dirty.current = true; void flush(); },
     eventData: activeRecord.eventData, setEventData,
     eventRecords: workspace.events, activeEventId: workspace.activeEventId,
@@ -105,5 +126,5 @@ export function useEventData() {
   };
 }
 class BroadcastChannelSafe {
-  notify(revision: number) { if (typeof BroadcastChannel !== 'undefined') { const channel = new BroadcastChannel('tirasi-workspace'); channel.postMessage(revision); channel.close(); } }
+  notify(revision: number) { try { if (typeof BroadcastChannel !== 'undefined') { const channel = new BroadcastChannel('tirasi-workspace'); channel.postMessage(revision); channel.close(); } } catch { /* A successful commit remains saved even when notifications are blocked. */ } }
 }

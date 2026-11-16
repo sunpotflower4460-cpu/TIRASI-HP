@@ -29,9 +29,9 @@ function Field({ label, value, onChange, multiline = false }: FieldProps) {
     <label className="editor-field">
       <span>{label}</span>
       {multiline ? (
-        <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={3} />
+        <textarea aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} rows={3} />
       ) : (
-        <input value={value} onChange={(event) => onChange(event.target.value)} />
+        <input aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} />
       )}
     </label>
   );

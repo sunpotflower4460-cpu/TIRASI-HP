@@ -1,3 +1,5 @@
+import { parseDocument } from "../studio/document";
+import type { CreativeDocument } from "../studio/document";
 import { defaultEvent } from '../data/defaultEvent';
 import type { EventData } from '../types/event';
 import { array, object, parseEvent, parseJson, string, ValidationError } from './validation';
@@ -9,11 +11,17 @@ export type Workspace = {
   activeEventId: string;
   events: EventRecord[];
   legacyBackup?: Record<string, string | null>;
-  documents: unknown[];
+  documents: CreativeDocument[];
   activeDocumentId?: string;
 };
 export const LEGACY_KEYS = ['tirasi-hp:event-library:v1', 'tirasi-hp:event-data:v1', 'tirasi-hp:active-event-id:v1'] as const;
-export const newId = () => crypto.randomUUID();
+export function newId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
 export const eventName = (event: EventData) => `${event.title} ${event.subtitle} ${event.volume}`.trim();
 export const recordFor = (eventData: EventData, id: string = newId(), name = eventName(eventData)): EventRecord => ({ id, name, eventData: structuredClone(eventData), updatedAt: new Date().toISOString() });
 export function parseRecords(value: unknown): EventRecord[] {
@@ -51,13 +59,16 @@ export function parseWorkspace(value: unknown): Workspace {
     const backup = object(data.legacyBackup);
     Object.values(backup).forEach(v => { if (v !== null) string(v, '移行原本', 4 * 1024 * 1024); });
   }
-  return { ...data, schemaVersion: 2, revision: Number(data.revision), events, activeEventId, documents: array(data.documents ?? [], '制作物', 100) } as Workspace;
+  const docs = array(data.documents ?? [], '制作物', 100).map(parseDocument);
+  if (new Set(docs.map(d => d.id)).size !== docs.length) throw new ValidationError('制作物IDが重複しています。');
+  if (data.activeDocumentId !== undefined && !docs.some(d => d.id === data.activeDocumentId)) throw new ValidationError('選択中の制作物が見つかりません。');
+  return { ...data, schemaVersion: 2, revision: Number(data.revision), events, activeEventId, documents: docs } as Workspace;
 }
 export function initialWorkspace(legacy: Record<string, string | null> = {}): Workspace {
   let events: EventRecord[];
   if (legacy[LEGACY_KEYS[0]]) events = parseLibrary(legacy[LEGACY_KEYS[0]]!);
-  else if (legacy[LEGACY_KEYS[1]]) events = [recordFor(parseEvent(parseJson(legacy[LEGACY_KEYS[1]]!)), 'migrated-event')];
-  else events = [recordFor(defaultEvent, 'default-event')];
+  else if (legacy[LEGACY_KEYS[1]]) { const eventData = parseEvent(parseJson(legacy[LEGACY_KEYS[1]]!)); events = [{ id: 'migrated-event', name: eventName(eventData), eventData, updatedAt: '1970-01-01T00:00:00.000Z' }]; }
+  else events = [{ id: 'default-event', name: eventName(defaultEvent), eventData: structuredClone(defaultEvent), updatedAt: '1970-01-01T00:00:00.000Z' }];
   const activeEventId = events.some(e => e.id === legacy[LEGACY_KEYS[2]]) ? legacy[LEGACY_KEYS[2]]! : events[0].id;
   return { schemaVersion: 2, revision: 0, events, activeEventId, documents: [], legacyBackup: legacy };
 }

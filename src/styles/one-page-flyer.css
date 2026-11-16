@@ -97,7 +97,7 @@
 
 .one-page-title-row h1 {
   color: var(--primary-color);
-  font-family: "Noto Sans JP", sans-serif;
+  font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
   font-size: 4.55rem;
   line-height: 0.98;
 }
@@ -209,7 +209,7 @@
 .one-page-open-mic h2,
 .one-page-access h2 {
   color: var(--primary-color);
-  font-family: "Noto Sans JP", sans-serif;
+  font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
   font-size: 1.2rem;
   margin-bottom: 5mm;
 }
@@ -242,7 +242,7 @@
 }
 
 .one-page-break {
-  color: #5f7f3c;
+  color: #385b24;
   background: #eef2e7;
   border: 1px solid rgba(95, 127, 60, 0.2);
   border-radius: 999px;
@@ -351,3 +351,6 @@
 .theme-night .one-page-open-mic { color: #24233d; }
 .theme-night .one-page-open-mic h2, .theme-night .one-page-badges span { color: #24233d; }
 .theme-night .one-page-note, .theme-night .one-page-footer { color: #f3edf0; }
+
+.one-page-kicker, .one-page-end { color: var(--primary-color); }
+.one-page-main-grid:has(> .one-page-side:only-child) { grid-template-columns: 1fr; }

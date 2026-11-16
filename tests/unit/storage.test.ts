@@ -30,3 +30,15 @@ describe('transactional migration', () => {
     expect(await readWorkspace()).toBeUndefined();
   });
 });
+describe('asset-aware workspace commits', () => {
+  it('does not commit a workspace with missing original images or leave newly staged assets behind', async () => {
+    const state = await initializeWorkspace(storage);
+    const { createDocument } = await import('../../src/studio/document');
+    const doc = createDocument('free-flyer'); doc.assetRefs = ['asset-missing', 'asset-provided'];
+    await expect(saveWorkspace({ ...state, documents: [doc] }, state.revision, [{ id: 'asset-provided', blob: new Blob(['original']) }])).rejects.toThrow('元画像');
+    expect(await readWorkspace()).toEqual(state);
+    const db = await openDatabase();
+    const asset = await new Promise(resolve => { const req = db.transaction('assets').objectStore('assets').get('asset-provided'); req.onsuccess = () => resolve(req.result); });
+    expect(asset).toBeUndefined();
+  });
+});

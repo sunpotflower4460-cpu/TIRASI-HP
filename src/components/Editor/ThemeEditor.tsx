@@ -21,6 +21,7 @@ export function ThemeEditor({ eventData, setEventData }: ThemeEditorProps) {
         <label className="editor-field">
           <span>テーマ</span>
           <select
+            aria-label="テーマ"
             value={selectedTheme.id}
             onChange={(event) => {
               const themeId = event.target.value;

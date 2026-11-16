@@ -9,10 +9,11 @@ export function downloadBlob(blob: Blob, name: string) {
 export function downloadJson(value: unknown, name: string) {
   downloadBlob(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }), safeFileName(name));
 }
-export function withTimeout<T>(promise: Promise<T>, ms = 20000): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms = 20000, disposeLate?: (value: T) => void): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('処理がタイムアウトしました。再試行してください。')), ms);
-    promise.then(v => { clearTimeout(timer); resolve(v); }, e => { clearTimeout(timer); reject(e); });
+    let settled = false;
+    const timer = setTimeout(() => { settled = true; reject(new Error('処理がタイムアウトしました。再試行してください。')); }, ms);
+    promise.then(value => { if (settled) { disposeLate?.(value); return; } settled = true; clearTimeout(timer); resolve(value); }, error => { if (settled) return; settled = true; clearTimeout(timer); reject(error); });
   });
 }
 export function canvasBlob(canvas: HTMLCanvasElement): Promise<Blob> {

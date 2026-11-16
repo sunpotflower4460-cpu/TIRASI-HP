@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import html2canvas from "html2canvas";
 import { eventDay } from '../../domain/date';
 import { canvasBlob, withTimeout } from '../../export/files';
 import { ExportActions } from '../../export/ExportActions';
@@ -35,7 +34,9 @@ function ScheduleRow({ item }: { item: ScheduleItem }) {
   );
 }
 
-export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onPrint: () => void }) {
+const EMPTY_BLOCKS: { id: string; text: string; visible: boolean }[] = [];
+
+export function OnePageFlyer({ eventData, onPrint, thumbnail = false, extraErrors = [], visibility, extraBlocks = EMPTY_BLOCKS }: { eventData: EventData; onPrint: () => void; thumbnail?: boolean; extraErrors?: string[]; visibility?: { schedule: boolean; openMic: boolean; notes: boolean; socials: boolean }; extraBlocks?: { id: string; text: string; visible: boolean }[] }) {
   const sheetRef = useRef<HTMLElement | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   useEffect(() => {
@@ -49,16 +50,17 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
       setErrors(out);
     }, 150);
     return () => clearTimeout(timer);
-  }, [eventData]);
+  }, [eventData, visibility, extraBlocks]);
   const generate = async (light: boolean) => {
     const sheet = sheetRef.current;
     if (!sheet) throw new Error('紙面の準備ができていません。');
     await withTimeout(document.fonts.ready);
     const width = light ? 1240 : 2480;
     const height = light ? 1754 : 3508;
+    const { default: html2canvas } = await withTimeout(import('html2canvas'));
     const canvas = await withTimeout(html2canvas(sheet, {
       width: 793.7, height: 1122.52, scale: width / 793.7, useCORS: true, logging: false,
-      onclone: doc => { const clone = doc.querySelector<HTMLElement>('.one-page-sheet'); if (clone) { clone.style.transform = 'none'; const parent = clone.closest<HTMLElement>('.sheet-transform'); if (parent) parent.style.transform = 'none'; } }
+      onclone: (_doc, clone) => { clone.style.transform = 'none'; const parent = clone.closest<HTMLElement>('.sheet-transform'); if (parent) parent.style.transform = 'none'; }
     }));
     const output = document.createElement('canvas'); output.width = width; output.height = height;
     output.getContext('2d')!.drawImage(canvas, 0, 0, width, height);
@@ -66,7 +68,7 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
   };
   return (
     <main className="one-page-flyer-page">
-      <ExportActions generate={generate} source={eventData} name={`${eventData.title}-${eventData.volume}`} errors={errors} onPrint={onPrint} />
+      {!thumbnail && <ExportActions generate={generate} source={eventData} name={`${eventData.title}-${eventData.volume}`} errors={[...errors, ...extraErrors]} onPrint={onPrint} />}
       <SheetViewport width={793.7} height={1122.52}>
       <article className="one-page-sheet" ref={sheetRef}>
         <header className="one-page-header">
@@ -86,27 +88,27 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
             <span>{eventData.price}</span>
             <span>Start {eventData.startTime}</span>
           </div>
-          <p className="one-page-note">{nl2br(eventData.statusNote)}</p>
+          {visibility?.notes !== false && <p className="one-page-note">{nl2br(eventData.statusNote)}</p>}
         </header>
 
         <section className="one-page-main-grid">
-          <section className="one-page-schedule">
+          {visibility?.schedule !== false && <section className="one-page-schedule">
             <h2>Time Schedule</h2>
             <div className="one-page-schedule-list">
               {eventData.schedule.map((item, index) => (
                 <ScheduleRow item={item} key={`${item.type}-${index}`} />
               ))}
             </div>
-          </section>
+          </section>}
 
           <aside className="one-page-side">
-            <section className="one-page-open-mic">
+            {visibility?.openMic !== false && <section className="one-page-open-mic">
               <h2>{eventData.openMic.title}</h2>
               <strong>{eventData.openMic.time}</strong>
               <p>{eventData.openMic.lastOrder}</p>
               <p className="one-page-open-headline">{eventData.openMic.headline}</p>
               <small>{eventData.openMic.note} / {eventData.openMic.closeNote}</small>
-            </section>
+            </section>}
 
             <section className="one-page-access">
               <h2>{eventData.venue.name}</h2>
@@ -117,11 +119,12 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
         </section>
 
         {eventData.flyerOptions.showPerformerProfiles && eventData.performers.length > 0 && <FlyerPerformerProfiles performers={eventData.performers} />}
-        <footer className="one-page-footer">
+        {extraBlocks.filter(block => block.visible).length > 0 && <section className="legacy-extra-blocks">{extraBlocks.filter(block => block.visible).map(block => <p key={block.id}>{nl2br(block.text)}</p>)}</section>}
+        {visibility?.socials !== false && <footer className="one-page-footer">
           {eventData.socials.map((social) => (
             <span key={social.label}>◎ {social.label}</span>
           ))}
-        </footer>
+        </footer>}
       </article>
       </SheetViewport>
     </main>

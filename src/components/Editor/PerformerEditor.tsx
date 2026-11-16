@@ -28,9 +28,10 @@ export function PerformerEditor({ eventData, setEventData }: PerformerEditorProp
   };
 
   const addPerformer = () => {
+    const performer = createPerformer();
     setEventData((current) => ({
       ...current,
-      performers: [...current.performers, createPerformer()]
+      performers: [...current.performers, performer]
     }));
   };
 

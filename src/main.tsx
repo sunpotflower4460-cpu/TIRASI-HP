@@ -1,3 +1,5 @@
+import "@fontsource/zen-maru-gothic/700.css";
+import "@fontsource/noto-serif-jp/700.css";
 import "@fontsource/noto-sans-jp/400.css";
 import "@fontsource/noto-sans-jp/700.css";
 import React from "react";
