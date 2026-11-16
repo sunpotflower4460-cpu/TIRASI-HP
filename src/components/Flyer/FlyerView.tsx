@@ -1,3 +1,5 @@
+import { eventDay } from "../../domain/date";
+import { safeUrl } from "../../domain/validation";
 import type { EventData, ScheduleItem } from "../../types/event";
 import "../../styles/a4-compact-event.css";
 
@@ -41,8 +43,8 @@ export function FlyerView({ eventData, variant = "web", onEdit, onPrint, showEdi
 
   return (
     <main className={variant === "a4" ? "flyer-page flyer-page-a4" : "flyer-page"}>
-      <div className="toolbar print-hidden">
-        <button type="button" onClick={onPrint}>印刷 / PDF保存</button>
+      <div className="toolbar print-hidden" hidden={!onPrint && !showEditButton}>
+        {onPrint && <button type="button" onClick={onPrint}>印刷 / PDF保存</button>}
         {showEditButton ? <button type="button" onClick={onEdit}>内容を編集</button> : null}
       </div>
 
@@ -58,7 +60,7 @@ export function FlyerView({ eventData, variant = "web", onEdit, onPrint, showEdi
             </h1>
 
             <div className="date-box">
-              {eventData.date} <span>({eventData.day})</span>
+              {eventData.date} <span>({eventDay(eventData)})</span>
             </div>
 
             <p className="venue-info">{eventData.organizer}</p>
@@ -96,14 +98,14 @@ export function FlyerView({ eventData, variant = "web", onEdit, onPrint, showEdi
             <div className="access-box">
               <p className="location-name">📍 {eventData.venue.name}</p>
               <p className="address">{eventData.venue.address}</p>
-              <a href={eventData.venue.url} target="_blank" rel="noreferrer" className="web-link">
+              <a href={safeUrl(eventData.venue.url)} target="_blank" rel="noreferrer" className="web-link">
                 {eventData.venue.url.replace("https://", "")}
               </a>
             </div>
 
             <div className="social-links">
               {eventData.socials.map((social) => (
-                <a href={social.url} target="_blank" rel="noreferrer" className="social-btn" key={social.label}>
+                <a href={safeUrl(social.url)} target="_blank" rel="noreferrer" className="social-btn" key={social.label}>
                   ◎ {social.label}
                 </a>
               ))}

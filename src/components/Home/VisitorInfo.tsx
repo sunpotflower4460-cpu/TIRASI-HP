@@ -13,9 +13,9 @@ export function VisitorInfo({ eventData }: { eventData: EventData }) {
         <article className="visitor-info-card">
           <h3>当日の流れ</h3>
           <ol>
-            <li>11:00ごろから、しののめむすびがおむすび屋さんとして営業しています。</li>
-            <li>15:30からライブ企画が始まります。</li>
-            <li>企画終了後は、19:30までOpen Micを予定しています。</li>
+            <li>{eventData.statusNote}</li>
+            <li>{eventData.startTime}からライブ企画が始まります。</li>
+            <li>{eventData.openMic.title}: {eventData.openMic.time}</li>
           </ol>
         </article>
 
@@ -25,7 +25,7 @@ export function VisitorInfo({ eventData }: { eventData: EventData }) {
             <dt>観覧料はかかりますか？</dt>
             <dd>{eventData.price}です。</dd>
             <dt>Open Micだけ参加できますか？</dt>
-            <dd>参加できます。Open Micのみ参加の場合はワンオーダーをお願いします。</dd>
+            <dd>{eventData.openMic.headline} {eventData.openMic.note}</dd>
           </dl>
         </article>
 

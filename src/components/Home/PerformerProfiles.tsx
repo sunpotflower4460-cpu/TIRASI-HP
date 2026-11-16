@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { safeUrl } from "../../domain/validation";
 import type { EventData, PerformerProfile } from "../../types/event";
 import "../../styles/performer-profiles.css";
 
@@ -6,10 +8,11 @@ function getInitial(name: string) {
 }
 
 function PerformerCard({ performer }: { performer: PerformerProfile }) {
+  const [failed, setFailed] = useState(false);
   const body = (
     <>
       <div className="performer-image-box">
-        {performer.imageUrl ? <img src={performer.imageUrl} alt={performer.name} loading="lazy" /> : <span>{getInitial(performer.name)}</span>}
+        {safeUrl(performer.imageUrl) && !failed ? <img src={safeUrl(performer.imageUrl)} alt={performer.name} loading="lazy" onError={() => setFailed(true)} /> : <span>{getInitial(performer.name)}</span>}
       </div>
       <div className="performer-card-body">
         <h3>{performer.name}</h3>
@@ -19,9 +22,9 @@ function PerformerCard({ performer }: { performer: PerformerProfile }) {
     </>
   );
 
-  if (performer.linkUrl) {
+  if (safeUrl(performer.linkUrl)) {
     return (
-      <a className="performer-card" href={performer.linkUrl} target="_blank" rel="noreferrer">
+      <a className="performer-card" href={safeUrl(performer.linkUrl)} target="_blank" rel="noreferrer">
         {body}
       </a>
     );

@@ -32,6 +32,8 @@ export type FlyerOptions = {
 };
 
 export type EventData = {
+  timezone?: string;
+  dayOverride?: boolean;
   themeId: string;
   venueSubtitle: string;
   title: string;
