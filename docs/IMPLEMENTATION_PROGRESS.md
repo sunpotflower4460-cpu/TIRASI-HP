@@ -43,11 +43,11 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 
 ## テスト結果 / 目視確認
 
-- 単体35件: schema/migration/reducer/CAS/保存失敗/素材参照のatomic abort/構図と配色/バインディング/非破壊切替等。
-- Chromium 159 / LinuxのE2E 17件: 公開/下書き、旧版選択、10回切替・Undo/Redo、画像位置と元コピー保持、リロード、完全バックアップの別コンテキスト復元、改ざん拒否、6加工の再現性、元画像不変、長文/出演者8名、390px操作、A4 PNG/PDF。
+- 単体40件: schema/migration/reducer/CAS/保存失敗/素材参照のatomic abort/構図と配色/バインディング/非破壊切替/件数上限と復元/OG日本語字形等。
+- Chromium 159 / LinuxのE2E 18件: 公開/下書き、旧版選択、10回切替・Undo/Redo、画像位置と元コピー保持、リロード、完全バックアップの別コンテキスト復元、改ざん拒否、6加工の再現性、元画像不変、長文/出演者8名、390px操作、A4 PNG/PDF、件数上限での編集・保存・復元。
 - 新20×4=80 PNG全件: PNGデコード、指定px、必須情報、安全域と文字衝突を検査。`docs/evidence/render-matrix.json` に80組の要約。全測定と必須文字はCI artifactの `test-results/render-matrix-full.json` に保存。
 - 比較画像: `template-contact-sheet.png`, `legacy-selected.png`, `effect-contact-sheet.png`, `studio-mobile.png`, `treatment-restored.png`。旧/新の構図と主要文字・配色を目視確認。
-- ローカル `npm run build`, `npm run test`, `npm run test:e2e`, `git diff --check`: pass。最終再実行も35 unit / 17 E2Eでpass。旧版4配色の実PNGと、印刷用2480×3508 Canvasの画素が生成PNGと一致することも検証。CI結果は提出後に追記する。
+- ローカル `npm run build`, `npm run test`, `npm run test:e2e`, `git diff --check`: pass。最終再実行も40 unit / 18 E2Eでpass。旧版4配色の実PNGと、印刷用2480×3508 Canvasの画素が生成PNGと一致することも検証。最新CIは各PRのChecksを参照する。
 - `npm audit --audit-level=high`: 0 vulnerabilities。
 - A4のブラウザPDFはpdfinfoでA4・1ページ。実際の印刷とは区別する。
 - PR-A GitHub Actions: success、run `43850253039`。
@@ -93,3 +93,12 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 - 欠損画像と同じhashの原本を再アップロードした際にも、保存完了通知でプレビューを再取得。復元後の画像欠損→同じ原本の再選択をE2Eで確認。
 - レビュー対応後の最終ローカル検証: unit35 / Chromium E2E17（新80 PNG、旧4配色、印刷PNG一致を含む）/ build / diff checkがpass。
 - PR-Bの初回機能・検証記録コミットのCIはsuccess（run 43860859246 / 43861166039）。追加レビュー対応の最終CIは各PRのChecksを参照。
+
+## 件数上限・日本語OGの最終レビュー対応（2026-11-16）
+
+- PR-A `889cbcfe125ede082590da08b01f8d087a8ff672`を取り込み。A単独のunit28件 / E2E8件 / build / audit0、GitHub Actions run43866305602がsuccess。
+- 入力・保存・復元で同じ件数上限を共有。イベント100 / schedule100 / プロフィール50 / SNS30で追加ボタンとpure reducerの両方が上限超過を防ぎ、理由を表示。一覧追加の上限エラーも候補を残して案内する。
+- 上限満杯のブラウザfixtureで、その後の編集→IDB保存→reload→一覧JSON復元が成功することを確認。大量入力が保存不能のWorkspaceを作らない。
+- 日本語OGの同梱フォント描画をPR-Aへ移し、両PRに別々の漢字の字形を比較する回帰試験を追加。1200×630 PNGの日本語を目視確認。
+- 統合後の最終ローカル検証はunit40件 / Chromium E2E18件 / build / diff checkがpass。新80 PNG・旧4配色・画素一致・原画像と完全バックアップの検証を含む。
+- branchは`feature/tirasi-v2-flyer-studio`、直前HEADは`bce96566ba1b72abc80de6feec4e20a5c38888da`。この統合をPR-B #37へ反映し、最新CIとレビューの対応済み状態を確認する。main / 本番は変更しない。

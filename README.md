@@ -72,7 +72,7 @@ npm run test:e2e
 
 Node.js 22.12以上を使用してください。Vercel: Vite / Build `npm run build` / Output `dist`。
 
-- 単体35件、Chromium E2E 17件（新20構図×4サイズ=80 PNGを含む）。
+- 単体40件、Chromium E2E 18件（新20構図×4サイズ=80 PNGを含む）。
 - v1移行の4段階中断、同時初期化、保存失敗、競合、入れ子の不正JSON、完全バックアップの別コンテキスト復元、原画像の保持と6加工の再現性を検証。
 - 比較画像: [デザイン20種](docs/evidence/template-contact-sheet.png) / [旧版4配色](docs/evidence/legacy-palette-contact-sheet.png) / [6加工](docs/evidence/effect-contact-sheet.png)。[実測結果](docs/evidence/render-matrix.json) / [デザインレビュー](docs/DESIGN_QUALITY_REVIEW.md)。
 - 実iPhone/SafariのOS共有UIと物理印刷は未検証。Chromiumの390px画面とA4ブラウザPDF（1ページ）は検証済みです。

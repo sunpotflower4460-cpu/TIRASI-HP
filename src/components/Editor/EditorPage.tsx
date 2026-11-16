@@ -3,6 +3,7 @@ import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 import { normalizeEventData } from "../../hooks/useEventData";
 import { errorMessage, parseEventFile, readJsonFile } from '../../domain/validation';
 import { eventWarnings, weekday } from '../../domain/date';
+import { EVENT_LIMITS } from '../../domain/limits';
 import { PerformerEditor } from './PerformerEditor';
 import { FlyerOptionsEditor } from './FlyerOptionsEditor';
 import type { EventData, ScheduleItem, SocialLink } from "../../types/event";
@@ -305,8 +306,9 @@ export function EditorPage({
         <section className="editor-card">
           <div className="card-heading">
             <h2>タイムスケジュール</h2>
-            <button type="button" onClick={addAct}>出演者を追加</button>
+            <button type="button" onClick={addAct} disabled={eventData.schedule.length >= EVENT_LIMITS.schedule}>出演者を追加</button>
           </div>
+          {eventData.schedule.length >= EVENT_LIMITS.schedule && <p role="status">スケジュールは{EVENT_LIMITS.schedule}件までです。追加するには不要な項目を削除してください。</p>}
 
           <div className="schedule-editor-list">
             {eventData.schedule.map((item, index) => (
@@ -387,8 +389,9 @@ export function EditorPage({
         <section className="editor-card">
           <div className="card-heading">
             <h2>SNSリンク</h2>
-            <button type="button" onClick={addSocial}>SNSを追加</button>
+            <button type="button" onClick={addSocial} disabled={eventData.socials.length >= EVENT_LIMITS.socials}>SNSを追加</button>
           </div>
+          {eventData.socials.length >= EVENT_LIMITS.socials && <p role="status">SNSリンクは{EVENT_LIMITS.socials}件までです。追加するには不要なリンクを削除してください。</p>}
           {eventData.socials.map((social, index) => (
             <div className="social-editor-item" key={index}>
               <input aria-label="SNS表示名" value={social.label} onChange={(event) => updateSocial(index, { label: event.target.value })} />

@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { EventData, PerformerProfile } from "../../types/event";
+import { EVENT_LIMITS } from '../../domain/limits';
 
 type PerformerEditorProps = {
   eventData: EventData;
@@ -52,8 +53,9 @@ export function PerformerEditor({ eventData, setEventData }: PerformerEditorProp
           <h2>出演者プロフィール</h2>
           <p className="performer-editor-note">HP用の出演者紹介です。画像はURL入力で表示できます。</p>
         </div>
-        <button type="button" onClick={addPerformer}>出演者を追加</button>
+        <button type="button" onClick={addPerformer} disabled={eventData.performers.length >= EVENT_LIMITS.performers}>出演者を追加</button>
       </div>
+      {eventData.performers.length >= EVENT_LIMITS.performers && <p role="status">出演者プロフィールは{EVENT_LIMITS.performers}件までです。追加するには不要なプロフィールを削除してください。</p>}
 
       {eventData.performers.length === 0 ? (
         <p className="performer-empty">まだプロフィールはありません。必要な出演者だけ追加できます。</p>
