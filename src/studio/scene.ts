@@ -6,7 +6,8 @@ import { defaultPlacement, eventForDocument } from "./document";
 import { paletteById, sizes, templateById } from "./registry";
 import type { Palette } from "./registry";
 import type { ArtworkNode } from "./artwork";
-import { responsiveRecipe } from "./layouts";
+import { responsiveRecipe, liveRecipe } from "./layouts";
+import { missingArtistNames } from "./live";
 export { compositions, responsiveRecipe } from "./layouts";
 
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -86,11 +87,12 @@ export function composeScene(
   if (doc.kind === "image-treatment" || doc.design.templateId === "legacy")
     return scene;
   const templateId = doc.design.templateId;
-  const recipe = responsiveRecipe(
+  const recipe = (doc.kind === "event-flyer" ? liveRecipe : responsiveRecipe)(
     templateId,
     doc.design.sizeId,
     !!doc.assetRefs[0],
   );
+  const showTimes = doc.design.visibility.times !== false;
   const p = doc.design.placements[doc.design.sizeId] ?? defaultPlacement;
   const safeX = size.safe,
     safeY = doc.design.sizeId === "story" ? 120 : size.safe;
@@ -176,6 +178,9 @@ export function composeScene(
         "参照するイベントが見つかりません。固定コピーに切り替えるかイベントを選んでください。",
       );
     const event = eventForDocument(doc, events);
+    scene.signature = `live/${scene.signature}`;
+    if (doc.design.visibility.schedule)
+      errors.push(...missingArtistNames(event));
     title = doc.content.titleOverride ?? event.title;
     subtitle =
       doc.content.subtitleOverride ??
@@ -196,15 +201,22 @@ export function composeScene(
       );
     if (doc.design.visibility.schedule) {
       program = event.schedule
+        .filter((item) => showTimes || item.type === "act")
         .map((item) =>
-          item.type === "act" ? `${item.time}   ${item.name}` : item.label,
+          item.type === "act"
+            ? showTimes
+              ? `${item.time}   ${item.name}`
+              : item.name
+            : item.label,
         )
         .join("\n");
       if (
         !doc.design.visibility.performers &&
         !doc.content.blocks.some((block) => block.visible)
       )
-        schedule = event.schedule;
+        schedule = event.schedule.filter(
+          (item) => showTimes || item.type === "act",
+        );
     }
     if (doc.design.visibility.performers && event.performers.length)
       program += `\n\n${event.performers.map((artist) => [artist.name, artist.catchcopy, artist.bio].filter(Boolean).join("\n")).join("\n\n")}`;
@@ -494,7 +506,7 @@ export function composeScene(
     const headingHeight = 42;
     text(
       "program-heading",
-      "出演・タイムテーブル",
+      showTimes ? "出演・タイムテーブル" : "出演者",
       { ...pb, h: 31 },
       22,
       18,
@@ -515,6 +527,7 @@ export function composeScene(
         const rowHeight = item.type === "act" ? unit : 33;
         if (item.type === "act") {
           const stacked =
+            showTimes &&
             (wide || ["livehouse", "indie"].includes(templateId)) &&
             rowHeight >= 65;
           if (stacked) {
@@ -540,7 +553,7 @@ export function composeScene(
                 w: columnWidth,
                 h: rowHeight - timeH - 10,
               },
-              wide ? 33 : 40,
+              wide ? 36 : 42,
               18,
               palette.ink,
               700,
@@ -549,19 +562,20 @@ export function composeScene(
               { lineHeight: 1.15 },
             );
           } else {
-            const timeWidth = columnWidth * 0.35;
-            text(
-              `time-${index}`,
-              item.time,
-              { x, y: y + 6, w: timeWidth - 10, h: rowHeight - 12 },
-              22,
-              18,
-              palette.accent,
-              700,
-              condensed,
-              "left",
-              { lineHeight: 1.2, valign: "center" },
-            );
+            const timeWidth = showTimes ? columnWidth * 0.35 : 0;
+            if (showTimes)
+              text(
+                `time-${index}`,
+                item.time,
+                { x, y: y + 6, w: timeWidth - 10, h: rowHeight - 12 },
+                22,
+                18,
+                palette.accent,
+                700,
+                condensed,
+                "left",
+                { lineHeight: 1.2, valign: "center" },
+              );
             text(
               `act-${index}`,
               item.name,
@@ -571,7 +585,7 @@ export function composeScene(
                 w: columnWidth - timeWidth,
                 h: rowHeight - 10,
               },
-              32,
+              showTimes ? 36 : 44,
               18,
               palette.ink,
               700,

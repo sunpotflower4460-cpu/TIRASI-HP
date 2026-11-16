@@ -240,6 +240,8 @@
 .one-page-schedule-row strong {
   font-size: 1.15rem;
 }
+.one-page-schedule-row.one-page-names-only { grid-template-columns: 1fr; }
+.one-page-schedule-row.one-page-names-only strong { font-size: 1.25rem; }
 
 .one-page-break {
   color: #385b24;

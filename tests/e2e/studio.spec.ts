@@ -106,6 +106,14 @@ test("legacy A4 is selectable beside the 20 new layouts and produces the origina
     .getByRole("button", { name: "チラシスタジオを開く", exact: true })
     .click();
   await page.getByRole("button", { name: /01 \/ EVENT/ }).click();
+  await expect(
+    page.getByRole("tab", { name: "ライブ情報", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "デザイン", exact: true }).click();
+  await expect(page.getByRole("button", { name: /^デザイン:/ })).toHaveCount(8);
+  await page
+    .getByLabel("デザインを絞り込む", { exact: true })
+    .selectOption("すべて");
   await expect(page.getByRole("button", { name: /^デザイン:/ })).toHaveCount(
     21,
   );
@@ -368,13 +376,11 @@ test("original image plus treatment recipe can be backed up and restored in a fr
     restored.getByText("元画像が見つかりません", { exact: false }).first(),
   ).toBeVisible();
   await restored.getByRole("tab", { name: "画像・加工", exact: true }).click();
-  await restored
-    .getByLabel("チラシの画像ファイル")
-    .setInputFiles({
-      name: "original.png",
-      mimeType: "image/png",
-      buffer: original,
-    });
+  await restored.getByLabel("チラシの画像ファイル").setInputFiles({
+    name: "original.png",
+    mimeType: "image/png",
+    buffer: original,
+  });
   await expect(restored.getByTestId("document-canvas")).toHaveAttribute(
     "data-errors",
     "0",
@@ -465,6 +471,10 @@ test("frozen event content stays consistent between the editor and rendered flye
 }) => {
   await page.goto("/studio");
   await page.getByRole("button", { name: /01 \/ EVENT/ }).click();
+  await page.getByRole("tab", { name: "デザイン", exact: true }).click();
+  await page
+    .getByRole("button", { name: "デザイン: シティポップ", exact: true })
+    .click();
   await page.getByRole("tab", { name: "本文", exact: true }).click();
   await page
     .getByLabel("イベントとの反映方法", { exact: true })

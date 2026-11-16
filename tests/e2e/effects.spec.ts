@@ -175,6 +175,7 @@ test("long text and many biographies stay in the scene and block export; empty f
       },
     };
     const doc = createDocument("event-flyer", event);
+    doc.design.templateId = "citypop";
     doc.design.visibility.performers = true;
     const scene = composeScene(doc, [event]);
     const rendered = await renderScene(scene, new Map());

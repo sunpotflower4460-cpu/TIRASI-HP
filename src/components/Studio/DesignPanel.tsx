@@ -29,6 +29,11 @@ export function DesignPanel({
   const tab = "design";
   const visibleTemplates =
     doc.kind === "event-flyer" ? [legacyTemplate, ...templates] : templates;
+  const matchesFamily = (template: Template) =>
+    family === "すべて" ||
+    (family === "ライブ向け"
+      ? ["旧版", "80年代", "音楽"].includes(template.family)
+      : template.family === family);
   const previewFor = (template: Template): CreativeDocument => {
     const selected = template.id === doc.design.templateId;
     const paletteId =
@@ -155,6 +160,7 @@ export function DesignPanel({
                 >
                   {[
                     "すべて",
+                    ...(doc.kind === "event-flyer" ? ["ライブ向け"] : []),
                     ...new Set(visibleTemplates.map((t) => t.family)),
                   ].map((f) => (
                     <option key={f}>{f}</option>
@@ -174,36 +180,28 @@ export function DesignPanel({
               <p className="gallery-count">
                 新デザイン20種
                 {doc.kind === "event-flyer" ? "＋旧版A4" : ""} ·{" "}
-                {
-                  visibleTemplates.filter(
-                    (t) => family === "すべて" || t.family === family,
-                  ).length
-                }
+                {visibleTemplates.filter(matchesFamily).length}
                 件表示
               </p>
               <div className="template-gallery">
-                {visibleTemplates
-                  .filter((t) => family === "すべて" || t.family === family)
-                  .map((t) => (
-                    <button
-                      key={t.id}
-                      className={`template-card ${doc.design.templateId === t.id ? "selected" : ""}`}
-                      aria-pressed={doc.design.templateId === t.id}
-                      aria-label={`デザイン: ${t.label}`}
-                      onClick={() =>
-                        chooseTemplate(t.id, useRecommendedPalette)
-                      }
-                    >
-                      <DocumentPreview
-                        document={previewFor(t)}
-                        events={workspace.events}
-                        thumbnail
-                      />
-                      <span className="template-family">{t.family}</span>
-                      <strong>{t.label}</strong>
-                      <small>{t.description}</small>
-                    </button>
-                  ))}
+                {visibleTemplates.filter(matchesFamily).map((t) => (
+                  <button
+                    key={t.id}
+                    className={`template-card ${doc.design.templateId === t.id ? "selected" : ""}`}
+                    aria-pressed={doc.design.templateId === t.id}
+                    aria-label={`デザイン: ${t.label}`}
+                    onClick={() => chooseTemplate(t.id, useRecommendedPalette)}
+                  >
+                    <DocumentPreview
+                      document={previewFor(t)}
+                      events={workspace.events}
+                      thumbnail
+                    />
+                    <span className="template-family">{t.family}</span>
+                    <strong>{t.label}</strong>
+                    <small>{t.description}</small>
+                  </button>
+                ))}
               </div>
               <div className="studio-note">
                 <strong>{templateById(doc.design.templateId).label}</strong>

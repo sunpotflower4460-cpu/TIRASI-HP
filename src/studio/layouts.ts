@@ -291,3 +291,58 @@ export function responsiveRecipe(
   }
   return recipe;
 }
+
+/** Event flyers reserve more space for artists and venue than the free-flyer compositions. */
+export function liveRecipe(
+  id: ModernTemplateId,
+  size: SizeId,
+  hasImage = false,
+): Layout {
+  const recipe = responsiveRecipe(id, size, hasImage);
+  const square = size === "square";
+  const scale = square ? 0.94 : 0.78;
+  for (const slot of [recipe.hero, recipe.art])
+    if (slot) {
+      slot[1] *= scale;
+      slot[3] *= scale;
+    }
+  recipe.facts[1] *= scale;
+  if (recipe.facts[3] > 0.15) recipe.facts[3] *= scale;
+  recipe.titleSize *= square ? 0.95 : 0.86;
+  if (id === "magazine") {
+    recipe.hero = [0, 0, 0.64, square ? 0.2 : 0.22];
+    recipe.art = [0.72, 0, 0.28, square ? 0.22 : 0.25];
+    recipe.facts = [0, square ? 0.26 : 0.29, 1, 0.07];
+    recipe.program = [0, square ? 0.37 : 0.4, 1, 0.27];
+    recipe.info = [0, square ? 0.69 : 0.73, 1, square ? 0.31 : 0.27];
+    return recipe;
+  }
+  const headerEnd = Math.max(
+    ...[recipe.hero, recipe.facts, recipe.art]
+      .filter((slot): slot is Slot => !!slot)
+      .map((slot) => slot[1] + slot[3]),
+  );
+  if (recipe.program[2] > 0.9) {
+    if (square) recipe.program[3] += 0.02;
+    else {
+      const start = Math.max(headerEnd + 0.035, recipe.program[1] - 0.05);
+      const infoStart = recipe.info[1] - 0.02;
+      recipe.program = [
+        recipe.program[0],
+        start,
+        recipe.program[2],
+        infoStart - start - 0.04,
+      ];
+      recipe.info[1] = infoStart;
+      recipe.info[3] = 1 - infoStart;
+    }
+  } else
+    for (const slot of [recipe.program, recipe.info]) {
+      slot[1] = Math.max(
+        headerEnd + (square ? 0.02 : 0.035),
+        slot[1] - (square ? 0.02 : 0.08),
+      );
+      slot[3] = 1 - slot[1];
+    }
+  return recipe;
+}

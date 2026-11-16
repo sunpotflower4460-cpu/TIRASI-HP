@@ -79,6 +79,7 @@ export type Design = {
     notes: boolean;
     performers: boolean;
     socials: boolean;
+    times?: boolean;
   };
   placements: Partial<Record<SizeId, Placement>>;
 };
@@ -130,6 +131,7 @@ export function defaultDesign(): Design {
       notes: true,
       performers: false,
       socials: true,
+      times: true,
     },
     placements: {},
   };
@@ -157,15 +159,22 @@ export function createDocument(
       ...base,
       design: {
         ...base.design,
-        paletteId: palettes.some((p) => p.id === event.eventData.themeId)
+        templateId: "legacy",
+        paletteId: ["spring", "summer", "autumn", "night"].includes(
+          event.eventData.themeId,
+        )
           ? event.eventData.themeId
-          : "spring",
+          : "summer",
         visibility: {
           ...base.design.visibility,
           performers: event.eventData.flyerOptions.showPerformerProfiles,
         },
       },
       kind,
+      name:
+        `${event.eventData.title} ${event.eventData.volume}`
+          .trim()
+          .slice(0, 500) || "ライブのチラシ",
       eventId: event.id,
       contentBinding: "linked",
       snapshot: parseEvent(event.eventData),
@@ -241,6 +250,8 @@ export function parseDocument(value: unknown): CreativeDocument {
   const visibility = object(design.visibility, "表示設定");
   for (const key of ["schedule", "openMic", "notes", "performers", "socials"])
     boolean(visibility[key], key);
+  if (visibility.times !== undefined)
+    boolean(visibility.times, "出演時刻の表示");
   boolean(design.decorations, "装飾");
   const placements = object(design.placements, "配置");
   for (const [size, v] of Object.entries(placements)) {

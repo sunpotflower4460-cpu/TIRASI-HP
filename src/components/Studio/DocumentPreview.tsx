@@ -15,6 +15,7 @@ import "../../styles/studio.css";
 import { OnePageFlyer } from "../Flyer/OnePageFlyer";
 import { getThemeClassName } from "../../data/themes";
 import { eventForDocument } from "../../studio/document";
+import { missingArtistNames } from "../../studio/live";
 function CanvasDocumentPreview({
   document: doc,
   events,
@@ -282,7 +283,10 @@ function LegacyDocumentPreview({
         eventData={data}
         onPrint={() => window.print()}
         thumbnail={thumbnail}
-        extraErrors={errors}
+        extraErrors={[
+          ...errors,
+          ...(doc.design.visibility.schedule ? missingArtistNames(data) : []),
+        ]}
         visibility={doc.design.visibility}
         extraBlocks={doc.content.blocks}
       />

@@ -1,4 +1,15 @@
 import { ContentPanel } from "./ContentPanel";
+import { LivePanel } from "./LivePanel";
+import { NextLiveDialog } from "./NextLiveDialog";
+import {
+  nextLiveValues,
+  repeatLiveWorkspace,
+  liveManagementName,
+} from "../../studio/live";
+import { restoreHistoryFrame } from "../../studio/history";
+import type { HistoryFrame } from "../../studio/history";
+import type { EventData } from "../../types/event";
+import { eventCollectionsFit } from "../../domain/limits";
 import { DesignPanel } from "./DesignPanel";
 import { ImagePanel } from "./ImagePanel";
 import { Field } from "./controls";
@@ -6,7 +17,7 @@ import { LayoutChangeDialog } from "./LayoutChangeDialog";
 import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { Workspace } from "../../domain/workspace";
-import { newId } from "../../domain/workspace";
+import { newId, eventName } from "../../domain/workspace";
 import type {
   CreativeDocument,
   Design,
@@ -54,11 +65,21 @@ export function StudioPage({
   const activeEvent = workspace.events.find(
     (e) => e.id === workspace.activeEventId,
   )!;
-  const [tab, setTab] = useState<"content" | "design" | "image">("design");
+  const [tab, setTab] = useState<"live" | "content" | "design" | "image">(
+    "design",
+  );
   const [family, setFamily] = useState("すべて");
   useEffect(() => {
-    setFamily("すべて");
-  }, [doc?.kind]);
+    setFamily(doc?.kind === "event-flyer" ? "ライブ向け" : "すべて");
+    setTab(
+      doc?.kind === "event-flyer"
+        ? "live"
+        : doc?.kind === "image-treatment"
+          ? "image"
+          : "design",
+    );
+  }, [doc?.id, doc?.kind]);
+  const [repeatSource, setRepeatSource] = useState<string>();
   const [notice, setNotice] = useState("");
   const [uploading, setUploading] = useState(false);
   const [compare, setCompare] = useState(false);
@@ -68,7 +89,7 @@ export function StudioPage({
   }>();
   const [deletedDoc, setDeletedDoc] = useState<CreativeDocument>();
   const history = useRef(
-    new Map<string, { undo: CreativeDocument[]; redo: CreativeDocument[] }>(),
+    new Map<string, { undo: HistoryFrame[]; redo: HistoryFrame[] }>(),
   );
   const [, setHistoryVersion] = useState(0);
   const imageInput = useRef<HTMLInputElement>(null);
@@ -82,7 +103,7 @@ export function StudioPage({
     const after = { ...fn(before), updatedAt: new Date().toISOString() };
     if (remember) {
       const h = history.current.get(id) ?? { undo: [], redo: [] };
-      h.undo = [...h.undo.slice(-59), structuredClone(before)];
+      h.undo = [...h.undo.slice(-59), { document: structuredClone(before) }];
       h.redo = [];
       history.current.set(id, h);
       setHistoryVersion((v) => v + 1);
@@ -98,11 +119,99 @@ export function StudioPage({
     if (!h) return;
     const from = redo ? h.redo : h.undo,
       to = redo ? h.undo : h.redo;
-    const value = from.pop();
+    const value = from[from.length - 1];
     if (!value) return;
-    to.push(structuredClone(doc));
-    mutate(doc.id, () => value, false);
-    setHistoryVersion((v) => v + 1);
+    try {
+      const state = currentWorkspace.current;
+      const restored = restoreHistoryFrame(
+        state,
+        value,
+        new Date().toISOString(),
+      );
+      const currentEvent = value.event
+        ? state.events.find((event) => event.id === value.event!.id)
+        : undefined;
+      from.pop();
+      to.push({
+        document: structuredClone(doc),
+        ...(currentEvent
+          ? {
+              event: structuredClone(currentEvent),
+              expectedEvent: structuredClone(value.event),
+            }
+          : {}),
+      });
+      setWorkspace(restored);
+      setHistoryVersion((v) => v + 1);
+    } catch (error) {
+      setNotice(errorMessage(error));
+    }
+  };
+  const updateLiveEvent = (update: (event: EventData) => EventData) => {
+    const current = currentWorkspace.current;
+    const target = current.documents.find((value) => value.id === doc?.id);
+    if (!target || target.kind !== "event-flyer") return;
+    if (target.contentBinding === "snapshot") {
+      const eventData = update(target.snapshot);
+      if (eventCollectionsFit(eventData))
+        mutate(target.id, (value) =>
+          value.kind === "event-flyer"
+            ? {
+                ...value,
+                name: liveManagementName(value, value.snapshot, eventData),
+                snapshot: eventData,
+              }
+            : value,
+        );
+      return;
+    }
+    const record = current.events.find((value) => value.id === target.eventId);
+    if (!record) {
+      setNotice(
+        "参照元が見つかりません。固定コピーに切り替えて編集してください。",
+      );
+      return;
+    }
+    const eventData = update(record.eventData);
+    if (eventData === record.eventData || !eventCollectionsFit(eventData))
+      return;
+    const now = new Date().toISOString();
+    const derivedName =
+      record.name === eventName(record.eventData) ||
+      record.name === eventName(record.eventData).slice(0, 500);
+    const nextRecord = {
+      ...record,
+      eventData,
+      updatedAt: now,
+      name: derivedName ? eventName(eventData).slice(0, 500) : record.name,
+    };
+    const nextDocument = {
+      ...target,
+      name: liveManagementName(target, record.eventData, eventData),
+      snapshot: structuredClone(eventData),
+      updatedAt: now,
+    };
+    const h = history.current.get(target.id) ?? { undo: [], redo: [] };
+    h.undo = [
+      ...h.undo.slice(-59),
+      {
+        document: structuredClone(target),
+        event: structuredClone(record),
+        expectedEvent: structuredClone(nextRecord),
+      },
+    ];
+    h.redo = [];
+    history.current.set(target.id, h);
+    setHistoryVersion((value) => value + 1);
+    setWorkspace((state) => ({
+      ...state,
+      events: state.events.map((value) =>
+        value.id === record.id ? nextRecord : value,
+      ),
+      documents: state.documents.map((value) =>
+        value.id === target.id ? nextDocument : value,
+      ),
+    }));
   };
   const addDocument = (next: CreativeDocument) => {
     if (
@@ -127,8 +236,14 @@ export function StudioPage({
       activeDocumentId: next.id,
     }));
     setNotice("新しい下書きを作りました。公開HPは変更されません。");
-    setFamily("すべて");
-    setTab(next.kind === "image-treatment" ? "image" : "design");
+    setFamily(next.kind === "event-flyer" ? "ライブ向け" : "すべて");
+    setTab(
+      next.kind === "event-flyer"
+        ? "live"
+        : next.kind === "image-treatment"
+          ? "image"
+          : "design",
+    );
   };
   const create = (kind: CreativeDocument["kind"], starterId?: string) => {
     let next = createDocument(kind, activeEvent);
@@ -252,13 +367,44 @@ export function StudioPage({
       );
   };
   const h = doc ? history.current.get(doc.id) : undefined;
+  const tabs: [typeof tab, string][] =
+    doc?.kind === "event-flyer"
+      ? [
+          ["live", "ライブ情報"],
+          ["design", "デザイン"],
+          ["image", "画像・配置"],
+          ["content", "本文"],
+        ]
+      : [
+          ["content", "本文"],
+          ["design", "デザイン"],
+          [
+            "image",
+            doc?.kind === "image-treatment" ? "画像・加工" : "画像・配置",
+          ],
+        ];
+  const repeatDoc = docs.find((value) => value.id === repeatSource);
+  const recentLive = [...docs]
+    .filter((value) => value.kind === "event-flyer")
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   return (
-    <main className="studio-page" inert={restoring}>
+    <main
+      className={`studio-page${doc ? " has-document" : ""}`}
+      inert={restoring}
+    >
       <header className="studio-header">
         <div>
           <p className="studio-eyebrow">TIRASI / FLYER STUDIO</p>
-          <h1>伝えたいことを、一枚に。</h1>
-          <p>ライブも、お店も、日々の小さなお知らせも。</p>
+          <h1>
+            {!doc
+              ? "ライブの告知を、いつもの手順で。"
+              : doc.kind === "event-flyer"
+                ? "ライブのチラシを編集"
+                : doc.kind === "free-flyer"
+                  ? "自由なチラシを編集"
+                  : "手持ちの画像を加工"}
+          </h1>
+          <p>前回を引き継いで、日付と出演者を変えれば、次の一枚へ。</p>
         </div>
         <div className="studio-save">
           <span className="save-dot" />
@@ -267,10 +413,13 @@ export function StudioPage({
         </div>
       </header>
       <section className="studio-create" aria-label="チラシの作り方">
-        <button onClick={() => create("event-flyer")}>
+        <button
+          className="live-create-primary"
+          onClick={() => create("event-flyer")}
+        >
           <span>01 / EVENT</span>
-          <strong>イベントチラシを作る</strong>
-          <small>編集済みの日時・出演者・会場を使う</small>
+          <strong>ライブのチラシを作る</strong>
+          <small>いつものA4に、タイトル・日時・出演者を自動配置</small>
         </button>
         <button onClick={() => create("free-flyer")}>
           <span>02 / FREE</span>
@@ -283,10 +432,23 @@ export function StudioPage({
           <small>元の文字・構図を保ったレトロ加工</small>
         </button>
       </section>
+      {recentLive && doc?.kind !== "event-flyer" && (
+        <div className="live-resume">
+          <div>
+            <strong>いつものライブから、次回分を。</strong>
+            <p>{recentLive.name}</p>
+          </div>
+          <button
+            className="primary"
+            onClick={() => setRepeatSource(recentLive.id)}
+          >
+            前回から作る
+          </button>
+        </div>
+      )}
       {!doc && (
-        <section className="studio-empty">
-          <p className="studio-eyebrow">START WITH A PURPOSE</p>
-          <h2>作りたいものから、はじめる。</h2>
+        <details className="studio-empty live-other-starts">
+          <summary>ライブ以外のチラシを、ひな形から作る</summary>
           <p>
             用途別の見本です。文章・価格・日時はご自身の内容に編集してください。
           </p>
@@ -299,7 +461,7 @@ export function StudioPage({
               </button>
             ))}
           </div>
-        </section>
+        </details>
       )}
       {doc && (
         <details className="starter-details print-hidden">
@@ -338,6 +500,14 @@ export function StudioPage({
               </select>
             </label>
             <div className="action-row">
+              {doc.kind === "event-flyer" && (
+                <button
+                  className="primary live-repeat-button"
+                  onClick={() => setRepeatSource(doc.id)}
+                >
+                  次回分を作る
+                </button>
+              )}
               <button
                 onClick={() =>
                   addDocument({
@@ -348,7 +518,7 @@ export function StudioPage({
                   })
                 }
               >
-                複製
+                {doc.kind === "event-flyer" ? "デザイン違いを作る" : "複製"}
               </button>
               <button disabled={!h?.undo.length} onClick={() => undo(false)}>
                 取り消す
@@ -387,29 +557,24 @@ export function StudioPage({
           </div>
           <div className="studio-workbench">
             <section className="studio-inspector">
-              <Field
-                label="制作物の管理名"
-                value={doc.name}
-                onChange={(name) => mutate(doc.id, (d) => ({ ...d, name }))}
-                max={500}
-              />
+              <details
+                className="live-management"
+                open={doc.kind !== "event-flyer"}
+              >
+                <summary>管理名を変更</summary>
+                <Field
+                  label="制作物の管理名"
+                  value={doc.name}
+                  onChange={(name) => mutate(doc.id, (d) => ({ ...d, name }))}
+                  max={500}
+                />
+              </details>
               <div
                 className="studio-tabs"
                 role="tablist"
                 aria-label="編集する項目"
               >
-                {(
-                  [
-                    ["content", "本文"],
-                    ["design", "デザイン"],
-                    [
-                      "image",
-                      doc.kind === "image-treatment"
-                        ? "画像・加工"
-                        : "画像・配置",
-                    ],
-                  ] as const
-                ).map(([id, label]) => (
+                {tabs.map(([id, label]) => (
                   <button
                     key={id}
                     role="tab"
@@ -422,15 +587,18 @@ export function StudioPage({
                       )
                         return;
                       event.preventDefault();
-                      const order = ["content", "design", "image"] as const;
+                      const order = tabs.map(([key]) => key);
                       const index = order.indexOf(id);
                       const next =
                         event.key === "Home"
                           ? 0
                           : event.key === "End"
-                            ? 2
-                            : (index + (event.key === "ArrowRight" ? 1 : 2)) %
-                              3;
+                            ? order.length - 1
+                            : (index +
+                                (event.key === "ArrowRight"
+                                  ? 1
+                                  : order.length - 1)) %
+                              order.length;
                       setTab(order[next]);
                       event.currentTarget.parentElement
                         ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
@@ -450,6 +618,16 @@ export function StudioPage({
                 id={`studio-panel-${tab}`}
                 aria-labelledby={`studio-tab-${tab}`}
               >
+                {tab === "live" && doc.kind === "event-flyer" && (
+                  <LivePanel
+                    key={doc.id}
+                    doc={doc}
+                    workspace={workspace}
+                    updateEvent={updateLiveEvent}
+                    mutate={mutate}
+                    setDesign={setDesign}
+                  />
+                )}
                 {tab === "content" && (
                   <ContentPanel
                     doc={doc}
@@ -558,6 +736,44 @@ export function StudioPage({
           onCancel={() => setPendingTemplate(undefined)}
         />
       )}
+      {repeatDoc?.kind === "event-flyer" && (
+        <NextLiveDialog
+          key={repeatDoc.id}
+          initial={nextLiveValues(repeatDoc, workspace.events)}
+          count={
+            (repeatDoc.contentBinding === "snapshot"
+              ? repeatDoc.snapshot
+              : (workspace.events.find(
+                  (value) => value.id === repeatDoc.eventId,
+                )?.eventData ?? repeatDoc.snapshot)
+            ).schedule.filter((item) => item.type === "act").length
+          }
+          onCancel={() => setRepeatSource(undefined)}
+          onCreate={(values) => {
+            try {
+              const next = repeatLiveWorkspace(
+                currentWorkspace.current,
+                repeatDoc.id,
+                values,
+                {
+                  eventId: newId(),
+                  documentId: newId(),
+                  now: new Date().toISOString(),
+                },
+              );
+              setWorkspace(next);
+              setRepeatSource(undefined);
+              setTab("live");
+              setNotice(
+                "前回を残して次回分を作りました。出演者や時刻を必要なところだけ変更してください。",
+              );
+              return undefined;
+            } catch (error) {
+              return errorMessage(error);
+            }
+          }}
+        />
+      )}
 
       <p
         className="studio-notice print-hidden"
@@ -573,11 +789,12 @@ export function StudioPage({
           history.current.clear();
           setDeletedDoc(undefined);
           setPendingTemplate(undefined);
+          setRepeatSource(undefined);
           setHistoryVersion((version) => version + 1);
         }}
       />
       <footer className="studio-footer print-hidden">
-        <p>TIRASI STUDIO · 端末内で、自由に。</p>
+        <p>TIRASI STUDIO · ライブの一枚を、いつもの手順で。</p>
         <button onClick={() => navigate("/editor")}>イベント情報を編集</button>
         <button onClick={() => navigate("/")}>公開HPを見る</button>
       </footer>

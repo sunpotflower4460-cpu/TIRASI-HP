@@ -111,6 +111,7 @@ describe("studio contracts", () => {
   });
   it("distinguishes linked content, snapshots, and explicit overrides", () => {
     const linked = createDocument("event-flyer", event);
+    linked.design.templateId = "citypop";
     if (linked.kind !== "event-flyer") throw new Error();
     const updatedEvent = {
       ...event,

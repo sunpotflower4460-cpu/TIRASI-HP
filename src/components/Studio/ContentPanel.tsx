@@ -165,6 +165,7 @@ export function ContentPanel({
             {(
               [
                 ["schedule", "スケジュール"],
+                ["times", "出演時刻"],
                 ["openMic", "Open Mic"],
                 ["notes", "注意書き"],
                 ["performers", "出演者プロフィール"],
@@ -174,7 +175,7 @@ export function ContentPanel({
               <label key={id}>
                 <input
                   type="checkbox"
-                  checked={doc.design.visibility[id]}
+                  checked={doc.design.visibility[id] ?? true}
                   onChange={(e) =>
                     setDesign({
                       visibility: {

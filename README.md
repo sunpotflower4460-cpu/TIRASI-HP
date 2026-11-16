@@ -1,20 +1,26 @@
 # TIRASI-HP / Flyer Studio
 
-イベントHPを保ちながら、ブラウザでチラシを作成・保存できるReact / TypeScript / Viteアプリです。
+ライブのタイトル・出演者・日時を入力すると、チラシへ自動配置するReact / TypeScript / Viteアプリです。前回のデザインと固定情報を引き継ぎ、毎回の告知づくりを短くします。イベントHPも併設しています。
 
 ## チラシを作る
 
 `/editor` の「チラシスタジオを開く」、または `/studio` から始めます。
 
-- **イベントチラシ**: 編集済みの日時・出演者・会場を反映。イベントに追従するか、現在の内容を固定コピーにするか選べます。
+1. 「ライブのチラシを作る」で旧版A4を開き、ライブ情報からタイトル・日時・出演者を入力します。
+2. 次の開催は「次回分を作る」。会場・主催・料金・デザインと、必要なら出演者・時刻も引き継ぎます。日付を入力し、回数の候補を確認すると、前回を残した新しいイベントとチラシができます。
+3. 今回変えるところだけ直し、PNGまたは印刷/PDFへ。デザインを変えても同じライブ情報が自動で入ります。
+
+出演者は1行ずつの貼り付け、過去の名前の入力候補、上下の並べ替えに対応します。時刻は開始時間・演奏時間・転換から明示操作でまとめて設定できます。「出演時刻を表示」を外すと名前だけのチラシになり、元の時刻・休憩・終了データは残ります。取り消し・やり直しはライブ情報の変更にも対応します。
+
+- **イベントチラシ**: 日時・出演者・会場を反映。「デザイン違いを作る」は同じイベントの別デザイン、「次回分を作る」は独立した次回用です。内容を固定コピーにすることもできます。
 - **自由制作**: 見出し・本文・画像から作成。作品展、ワークショップ、ショップ告知、メニュー、教室、地域の催しのひな形があります。日付・会場・Open Micは必須ではありません。
 - **既存画像の加工**: 元の文字や構図を保ち、色・粒子・網点・版ずれ・退色などを調整する非破壊フィルターです。生成AIによる描き直しではありません。
 
-**旧版「生音 A4」もイベントチラシのギャラリーから選択できます。** 従来の丸ゴシック、カード、4配色を保持し、文字の収まりと出力を改善しています。旧版はA4専用で画像枠はありません。
+**新しいライブチラシは旧版「生音 A4」から始まります。** 既存の制作物の選択は変更しません。従来の丸ゴシック、カード、4配色を保持し、文字の収まりと出力を改善しています。旧版はA4専用で画像枠はありません。
 
 新デザインは、ライブハウス、シティポップ、ネオン、リソグラフ、アコースティック、インディー、フェス、ボタニカル、フォレスト、水彩、スイスグリッド、ギャラリー、マガジン、昭和ポップ、和紙、ステッカー、パーティー、アールデコ、セリフ、情報優先の**20構図**です。配色12種は構図と独立し、見出しのゴシック・明朝・丸ゴシックも変更できます。
 
-各構図を大きな題名とオリジナルの植物画・楽器・夕景・版画などで再設計しました。絵の縦横比を保ち、短い和文見出しは文節に合わせて改行します。会場、注意書き、Open Micは文字の大きさと間隔で読み分けられます。「選ぶとおすすめの配色も適用」を外せば、現在の配色を保って構図を選べます。
+ライブ向けの旧版＋7構図を先に表示し、「すべて」で全20構図へ広げられます。ライブ用では絵の面積を抑え、出演者欄と開催情報を広げました。自由制作では大きな題名と植物画・楽器・夕景・版画などの構図を使えます。絵の縦横比を保ち、短い和文見出しは文節に合わせて改行します。会場、注意書き、Open Micは文字の大きさと間隔で読み分けられます。「選ぶとおすすめの配色も適用」を外せば、現在の配色を保って構図を選べます。
 
 本文ブロックの追加・順番・表示、チラシだけの文字上書き、画像位置、サイズ別の配置、取り消し・やり直しに対応します。調整済みの配置がある場合、新しい構図への変更は元の制作物を残すコピーとして行えます。
 
@@ -74,10 +80,11 @@ npm run test:e2e
 
 Node.js 22.12以上を使用してください。Vercel: Vite / Build `npm run build` / Output `dist`。
 
-- 単体44件、Chromium E2E 20件。新20構図×4サイズの80 PNGに加え、画像入りのイベント・自由制作160 PNGで寸法・文字・画像との交差を検証。
+- 単体56件、Chromium E2E 24件。通常80・名前だけ80・画像入りイベントと自由制作160の計320 PNGで、寸法・全文・安全域・文字や画像との交差を検証。
 - v1移行の4段階中断、同時初期化、保存失敗、競合、入れ子の不正JSON、完全バックアップの別コンテキスト復元、原画像の保持と6加工の再現性を検証。
-- 比較画像: [デザイン20種](docs/evidence/template-contact-sheet.png) / [旧版4配色](docs/evidence/legacy-palette-contact-sheet.png) / [6加工](docs/evidence/effect-contact-sheet.png)。[実測結果](docs/evidence/render-matrix.json) / [デザインレビュー](docs/DESIGN_QUALITY_REVIEW.md)。
-- 再制作前後: [以前の20種](docs/evidence/designs-before-polish.png) / [見比べる](docs/evidence/designs-before-after.png)。開発サーバー起動中に `node scripts/render-design-proof.mjs` でA4・正方形・Storyの比較画像を再生成できます。自由制作は `--fixture=free` を指定します。
+- ライブの仕上がり: [時刻付き8種](docs/evidence/live-designs.png) / [名前だけ8種](docs/evidence/live-names-only.png) / [編集画面](docs/evidence/live-editor-desktop.png) / [スマートフォン](docs/evidence/live-editor-mobile.png)。開発サーバー起動中に `node scripts/render-live-proof.mjs` で旧版を含む16枚の実PNGと一覧を再生成できます。
+- 比較画像: [全20構図](docs/evidence/template-contact-sheet.png) / [旧版4配色](docs/evidence/legacy-palette-contact-sheet.png) / [6加工](docs/evidence/effect-contact-sheet.png)。[実測結果](docs/evidence/render-matrix.json) / [デザインレビュー](docs/DESIGN_QUALITY_REVIEW.md)。
+- 初回の再制作記録（5042252時点）: [以前の20種](docs/evidence/designs-before-polish.png) / [変更前後](docs/evidence/designs-before-after.png)。`node scripts/render-design-proof.mjs` で現在のA4・正方形・Storyを描画できます。自由制作は `--fixture=free` を指定します。
 - 実iPhone/SafariのOS共有UIと物理印刷は未検証。Chromiumの390px画面とA4ブラウザPDF（1ページ）は検証済みです。
 
 フォントはFontsourceからローカル配信します（Noto Sans JP / Noto Serif JP / Zen Maru Gothic / Barlow Condensed / Cormorant Garamond、OFL-1.1。ライセンスは `public/licenses`）。和文見出しはGoogle BudouX v0.10.4（Apache-2.0）の純粋なparserと日本語モデルだけを同梱します。文節分割は端末内で行い、本文を外部に送信しません。出典・変更点は `src/vendor/budoux/NOTICE.md`。sharp（Apache-2.0）はOG画像と検証用比較画像の生成用です。Vitest（MIT）、Playwright（Apache-2.0）、fake-indexeddb（Apache-2.0）はテスト用でブラウザに配布しません。PNG用html2canvasは旧版の出力時に遅延読み込みします。

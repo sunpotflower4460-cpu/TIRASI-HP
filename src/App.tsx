@@ -233,7 +233,7 @@ export default function App() {
   }
   return (
     <div
-      className={`app-shell ${isLocal ? "local-view" : "public-view"} ${theme}`}
+      className={`app-shell ${isLocal ? "local-view" : "public-view"}${studioRoute ? " studio-view" : ""} ${theme}`}
     >
       <a className="skip-link print-hidden" href="#page-content">
         本文へ移動
