@@ -6,11 +6,11 @@
 
 - 基準main: `a270aee55b0fc27fe313ab113b25b55b8bc39803`。作業開始時のopen PR/変更なし。最終fetchでもmainは同じ。
 - PR-A: `feature/tirasi-v2-reliability` / `11bbac43916f859c58fe11ba4d8062ed5e99456f`。
-- PR-B: `feature/tirasi-v2-flyer-studio`。PR-Aを基点にstack。最終HEADはこの文書を含むコミット参照。
+- PR-B: `feature/tirasi-v2-flyer-studio`。PR-Aを基点にstack。機能コミット `c559b48274aa96626ca11acd8e7848ae83506336`。最終HEADは検証記録の整理を含む。
 
 ## 現在工程
 
-A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証し、PR-Bを提出する最終チェックポイント。実装・実測範囲は受入台帳を参照。
+A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証し、PR-Bも提出済み。両PRはレビュー待ち。実装・実測範囲は受入台帳を参照。
 
 ## 今回確定した事実 / 完成した実装
 
@@ -45,7 +45,7 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 
 - 単体32件: schema/migration/reducer/CAS/保存失敗/素材参照のatomic abort/構図と配色/バインディング/非破壊切替等。
 - Chromium 159 / LinuxのE2E 14件: 公開/下書き、旧版選択、10回切替・Undo/Redo、画像位置と元コピー保持、リロード、完全バックアップの別コンテキスト復元、改ざん拒否、6加工の再現性、元画像不変、長文/出演者8名、390px操作、A4 PNG/PDF。
-- 新20×4=80 PNG全件: PNGデコード、指定px、必須情報、安全域と文字衝突を検査。`docs/evidence/render-matrix.json`。
+- 新20×4=80 PNG全件: PNGデコード、指定px、必須情報、安全域と文字衝突を検査。`docs/evidence/render-matrix.json` に80組の要約。全測定と必須文字はCI artifactの `test-results/render-matrix-full.json` に保存。
 - 比較画像: `template-contact-sheet.png`, `legacy-selected.png`, `effect-contact-sheet.png`, `studio-mobile.png`, `treatment-restored.png`。旧/新の構図と主要文字・配色を目視確認。
 - ローカル `npm run build`, `npm run test`, `npm run test:e2e`, `git diff --check`: pass。最終再実行も32 unit / 14 E2Eでpass。旧版4配色の実PNGと、印刷用2480×3508 Canvasの画素が生成PNGと一致することも検証。CI結果は提出後に追記する。
 - `npm audit --audit-level=high`: 0 vulnerabilities。
@@ -70,7 +70,7 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 
 ## 次の着手点 / 再開コマンド
 
-1. 最終検証結果と比較画像を確認し、PR-BをA向けに提出（自動マージ・デプロイなし）。
+1. 提出済みPR-A #36 / PR-B #37のレビューを確認する（自動マージ・デプロイなし）。
 2. GitHub Actionsの完了を確認して結果を追記する。
 3. レビュー時はA→Bの順で確認。実機共有・紙面は運用者が確認する。
 
@@ -79,5 +79,5 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 ## PR URL / レビュー待ち
 
 - PR-A: https://github.com/sunpotflower4460-cpu/TIRASI-HP/pull/36 （main向け、未マージ）
-- PR-B: 提出準備中（base: feature/tirasi-v2-reliability）
+- PR-B: https://github.com/sunpotflower4460-cpu/TIRASI-HP/pull/37 （base: feature/tirasi-v2-reliability、未マージ）
 - mainマージ / 本番デプロイ: 実施していない。

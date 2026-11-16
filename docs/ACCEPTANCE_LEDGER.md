@@ -29,7 +29,7 @@
 ## 実測と限界
 
 - unit 32件、Chromium E2E 14件（80 PNGのマトリクスを含む）。CIはPR-Aがsuccess、PR-Bは提出後に確認する。
-- 画像と数値: `docs/evidence/`。PNG原寸とPDFはPlaywrightのCI artifactへ保存。A4 PDFはpdfinfoでも1ページ・A4を確認。
+- 画像と数値: `docs/evidence/`。PNG原寸・PDF・全テキスト測定はPlaywrightのCI artifactへ保存。Git管理するJSONは80組の要約。A4 PDFはpdfinfoでも1ページ・A4を確認。
 - 実iPhone/SafariのOS共有、物理プリンター、全機種のメモリ上限は未検証。これらをpassとしない。
 - 旧版はイベントA4用の互換デザイン。新20構図の数には含めない。新構図は4サイズ、SNSはPNG専用。
 - ZIPではなく原本のbase64とmanifestを持つJSONパッケージ。ZIPの展開処理・任意のパスの展開は行わない。容量・件数・形式・hashを検査し、画像欠損は完全復元扱いにしない。

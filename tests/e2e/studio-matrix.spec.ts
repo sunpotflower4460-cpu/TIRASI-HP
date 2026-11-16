@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
+import type { Measurement } from "../../src/studio/render";
+import { defaultEvent } from "../../src/data/defaultEvent";
 import { templates, sizes } from "../../src/studio/registry";
 test("all 20 compositions × 4 sizes produce decodable PNGs with every measured text inside safe areas", async ({
   page,
@@ -8,7 +10,26 @@ test("all 20 compositions × 4 sizes produce decodable PNGs with every measured 
   test.setTimeout(180000);
   await page.goto("/studio");
   await mkdir("test-results/matrix", { recursive: true });
-  const report: unknown[] = [];
+  const report: {
+    template: string;
+    size: string;
+    errors: string[];
+    signature: string;
+    measurements: Measurement[];
+    bytes: number;
+    width: number;
+    height: number;
+  }[] = [];
+  const required = [
+    defaultEvent.title,
+    defaultEvent.date,
+    defaultEvent.startTime,
+    defaultEvent.price,
+    defaultEvent.venue.name,
+    ...defaultEvent.schedule
+      .filter((item) => item.type === "act")
+      .map((item) => item.name),
+  ];
   const failures: string[] = [];
   for (const template of templates)
     for (const [sizeId, size] of Object.entries(sizes)) {
@@ -89,6 +110,10 @@ test("all 20 compositions × 4 sizes produce decodable PNGs with every measured 
       expect(
         result.measurements.map((m: { text: string }) => m.text).join("\n"),
       ).toContain("TATEBAYASHI PUBLIC HOUSE");
+      const measuredText = result.measurements
+        .map((m: { text: string }) => m.text)
+        .join("\n");
+      for (const value of required) expect(measuredText).toContain(value);
       const png = Buffer.from(base64, "base64");
       expect(await sharp(png).metadata()).toMatchObject({
         width: size.width,
@@ -97,9 +122,46 @@ test("all 20 compositions × 4 sizes produce decodable PNGs with every measured 
       });
       await writeFile(`test-results/matrix/${template.id}-${sizeId}.png`, png);
     }
+  // Keep exhaustive measurement/text data with the generated PNGs in the CI artifact.
+  await writeFile(
+    "test-results/render-matrix-full.json",
+    JSON.stringify(report, null, 2),
+  );
+  const summary = report.map((row) => {
+    const text = row.measurements
+      .map((measurement) => measurement.text)
+      .join("\n");
+    return {
+      template: row.template,
+      size: row.size,
+      compositionSignature: row.signature,
+      width: row.width,
+      height: row.height,
+      pngBytes: row.bytes,
+      measuredTextRuns: row.measurements.length,
+      smallestFontSize: row.measurements.length
+        ? Math.min(
+            ...row.measurements.map((measurement) => measurement.fontSize),
+          )
+        : 0,
+      allTextFits: row.measurements.every((measurement) => measurement.fits),
+      requiredTextPresent: required.every((value) => text.includes(value)),
+      errors: row.errors,
+    };
+  });
   await writeFile(
     "docs/evidence/render-matrix.json",
-    JSON.stringify(report, null, 2),
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        renderer: "Chromium 159 / Linux",
+        combinations: summary.length,
+        fullMeasurements: "CI artifact: test-results/render-matrix-full.json",
+        results: summary,
+      },
+      null,
+      2,
+    ),
   );
   expect(failures).toEqual([]);
   const tiles = await Promise.all(
