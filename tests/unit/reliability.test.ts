@@ -4,6 +4,7 @@ import { parseEvent, parseEventFile, safeUrl } from '../../src/domain/validation
 import { initialWorkspace, parseLibrary, parseWorkspace, workspaceReducer, LEGACY_KEYS } from '../../src/domain/workspace';
 import { eventDay, eventWarnings, dateISO } from '../../src/domain/date';
 import { metadata } from '../../src/domain/publication';
+import { EVENT_LIMITS, MAX_EVENTS } from '../../src/domain/limits';
 
 describe('legacy and strict schema', () => {
   it('retains every known and unknown field through single/library/workspace round trips', () => {
@@ -32,6 +33,30 @@ describe('legacy and strict schema', () => {
   });
 });
 describe('state transitions', () => {
+  it.each(['schedule', 'performers', 'socials'] as const)('keeps %s additions within restorable limits while allowing later edits', key => {
+    const initial = initialWorkspace();
+    const sample = key === 'schedule' ? { type: 'act' as const, time: '14:00', name: 'Act' } : key === 'performers' ? { id: 'profile', name: 'Profile', catchcopy: '', bio: '', imageUrl: '', linkUrl: '' } : { label: 'Site', url: 'https://example.com' };
+    const event = parseEvent({ ...defaultEvent, [key]: Array.from({ length: EVENT_LIMITS[key] }, () => ({ ...sample })) });
+    const state = workspaceReducer(initial, { type: 'edit', id: initial.activeEventId, eventData: event, updatedAt: 'x' });
+    expect(state.events[0].eventData[key]).toHaveLength(EVENT_LIMITS[key]);
+    const excessive = { ...event, [key]: [...event[key], sample] };
+    expect(workspaceReducer(state, { type: 'edit', id: state.activeEventId, eventData: excessive, updatedAt: 'x' })).toBe(state);
+    const edited = workspaceReducer(state, { type: 'edit', id: state.activeEventId, eventData: { ...event, title: 'STILL EDITABLE' }, updatedAt: 'y' });
+    expect(parseWorkspace(edited).events[0].eventData.title).toBe('STILL EDITABLE');
+    expect(parseLibrary(JSON.stringify(edited))[0].eventData[key]).toHaveLength(EVENT_LIMITS[key]);
+  });
+  it('caps event creation, duplication and replacement without leaving an invalid workspace', () => {
+    const initial = initialWorkspace();
+    const records = Array.from({ length: MAX_EVENTS }, (_, index) => ({ ...initial.events[0], id: `event-${index}` }));
+    const state = workspaceReducer(initial, { type: 'replace', records });
+    const extra = { ...records[0], id: 'extra' };
+    expect(workspaceReducer(state, { type: 'add', record: extra })).toBe(state);
+    expect(workspaceReducer(state, { type: 'replace', records: [...records, extra] })).toBe(state);
+    expect(parseLibrary(JSON.stringify(state))).toHaveLength(MAX_EVENTS);
+    expect(() => parseLibrary(JSON.stringify([...records, extra]))).toThrow('100件以内');
+    const removed = workspaceReducer(state, { type: 'delete', id: records[1].id, fallback: records[0] });
+    expect(parseWorkspace(workspaceReducer(removed, { type: 'add', record: extra })).events).toHaveLength(MAX_EVENTS);
+  });
   it('deletes, duplicates and edits only the addressed record under repeated pure transitions', () => {
     const initial = initialWorkspace();
     const record = { ...initial.events[0], id: 'b', name: 'other' };

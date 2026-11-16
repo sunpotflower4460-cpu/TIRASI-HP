@@ -66,3 +66,11 @@ PR-A: 提出準備。PR-B: 未提出。mainマージ/本番デプロイは実施
 
 - 保存エラー時に出力するraw Workspaceを、イベント一覧復元から受け入れる。制作物入りの形式は無言でイベントだけにせず、スタジオ復元へ案内する。
 - URLで指定された下書きの配色を使い、現在選択中の別イベントのテーマを混入させない。退避JSONの復元と、別イベント選択後の保存済みpreview URLを回帰検証する。
+
+## PR-A最終レビュー追補（2026-11-16）
+
+- branch: `feature/tirasi-v2-reliability`、直前HEAD `4249a09db01a6bc255112eba89e83a3f27d553de`。PR-A https://github.com/sunpotflower4460-cpu/TIRASI-HP/pull/36 はmain向け。PR-B #37はAをbaseとして継続中。いずれも未マージ・本番未反映。
+- 入力・保存・復元の件数上限を共有。イベント100件、schedule100件、プロフィール50件、SNS30件で追加操作を無効化し理由を表示。pure reducerも上限超過を防ぎ、一覧の追加読み込みが超える場合は元データと読み込み候補を保持する。
+- 公開OG PNGの描画に同梱のNoto Sans JPを明示し、日本語system fontがないビルド環境にも対応。別々の漢字が同じ欠落字形にならない回帰検査と、実生成した1200×630 PNGの目視確認を実施。
+- `npm ci`、unit28件、Chromium E2E8件、TypeScript/Vite build、diff checkがpass。上限満杯fixtureで編集→保存→リロード→一覧JSONの復元を検証。実iPhone/Safari共有・物理印刷は引き続き未検証。
+- 次はこの修正をPR-Bへ取り込み、統合済みの検証と両PRのCIを確認する。新たなPRや自動マージ・本番デプロイは行わない。

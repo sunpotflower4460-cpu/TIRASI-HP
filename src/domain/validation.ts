@@ -1,5 +1,6 @@
 import { defaultEvent } from '../data/defaultEvent';
 import type { EventData, PerformerProfile, ScheduleItem, SocialLink } from '../types/event';
+import { EVENT_LIMITS } from './limits';
 
 export const MAX_JSON_BYTES = 4 * 1024 * 1024;
 export class ValidationError extends Error {}
@@ -36,13 +37,13 @@ function fields(value: unknown, names: string[], path: string): Record<string, s
 export function parseEvent(value: unknown): EventData {
   const input = object(value, 'イベント');
   const root = fields(input, ['title', 'subtitle', 'volume', 'date', 'day', 'startTime', 'organizer', 'price', 'statusNote', 'venueSubtitle'], 'イベント');
-  const schedule = array(input.schedule, 'schedule').map((value, i): ScheduleItem => {
+  const schedule = array(input.schedule, 'schedule', EVENT_LIMITS.schedule).map((value, i): ScheduleItem => {
     const item = object(value, `schedule[${i}]`);
     if (item.type === 'act') return { ...item, type: 'act', time: string(item.time, '出演時間', 300), name: string(item.name, '出演者名', 1000) };
     if (item.type === 'break' || item.type === 'end') return { ...item, type: item.type, label: string(item.label, '表示文', 1000) };
     throw new ValidationError(`schedule[${i}]: 種類が不正です。`);
   });
-  const performers = array(input.performers ?? [], 'performers', 50).map((value, i) => fields(value, ['id', 'name', 'catchcopy', 'bio', 'imageUrl', 'linkUrl'], `performers[${i}]`) as PerformerProfile);
+  const performers = array(input.performers ?? [], 'performers', EVENT_LIMITS.performers).map((value, i) => fields(value, ['id', 'name', 'catchcopy', 'bio', 'imageUrl', 'linkUrl'], `performers[${i}]`) as PerformerProfile);
   const ids = new Set<string>();
   performers.forEach((p, i) => { let id = p.id || `performer-${i + 1}`; while (ids.has(id)) id += '-copy'; ids.add(id); p.id = id; });
   const options = object(input.flyerOptions ?? defaultEvent.flyerOptions, 'flyerOptions');
@@ -57,7 +58,7 @@ export function parseEvent(value: unknown): EventData {
     schedule, performers, flyerOptions: { ...options, showPerformerProfiles: options.showPerformerProfiles },
     venue: fields(input.venue, ['name', 'address', 'url'], 'venue') as EventData['venue'],
     openMic: fields(input.openMic, ['title', 'time', 'lastOrder', 'headline', 'note', 'closeNote'], 'openMic') as EventData['openMic'],
-    socials: array(input.socials, 'socials', 30).map((v, i) => fields(v, ['label', 'url'], `socials[${i}]`) as SocialLink)
+    socials: array(input.socials, 'socials', EVENT_LIMITS.socials).map((v, i) => fields(v, ['label', 'url'], `socials[${i}]`) as SocialLink)
   } as EventData;
 }
 export function parseJson(text: string): unknown {

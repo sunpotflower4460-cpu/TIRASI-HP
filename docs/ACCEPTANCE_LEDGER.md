@@ -25,3 +25,5 @@
 | DA21 | 単一state transition・StrictMode・二タブ・storage失敗 | A実装・検証 |
 
 物理印刷・実iPhone/Safariの共有・端末メモリ制約は別の手動確認。未実測をpassとしない。
+
+追加レビュー: raw Workspace退避の復元、URL指定イベントの配色、入力と保存の件数上限一致、日本語フォントを同梱したOG PNGを修正。最終ローカル検証はunit28件・Chromium E2E8件・buildがpass。PR-A #36（base main）、PR-B #37（base PR-A）。

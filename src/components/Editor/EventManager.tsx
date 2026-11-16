@@ -3,6 +3,7 @@ import type { ChangeEvent } from "react";
 import type { EventRecord } from "../../hooks/useEventData";
 import { parseLibrary } from '../../domain/workspace';
 import { errorMessage, readJsonFile } from '../../domain/validation';
+import { MAX_EVENTS } from '../../domain/limits';
 
 type EventManagerProps = {
   eventRecords: EventRecord[];
@@ -66,7 +67,10 @@ export function EventManager({
   const applyImport = (merge: boolean) => {
     if (!pending) return;
     const records = merge ? [...eventRecords, ...pending.map(r => ({ ...r, id: crypto.randomUUID() }))] : pending;
-    onReplaceEventLibrary(records); setPending(undefined); setNotice('イベント一覧を復元しました。');
+    if (records.length > MAX_EVENTS) { setNotice(`イベントは${MAX_EVENTS}件までです。追加するには不要なイベントを削除するか、一覧を置き換えてください。`); return; }
+    try {
+      if (onReplaceEventLibrary(records)) { setPending(undefined); setNotice('イベント一覧を復元しました。'); }
+    } catch (error) { setNotice(errorMessage(error)); }
   };
 
   return (
@@ -77,8 +81,8 @@ export function EventManager({
           <p className="event-manager-note">現在のイベントを複製して、次のチラシを作れます。公開イベントは切り替わりません。</p>
         </div>
         <div className="event-manager-actions">
-          <button type="button" onClick={onCreateNewEvent}>新規</button>
-          <button type="button" onClick={onDuplicateActiveEvent}>複製</button>
+          <button type="button" onClick={onCreateNewEvent} disabled={eventRecords.length >= MAX_EVENTS}>新規</button>
+          <button type="button" onClick={onDuplicateActiveEvent} disabled={eventRecords.length >= MAX_EVENTS}>複製</button>
           <button type="button" onClick={exportLibrary}>一覧保存</button>
           <button type="button" onClick={() => importInputRef.current?.click()}>一覧復元</button>
           <button type="button" className="danger" onClick={handleDelete}>削除</button>
@@ -91,6 +95,7 @@ export function EventManager({
           />
         </div>
       </div>
+      {eventRecords.length >= MAX_EVENTS && <p role="status">イベントは{MAX_EVENTS}件までです。追加するには不要なイベントを削除してください。</p>}
 
       {notice ? <p role="status" className="editor-notice event-manager-notice">{notice}</p> : null}
 

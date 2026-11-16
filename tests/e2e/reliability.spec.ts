@@ -1,5 +1,46 @@
 import { test, expect } from '@playwright/test';
 import { defaultEvent } from '../../src/data/defaultEvent';
+import { EVENT_LIMITS, MAX_EVENTS } from '../../src/domain/limits';
+test('collection caps block additions and oversized library merges while edits still save and restore', async ({ page }) => {
+  const event = {
+    ...defaultEvent,
+    schedule: Array.from({ length: EVENT_LIMITS.schedule }, () => ({ type: 'act', time: '14:00', name: 'Act' })),
+    performers: Array.from({ length: EVENT_LIMITS.performers }, (_, index) => ({ id: `p-${index}`, name: 'Profile', catchcopy: '', bio: '', imageUrl: '', linkUrl: '' })),
+    socials: Array.from({ length: EVENT_LIMITS.socials }, () => ({ label: 'Site', url: 'https://example.com' })),
+  };
+  const records = Array.from({ length: MAX_EVENTS }, (_, index) => ({ id: `event-${index}`, name: `Event ${index}`, eventData: index === 0 ? event : defaultEvent }));
+  await page.addInitScript(data => {
+    if (localStorage.getItem('limit-fixture')) return;
+    localStorage.setItem('tirasi-hp:event-library:v1', JSON.stringify(data));
+    localStorage.setItem('limit-fixture', 'yes');
+  }, records);
+  await page.goto('/editor');
+  await expect(page.getByRole('button', { name: '新規', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '複製', exact: true })).toBeDisabled();
+  for (const button of await page.getByRole('button', { name: '出演者を追加', exact: true }).all()) await expect(button).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'SNSを追加', exact: true })).toBeDisabled();
+  await page.locator('input[type=file]').first().setInputFiles({ name: 'one.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify([records[1]])) });
+  await page.getByRole('button', { name: '一覧に追加', exact: true }).click();
+  await expect(page.getByText('イベントは100件までです。追加するには不要なイベントを削除するか、一覧を置き換えてください。', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'キャンセル', exact: true }).click();
+  await page.getByLabel('イベント名', { exact: true }).fill('SAVED AT CAPACITY');
+  await expect.poll(() => page.evaluate(async () => {
+    const path = '/src/storage/database.ts';
+    const { readWorkspace } = await import(path);
+    return (await readWorkspace()).events[0].eventData.title;
+  })).toBe('SAVED AT CAPACITY');
+  await page.reload();
+  await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('SAVED AT CAPACITY');
+  const exported = page.waitForEvent('download');
+  await page.getByRole('button', { name: '一覧保存', exact: true }).click();
+  const file = await exported;
+  const { readFile } = await import('node:fs/promises');
+  const { parseLibrary } = await import('../../src/domain/workspace');
+  const restored = parseLibrary(await readFile((await file.path())!, 'utf8'));
+  expect(restored).toHaveLength(MAX_EVENTS);
+  expect(restored[0].eventData.title).toBe('SAVED AT CAPACITY');
+  expect(restored[0].eventData.performers).toHaveLength(EVENT_LIMITS.performers);
+});
 test('public source stays separate from migrated draft across navigation and reload', async ({ page }) => {
   await page.addInitScript(event => { if (!localStorage.getItem('seeded')) { localStorage.setItem('tirasi-hp:event-data:v1', JSON.stringify({ ...event, title: 'LOCAL DRAFT' })); localStorage.setItem('seeded', 'yes'); } }, defaultEvent);
   await page.goto('/'); await expect(page.locator('h1')).toContainText('生音');

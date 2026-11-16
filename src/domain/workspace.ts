@@ -1,6 +1,7 @@
 import { defaultEvent } from '../data/defaultEvent';
 import type { EventData } from '../types/event';
 import { array, object, parseEvent, parseJson, string, ValidationError } from './validation';
+import { eventCollectionsFit, MAX_EVENTS } from './limits';
 
 export type EventRecord = { id: string; name: string; eventData: EventData; updatedAt: string };
 export type Workspace = {
@@ -18,7 +19,7 @@ export const eventName = (event: EventData) => `${event.title} ${event.subtitle}
 export const recordFor = (eventData: EventData, id: string = newId(), name = eventName(eventData)): EventRecord => ({ id, name, eventData: structuredClone(eventData), updatedAt: new Date().toISOString() });
 export function parseRecords(value: unknown): EventRecord[] {
   const ids = new Set<string>();
-  const records = array(value, 'イベント一覧').map((v, index) => {
+  const records = array(value, 'イベント一覧', MAX_EVENTS).map((v, index) => {
     const record = object(v, `イベント[${index}]`);
     const eventData = parseEvent(record.eventData);
     const originalId = record.id === undefined ? `import-${index}` : string(record.id, 'id', 200);
@@ -74,15 +75,15 @@ export type WorkspaceAction =
   | { type: 'replace'; records: EventRecord[] };
 export function workspaceReducer(state: Workspace, action: WorkspaceAction): Workspace {
   switch (action.type) {
-    case 'edit': return { ...state, events: state.events.map(e => e.id === action.id ? { ...e, eventData: action.eventData, updatedAt: action.updatedAt } : e) };
+    case 'edit': return eventCollectionsFit(action.eventData) ? { ...state, events: state.events.map(e => e.id === action.id ? { ...e, eventData: action.eventData, updatedAt: action.updatedAt } : e) } : state;
     case 'select': return state.events.some(e => e.id === action.id) ? { ...state, activeEventId: action.id } : state;
-    case 'add': return { ...state, events: [...state.events, action.record], activeEventId: action.record.id };
+    case 'add': return state.events.length >= MAX_EVENTS || state.events.some(e => e.id === action.record.id) ? state : { ...state, events: [...state.events, action.record], activeEventId: action.record.id };
     case 'rename': return { ...state, events: state.events.map(e => e.id === action.id ? { ...e, name: action.name || eventName(e.eventData) } : e) };
     case 'delete': {
       const remaining = state.events.filter(e => e.id !== action.id);
       const events = remaining.length ? remaining : [action.fallback];
       return { ...state, events, activeEventId: events.some(e => e.id === state.activeEventId) ? state.activeEventId : events[0].id };
     }
-    case 'replace': return { ...state, events: action.records, activeEventId: action.records[0].id };
+    case 'replace': return !action.records.length || action.records.length > MAX_EVENTS ? state : { ...state, events: action.records, activeEventId: action.records[0].id };
   }
 }
