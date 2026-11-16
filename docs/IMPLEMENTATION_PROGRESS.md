@@ -81,3 +81,8 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 - PR-A: https://github.com/sunpotflower4460-cpu/TIRASI-HP/pull/36 （main向け、未マージ）
 - PR-B: https://github.com/sunpotflower4460-cpu/TIRASI-HP/pull/37 （base: feature/tirasi-v2-reliability、未マージ）
 - mainマージ / 本番デプロイ: 実施していない。
+
+## 追加レビュー対応（2026-11-16）
+
+- PR-A `4249a09db01a6bc255112eba89e83a3f27d553de`: 退避Workspaceのイベント復元と、URLで指定されたpreviewの配色を修正。unit23 / E2E7を確認。
+- PR-B: サムネイルの原画像デコード共有・縮小、固定snapshotと編集欄の一致、旧版の配色スコープ、復元後の削除Undoを追加検証する。

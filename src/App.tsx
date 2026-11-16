@@ -29,9 +29,10 @@ export default function App() {
   const local = useEventData();
   const isLocal =
     route === "/editor" || route === "/studio" || route.startsWith("/preview/");
-  const theme = getThemeClassName(
-    isLocal ? local.eventData.themeId : publishedEvent.themeId,
-  );
+  const requestedPreviewId = route.startsWith('/preview/event/') ? decodeId(route.slice('/preview/event/'.length)) : route.startsWith('/preview/event-') ? decodeId(route.slice('/preview/event-'.length)) : '';
+  const requestedPreview = local.eventRecords.find(record=>record.id === requestedPreviewId);
+  const studioRoute = route === '/studio' || route.startsWith('/preview/document/');
+  const theme = getThemeClassName(studioRoute ? 'spring' : isLocal ? requestedPreview?.eventData.themeId ?? local.eventData.themeId : publishedEvent.themeId);
   useEffect(() => {
     const pop = () => setRoute(getRoute());
     window.addEventListener("popstate", pop);

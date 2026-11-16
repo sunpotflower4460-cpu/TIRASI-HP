@@ -70,3 +70,20 @@ test('storage write failure preserves edits and offers a recoverable backup', as
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('KEEP UNSAVED');
   await expect(page.getByRole('button', { name: '未保存の内容をJSON保存' })).toBeVisible();
 });
+test('a bookmarked event preview uses its own palette after another event is selected', async ({ page }) => {
+  await page.addInitScript(event => {
+    if (!localStorage.getItem('palette-fixture')) {
+      localStorage.setItem('tirasi-hp:event-library:v1', JSON.stringify([{ id: 'summer-event', name: 'summer', eventData: { ...event, themeId: 'summer', title: 'SUMMER DRAFT' } }, { id: 'night-event', name: 'night', eventData: { ...event, themeId: 'night', title: 'NIGHT DRAFT' } }]));
+      localStorage.setItem('tirasi-hp:active-event-id:v1', 'summer-event'); localStorage.setItem('palette-fixture', 'yes');
+    }
+  }, defaultEvent);
+  await page.goto('/editor'); await page.getByRole('button', { name: '下書きA4を見る', exact: true }).click();
+  const summerPreview = page.url();
+  await page.getByRole('button', { name: '編集に戻る', exact: true }).click();
+  await page.getByRole('combobox', { name: '編集中のイベント', exact: true }).selectOption('night-event');
+  await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('NIGHT DRAFT');
+  await expect.poll(async () => page.evaluate(async () => { const modulePath='/src/storage/database.ts'; const { readWorkspace } = await import(modulePath); return (await readWorkspace()).activeEventId; })).toBe('night-event');
+  await page.goto(summerPreview);
+  await expect(page.locator('.one-page-title-row h1')).toHaveText('SUMMER DRAFT');
+  expect(await page.locator('.one-page-sheet').evaluate(element => getComputedStyle(element).backgroundColor)).toBe('rgb(245, 252, 255)');
+});
