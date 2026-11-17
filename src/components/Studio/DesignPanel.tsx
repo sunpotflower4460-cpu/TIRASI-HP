@@ -169,6 +169,7 @@ export function DesignPanel({
               <button
                 key={p.id}
                 aria-label={`配色: ${p.label}`}
+                title={p.label}
                 aria-pressed={doc.design.paletteId === p.id}
                 onClick={() => setDesign({ paletteId: p.id })}
                 style={{
