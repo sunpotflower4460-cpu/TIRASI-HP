@@ -1,6 +1,6 @@
 import type { ModernTemplateId, SizeId } from "./registry";
 
-type Slot = [number, number, number, number];
+export type Slot = [number, number, number, number];
 export type Layout = {
   hero: Slot;
   facts: Slot;

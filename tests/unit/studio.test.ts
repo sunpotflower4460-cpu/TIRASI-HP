@@ -221,3 +221,50 @@ describe("event date typesetting", () => {
     expect(t.facts).toContain("5月上旬");
   });
 });
+
+describe("boundary text handling", () => {
+  const withEvent = (patch: Record<string, unknown>) => ({
+    ...event,
+    eventData: { ...event.eventData, ...patch },
+  });
+  const flowTexts = (
+    doc: ReturnType<typeof createDocument>,
+    events: unknown[],
+  ) =>
+    composeScene(doc, events as never)
+      .nodes.flatMap((node) => (node.kind === "flow" ? node.blocks : []))
+      .map((block) => block.text);
+  it("moves a long price from the date strip into the details column", () => {
+    const longPrice = "前売 2,500円 / 当日 3,000円（1ドリンク別）";
+    const record = withEvent({ price: longPrice });
+    const doc = createDocument("event-flyer", record);
+    doc.design.templateId = "acoustic";
+    const scene = composeScene(doc, [record]);
+    const text = (id: string) =>
+      scene.nodes.find((node) => node.kind === "text" && node.id === id) as
+        | { text: string }
+        | undefined;
+    expect(text("facts-detail")?.text).toBe("開始 14:30");
+    expect(flowTexts(doc, [record])).toContain(longPrice);
+    // A short price stays where readers expect it.
+    const short = createDocument("event-flyer", event);
+    short.design.templateId = "acoustic";
+    expect(flowTexts(short, [event])).not.toContain("観覧無料");
+  });
+  it("gives washi a wide headline slot when the title cannot be set vertically", () => {
+    const widthOf = (title: string) => {
+      const record = withEvent({ title });
+      const doc = createDocument("event-flyer", record);
+      doc.design.templateId = "washi";
+      const node = composeScene(doc, [record]).nodes.find(
+        (n) => n.kind === "text" && n.id === "title",
+      ) as { w: number; vertical?: boolean };
+      return node;
+    };
+    const short = widthOf("生音");
+    const long = widthOf("館林みつで通り春のおおきな音楽祭スペシャル");
+    expect(short.vertical).toBe(true);
+    expect(long.vertical).toBeFalsy();
+    expect(long.w).toBeGreaterThan(short.w * 2);
+  });
+});
