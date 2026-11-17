@@ -168,10 +168,14 @@
   gap: 12px;
   min-width: 0;
 }
+/* :where() keeps this base style at low specificity so .primary and other
+   intentional variants are not silently overridden. */
 .studio-page
-  button:not(.template-card):not(.studio-create button):not(
-    .starter-grid button
-  ):not(.palette-swatches button):not([role="tab"]):not(.effect-grid button) {
+  :where(
+    button:not(.template-card):not(.studio-create button):not(
+        .starter-grid button
+      ):not(.palette-swatches button):not([role="tab"]):not(.effect-grid button)
+  ) {
   min-height: 40px;
   border: 1px solid var(--studio-line);
   border-radius: 7px;
@@ -1143,6 +1147,107 @@
 @media print {
   .live-resume,
   .next-live-dialog {
+    display: none !important;
+  }
+}
+
+/* ---- 2026-11 polish: one-click export, preview that stays in view ---- */
+.export-actions .action-row button {
+  min-height: 40px;
+  padding: 9px 16px;
+  border-radius: 8px;
+}
+.export-actions button.export-primary {
+  background: #24493c;
+  border-color: #24493c;
+  color: #fff;
+  padding-inline: 22px;
+  box-shadow: 0 6px 16px #24493c2e;
+}
+.export-actions button.export-primary:hover:enabled {
+  background: #1b3a2f;
+  border-color: #1b3a2f;
+}
+.export-actions .export-status:empty {
+  display: none;
+}
+.export-actions .export-status {
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+.export-settings {
+  margin-top: 10px;
+  font-size: 12px;
+}
+.export-settings > summary {
+  cursor: pointer;
+  color: #5b6b60;
+  font-weight: 700;
+  font-size: 11px;
+}
+.export-settings .helper {
+  font-size: 11px;
+  line-height: 1.7;
+}
+.document-preview .export-actions,
+.studio-preview-panel .export-actions {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.preview-zoom {
+  margin-left: auto;
+  min-height: 30px;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+}
+@media (min-width: 1001px) {
+  /* Fit the whole sheet beside the form so every keystroke is visible. */
+  .studio-preview-panel:not(.zoomed) .studio-paper {
+    max-width: min(1000px, calc((100vh - 270px) * var(--paper-ratio, 0.7071)));
+  }
+  .studio-preview-panel:not(.zoomed) .sheet-viewport {
+    max-width: min(793.7px, calc((100vh - 270px) * 0.7071)) !important;
+  }
+  .studio-preview-panel {
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .studio-preview-panel.zoomed {
+    max-height: none;
+    overflow: visible;
+    position: static;
+  }
+}
+.studio-mobile-bar {
+  display: none;
+}
+@media (max-width: 760px) {
+  .studio-mobile-bar {
+    display: flex;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 40;
+    gap: 6px;
+    padding: 6px;
+    background: #fdfdf8f2;
+    border: 1px solid var(--studio-line);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px #1f342a33;
+    backdrop-filter: blur(8px);
+  }
+  .studio-mobile-bar button {
+    flex: 1;
+    min-height: 44px;
+  }
+  .studio-page.has-document {
+    padding-bottom: 96px;
+  }
+}
+@media print {
+  .studio-mobile-bar {
     display: none !important;
   }
 }

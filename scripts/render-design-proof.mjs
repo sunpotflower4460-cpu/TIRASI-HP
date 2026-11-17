@@ -11,7 +11,7 @@ const output = args.out ?? "test-results/design-proof";
 const sizeIds = (args.sizes ?? "a4,square,story").split(",");
 const fixture = args.fixture ?? "event";
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 const page = await browser.newPage();
 try {
   await page.goto(args.origin ?? "http://127.0.0.1:5173/studio");

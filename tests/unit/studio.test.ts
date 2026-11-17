@@ -169,3 +169,55 @@ describe("snapshot normalization", () => {
     expect(parsed.snapshot.performers).toEqual([]);
   });
 });
+
+describe("event date typesetting", () => {
+  const texts = (doc: ReturnType<typeof createDocument>, events = [event]) =>
+    Object.fromEntries(
+      composeScene(doc, events)
+        .nodes.filter((node) => node.kind === "text")
+        .map((node) => [
+          (node as { id: string }).id,
+          (node as { text: string }).text,
+        ]),
+    );
+  it("turns a parseable date into a display numeral with year, weekday, start and price", () => {
+    for (const template of templates.filter(
+      (t) => !["swiss", "information"].includes(t.id),
+    )) {
+      const doc = createDocument("event-flyer", event);
+      doc.design.templateId = template.id;
+      const t = texts(doc);
+      expect(t["facts-date"], template.id).toBe("5/9");
+      expect(`${t["facts-year"] ?? ""} ${t["facts-weekday"]}`).toContain(
+        "2026",
+      );
+      expect(t["facts-weekday"]).toContain("SAT (土)");
+      expect(t["facts-detail"]).toContain("開始 14:30");
+      expect(t["facts-detail"]).toContain("観覧無料");
+      expect(t.facts).toBeUndefined();
+    }
+  });
+  it("keeps the writer's separator and falls back to the original line for free-form dates", () => {
+    const dotted = {
+      ...event,
+      eventData: { ...event.eventData, date: "2026.12.24" },
+    };
+    const doc = createDocument("event-flyer", dotted);
+    doc.design.templateId = "citypop";
+    expect(texts(doc, [dotted])["facts-date"]).toBe("12.24");
+    const loose = {
+      ...event,
+      eventData: {
+        ...event.eventData,
+        date: "5月上旬",
+        dayOverride: true,
+        day: "未定",
+      },
+    };
+    const free = createDocument("event-flyer", loose);
+    free.design.templateId = "citypop";
+    const t = texts(free, [loose]);
+    expect(t["facts-date"]).toBeUndefined();
+    expect(t.facts).toContain("5月上旬");
+  });
+});

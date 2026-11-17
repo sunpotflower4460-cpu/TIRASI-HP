@@ -36,22 +36,22 @@ export function ExportActions({
       generation.current++;
     };
   }, [source, light]);
-  const create = async () => {
-    if (locked.current || errors.length) return;
+  // One click from preview to file: generate (or reuse) the PNG, then act on it.
+  const ensureBlob = async (): Promise<Blob | undefined> => {
+    if (blob) return blob;
+    if (locked.current || errors.length) return undefined;
     locked.current = true;
     const id = ++generation.current;
     setBusy(true);
-    setBlob(undefined);
-    setStatus("PNGを生成しています…");
+    setStatus("PNGを作成しています…");
     try {
       const result = await generate(light);
-      if (id !== generation.current) return;
+      if (id !== generation.current) return undefined;
       setBlob(result);
-      setStatus(
-        "PNGの準備ができました。「PNGを保存」または「共有」を選んでください。",
-      );
+      return result;
     } catch (error) {
       if (id === generation.current) setStatus(errorMessage(error));
+      return undefined;
     } finally {
       if (id === generation.current) {
         setBusy(false);
@@ -60,9 +60,19 @@ export function ExportActions({
     }
   };
   const fileName = `${safeFileName(name)}${light ? "-light" : ""}.png`;
+  const save = async () => {
+    const ready = await ensureBlob();
+    if (!ready) return;
+    downloadBlob(ready, fileName);
+    setStatus(
+      "PNGのダウンロードを開始しました。端末の保存先をご確認ください。",
+    );
+  };
   const share = async () => {
-    if (!blob || locked.current) return;
-    const file = new File([blob], fileName, { type: "image/png" });
+    const prepared = !!blob;
+    const ready = await ensureBlob();
+    if (!ready || locked.current) return;
+    const file = new File([ready], fileName, { type: "image/png" });
     let canShare = false;
     try {
       canShare = !!navigator.canShare?.({ files: [file] }) && !!navigator.share;
@@ -86,7 +96,11 @@ export function ExportActions({
         setStatus(
           e instanceof DOMException && e.name === "AbortError"
             ? "共有をキャンセルしました。PNGは引き続き保存できます。"
-            : "共有できませんでした。「PNGを保存」をお使いください。",
+            : !prepared &&
+                e instanceof DOMException &&
+                e.name === "NotAllowedError"
+              ? "画像の準備ができました。もう一度「共有」を押してください。"
+              : "共有できませんでした。「PNGを保存」をお使いください。",
         );
     } finally {
       if (id === generation.current) locked.current = false;
@@ -118,27 +132,11 @@ export function ExportActions({
       <div className="action-row">
         <button
           type="button"
-          onClick={create}
+          className="export-primary"
+          onClick={() => void save()}
           disabled={busy || !!errors.length}
         >
-          {busy ? "生成中…" : "PNGを生成"}
-        </button>
-        <button
-          type="button"
-          disabled={!blob || busy}
-          onClick={() => {
-            if (blob) {
-              downloadBlob(blob, fileName);
-              setStatus(
-                "PNGのダウンロードを開始しました。端末の保存先をご確認ください。",
-              );
-            }
-          }}
-        >
-          PNGを保存
-        </button>
-        <button type="button" disabled={!blob || busy} onClick={share}>
-          共有
+          {busy ? "作成中…" : "PNGを保存"}
         </button>
         {canPrint && (
           <button
@@ -149,28 +147,14 @@ export function ExportActions({
             印刷 / PDFとして保存
           </button>
         )}
+        <button
+          type="button"
+          disabled={busy || !!errors.length}
+          onClick={() => void share()}
+        >
+          共有
+        </button>
       </div>
-      {canPrint && (
-        <label className="inline-check">
-          <input
-            type="checkbox"
-            checked={light}
-            onChange={(e) => setLight(e.target.checked)}
-          />
-          軽量版（A4は1240×1754px）
-        </label>
-      )}
-      <p className="helper">
-        {sizeInfo ??
-          "A4 PNG: 2480×3508px（300dpi相当） / 印刷はブラウザ機能です。A4・倍率100%・余白なし・背景の印刷を選んでください。業者向け塗り足しは含みません。"}
-      </p>
-      <p className="helper">
-        高画質PNGの作業メモリ目安: 約{memoryEstimateMB}
-        MB（端末や画像により増減）。
-        {canPrint
-          ? "動作が重い場合は軽量版を選んでください。"
-          : "画像を小さくすると負荷を下げられます。"}
-      </p>
       {errors.length > 0 && (
         <div role="alert" className="editor-warning">
           <strong>書き出す前に修正してください</strong>
@@ -184,9 +168,33 @@ export function ExportActions({
           </p>
         </div>
       )}
-      <p role="status" aria-live="polite">
+      <p role="status" aria-live="polite" className="export-status">
         {status}
       </p>
+      <details className="export-settings">
+        <summary>出力サイズと印刷のこつ</summary>
+        {canPrint && (
+          <label className="inline-check">
+            <input
+              type="checkbox"
+              checked={light}
+              onChange={(e) => setLight(e.target.checked)}
+            />
+            軽量版（A4は1240×1754px）
+          </label>
+        )}
+        <p className="helper">
+          {sizeInfo ??
+            "A4 PNG: 2480×3508px（300dpi相当） / 印刷はブラウザ機能です。A4・倍率100%・余白なし・背景の印刷を選んでください。業者向け塗り足しは含みません。"}
+        </p>
+        <p className="helper">
+          高画質PNGの作業メモリ目安: 約{memoryEstimateMB}
+          MB（端末や画像により増減）。
+          {canPrint
+            ? "動作が重い場合は軽量版を選んでください。"
+            : "画像を小さくすると負荷を下げられます。"}
+        </p>
+      </details>
     </div>
   );
 }

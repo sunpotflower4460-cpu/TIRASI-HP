@@ -166,6 +166,16 @@ export function composeScene(
     facts = "",
     program = "",
     eventDayNumber = "";
+  let dateParts:
+    | {
+        year: string;
+        monthDay: string;
+        weekday: string;
+        english: string;
+        start: string;
+        price: string;
+      }
+    | undefined;
   let schedule: ScheduleItem[] | undefined;
   let venueBlocks: FlowBlock[] = [],
     additionalBlocks: FlowBlock[] = [];
@@ -189,6 +199,28 @@ export function composeScene(
     facts = `${event.date} (${eventDay(event)})\n開始 ${event.startTime}   /   ${event.price}`;
     const parsedDate = dateISO(event.date);
     eventDayNumber = parsedDate ? parsedDate.slice(8) : "";
+    if (parsedDate) {
+      // Keep the writer's own month/day separator ("5/9", "5.9") so the
+      // flyer reads the way it was typed, only larger.
+      const raw = event.date
+        .trim()
+        .match(/^(\d{4})[.\-/年](\d{1,2})([.\-/月])(\d{1,2})/);
+      const separator = raw && raw[3] !== "-" && raw[3] !== "月" ? raw[3] : "/";
+      const day = eventDay(event);
+      const englishDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+      const japaneseIndex = "日月火水木金土".indexOf(day);
+      dateParts = {
+        year: parsedDate.slice(0, 4),
+        monthDay: `${Number(parsedDate.slice(5, 7))}${separator}${Number(parsedDate.slice(8))}`,
+        weekday: day,
+        english:
+          day.length === 1 && japaneseIndex >= 0
+            ? englishDays[japaneseIndex]
+            : "",
+        start: event.startTime.trim() ? `開始 ${event.startTime.trim()}` : "",
+        price: event.price.trim(),
+      };
+    }
     if (
       !title.trim() ||
       !event.date.trim() ||
@@ -475,6 +507,214 @@ export function composeScene(
         { lineHeight: 1, valign: "center" },
       );
       if (!filled) rule({ ...fb, y: fb.y + fb.h }, palette.accent);
+    } else if (dateParts) {
+      // A flyer is read for "when" right after "what": the date becomes a
+      // display numeral instead of one more line of body copy.
+      const d = dateParts;
+      const pad = filled ? 22 : 12;
+      const inner = { x: fb.x + pad, y: fb.y, w: fb.w - pad * 2, h: fb.h };
+      const accentInk = filled ? palette.onAccent : palette.accent;
+      const estimate = (value: string, px: number, narrow = false) =>
+        Array.from(value).reduce(
+          (sum, char) =>
+            sum +
+            px *
+              (/[^\u0000-\u007f]/.test(char)
+                ? 1
+                : narrow
+                  ? /[0-9]/.test(char)
+                    ? 0.5
+                    : 0.34
+                  : 0.6),
+          0,
+        );
+      const weekdayLabel = d.english
+        ? `${d.english} (${d.weekday})`
+        : d.weekday
+          ? `(${d.weekday})`
+          : "";
+      const horizontal =
+        inner.w >= 330 && (inner.h < 220 || inner.w / inner.h > 4.2);
+      if (horizontal) {
+        const infoText = (px: number) =>
+          Math.max(estimate(d.start, px), estimate(d.price, px)) + 10;
+        // Shrink the numeral until numeral + weekday + details share one line;
+        // in a narrow strip the details drop to a second row instead.
+        const measure = (rowH: number, beside: boolean) => {
+          for (let big = Math.min(132, Math.max(44, rowH * 0.94)); ; big -= 4) {
+            const small = Math.max(18, Math.min(30, big * 0.32));
+            const infoSize = Math.max(19, Math.min(34, big * 0.36));
+            const numberWidth = estimate(d.monthDay, big, true) + 8;
+            const sideWidth =
+              Math.max(
+                estimate(d.year, small, true),
+                estimate(weekdayLabel, small * 1.15, true),
+              ) + 10;
+            const fixed = numberWidth + 16 + sideWidth + (beside ? 56 : 0);
+            const need = beside
+              ? fixed + Math.min(infoText(infoSize), 150)
+              : fixed;
+            if (need <= inner.w || big <= 44)
+              return {
+                big,
+                small,
+                infoSize,
+                numberWidth,
+                sideWidth,
+                fixed,
+                fits: need <= inner.w,
+              };
+          }
+        };
+        let row = measure(inner.h, true);
+        const twoRows = inner.h >= 110 && (!row.fits || row.big < 64);
+        const rowH = twoRows ? inner.h * 0.64 : inner.h;
+        if (twoRows) row = measure(rowH, false);
+        const { big, small, infoSize, numberWidth, sideWidth, fixed } = row;
+        const infoWidth = twoRows
+          ? 0
+          : Math.max(120, Math.min(inner.w - fixed, infoText(infoSize)));
+        const total = fixed + infoWidth;
+        const centered = recipe.align === "center" || style === "rule";
+        let x = centered
+          ? inner.x + Math.max(0, (inner.w - total) / 2)
+          : inner.x;
+        text(
+          "facts-date",
+          d.monthDay,
+          { x, y: inner.y, w: numberWidth, h: rowH },
+          big,
+          28,
+          factsColor,
+          700,
+          condensed,
+          "left",
+          { lineHeight: 1, valign: "center", maxLines: 1 },
+        );
+        x += numberWidth + 16;
+        const stackH = small * 1.2 + small * 1.15 * 1.2;
+        const stackY = inner.y + (rowH - stackH) / 2;
+        text(
+          "facts-year",
+          d.year,
+          { x, y: stackY, w: sideWidth, h: small * 1.2 },
+          small,
+          16,
+          accentInk,
+          700,
+          condensed,
+          "left",
+          { lineHeight: 1.1, maxLines: 1 },
+        );
+        text(
+          "facts-weekday",
+          weekdayLabel,
+          {
+            x,
+            y: stackY + small * 1.2,
+            w: sideWidth,
+            h: small * 1.15 * 1.2,
+          },
+          small * 1.15,
+          16,
+          factsColor,
+          700,
+          condensed,
+          "left",
+          { lineHeight: 1.1, maxLines: 1 },
+        );
+        if (twoRows)
+          text(
+            "facts-detail",
+            [d.start, d.price].filter(Boolean).join("  /  "),
+            { x: inner.x, y: inner.y + rowH, w: inner.w, h: inner.h - rowH },
+            Math.max(19, Math.min(30, (inner.h - rowH) * 0.6)),
+            16,
+            factsColor,
+            700,
+            sans,
+            centered ? "center" : "left",
+            { lineHeight: 1.2, valign: "center" },
+          );
+        else {
+          x += sideWidth + 27;
+          shape(
+            { x, y: inner.y + inner.h * 0.2, w: 2, h: inner.h * 0.6 },
+            filled ? palette.onAccent : palette.soft,
+          );
+          x += 27;
+          text(
+            "facts-detail",
+            [d.start, d.price].filter(Boolean).join("\n"),
+            {
+              x,
+              y: inner.y + 4,
+              w: Math.min(infoWidth, inner.x + inner.w - x),
+              h: inner.h - 8,
+            },
+            infoSize,
+            17,
+            factsColor,
+            700,
+            sans,
+            "left",
+            { lineHeight: 1.22, valign: "center" },
+          );
+        }
+      } else {
+        // Stacked ticket: numeral, then weekday/year, then start and price.
+        const big = Math.min(150, Math.max(40, inner.h * 0.42));
+        const small = Math.max(18, Math.min(28, big * 0.3));
+        const align = recipe.align === "center" ? "center" : "left";
+        const numberH = big * 1.04;
+        const lineH = small * 1.3;
+        const detailLines = [d.start, d.price].filter(Boolean).join("\n");
+        const detailH = Math.max(small * 1.3, inner.h - numberH - lineH - 22);
+        const startY =
+          inner.y +
+          Math.max(6, (inner.h - (numberH + lineH + detailH + 12)) / 2);
+        text(
+          "facts-date",
+          d.monthDay,
+          { x: inner.x, y: startY, w: inner.w, h: numberH },
+          big,
+          28,
+          factsColor,
+          700,
+          condensed,
+          align,
+          { lineHeight: 1, valign: "center", maxLines: 1 },
+        );
+        text(
+          "facts-weekday",
+          [weekdayLabel, d.year].filter(Boolean).join("  "),
+          { x: inner.x, y: startY + numberH, w: inner.w, h: lineH },
+          small,
+          16,
+          accentInk,
+          700,
+          condensed,
+          align,
+          { lineHeight: 1.15, maxLines: 1 },
+        );
+        text(
+          "facts-detail",
+          detailLines,
+          {
+            x: inner.x,
+            y: startY + numberH + lineH + 12,
+            w: inner.w,
+            h: detailH,
+          },
+          Math.max(20, Math.min(30, small * 1.08)),
+          17,
+          factsColor,
+          700,
+          sans,
+          align,
+          { lineHeight: 1.3 },
+        );
+      }
     } else {
       const wide = fb.w > 440 && fb.h < 160;
       text(
@@ -596,15 +836,49 @@ export function composeScene(
           }
           rule({ x, y: y + rowHeight - 1, w: columnWidth, h: 1 });
         } else {
-          if (item.type === "break")
+          if (item.type === "break") {
+            // A quiet interlude marker: a short pill between hairlines rather
+            // than a full-width bar competing with the artist names.
+            const pill = Math.min(columnWidth * 0.62, 300);
+            const px = x + (columnWidth - pill) / 2;
             shape(
-              { x, y: y + 5, w: columnWidth, h: rowHeight - 10 },
+              {
+                x,
+                y: y + rowHeight / 2,
+                w: (columnWidth - pill) / 2 - 10,
+                h: 1,
+              },
               palette.soft,
             );
+            shape(
+              {
+                x: px + pill + 10,
+                y: y + rowHeight / 2,
+                w: (columnWidth - pill) / 2 - 10,
+                h: 1,
+              },
+              palette.soft,
+            );
+            shape(
+              { x: px, y: y + 4, w: pill, h: rowHeight - 8 },
+              palette.soft,
+              undefined,
+              (rowHeight - 8) / 2,
+            );
+          }
+          const labelWidth =
+            item.type === "break"
+              ? Math.min(columnWidth * 0.62, 300) - 20
+              : columnWidth - 10;
           text(
             `schedule-${index}`,
             item.label,
-            { x: x + 5, y: y + 5, w: columnWidth - 10, h: rowHeight - 10 },
+            {
+              x: x + (columnWidth - labelWidth) / 2,
+              y: y + 5,
+              w: labelWidth,
+              h: rowHeight - 10,
+            },
             19,
             18,
             palette.ink,

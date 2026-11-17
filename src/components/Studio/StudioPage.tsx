@@ -84,6 +84,7 @@ export function StudioPage({
   const [notice, setNotice] = useState("");
   const [uploading, setUploading] = useState(false);
   const [compare, setCompare] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
   const [pendingTemplate, setPendingTemplate] = useState<{
     id: TemplateId;
     paletteId?: string;
@@ -667,7 +668,10 @@ export function StudioPage({
                 )}
               </div>
             </section>
-            <aside className="studio-preview-panel" id="studio-preview">
+            <aside
+              className={`studio-preview-panel${zoomed ? " zoomed" : ""}`}
+              id="studio-preview"
+            >
               <div className="preview-heading">
                 <p className="studio-eyebrow">LOCAL DRAFT / PREVIEW</p>
                 <span>
@@ -676,6 +680,14 @@ export function StudioPage({
                     : templateById(doc.design.templateId).label}{" "}
                   · {paletteById(doc.design.paletteId).label}
                 </span>
+                <button
+                  type="button"
+                  className="preview-zoom"
+                  aria-pressed={zoomed}
+                  onClick={() => setZoomed((value) => !value)}
+                >
+                  {zoomed ? "全体を表示" : "大きく表示"}
+                </button>
               </div>
               {doc.kind === "image-treatment" && compare && (
                 <div className="comparison-original">
@@ -779,6 +791,34 @@ export function StudioPage({
         />
       )}
 
+      {doc && (
+        <nav
+          className="studio-mobile-bar print-hidden"
+          aria-label="編集と確認の切り替え"
+        >
+          <button
+            type="button"
+            onClick={() =>
+              document
+                .querySelector(".studio-inspector")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          >
+            入力する
+          </button>
+          <button
+            type="button"
+            className="primary"
+            onClick={() =>
+              document
+                .getElementById("studio-preview")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          >
+            仕上がりを見る
+          </button>
+        </nav>
+      )}
       <p
         className="studio-notice print-hidden"
         role="status"

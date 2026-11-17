@@ -9,7 +9,7 @@ await mkdir(output, { recursive: true });
 const fontfile = createRequire(import.meta.url).resolve(
   "@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-700-normal.woff2",
 );
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 const page = await browser.newPage();
 try {
   await page.goto("http://127.0.0.1:5173/studio");

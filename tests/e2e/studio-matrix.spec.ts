@@ -23,7 +23,11 @@ test("all 20 compositions × 4 sizes produce decodable PNGs with every measured 
   }[] = [];
   const required = [
     defaultEvent.title,
-    defaultEvent.date,
+    // The date is typeset as a display numeral ("5/9") with year and weekday
+    // beside it, so check each part instead of the single source string.
+    "2026",
+    "5/9",
+    "(土)",
     defaultEvent.startTime,
     defaultEvent.price,
     defaultEvent.venue.name,

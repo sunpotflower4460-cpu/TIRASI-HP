@@ -126,15 +126,12 @@ test("legacy A4 is selectable beside the 20 new layouts and produces the origina
   await expect(page.getByLabel("出力サイズ", { exact: true })).toHaveValue(
     "a4",
   );
+  const legacyDownload = page.waitForEvent("download");
   await page
     .locator(".studio-preview-panel")
-    .getByRole("button", { name: "PNGを生成", exact: true })
+    .getByRole("button", { name: "PNGを保存", exact: true })
     .click();
-  await expect(
-    page
-      .locator(".studio-preview-panel")
-      .getByRole("button", { name: "PNGを保存", exact: true }),
-  ).toBeEnabled();
+  await legacyDownload;
   await page.screenshot({
     path: "docs/evidence/legacy-selected.png",
     fullPage: true,
@@ -151,15 +148,6 @@ test("legacy A4 is selectable beside the 20 new layouts and produces the origina
     await page
       .getByLabel("配色（構図と独立して変更）", { exact: true })
       .selectOption(palette);
-    await page
-      .locator(".studio-preview-panel")
-      .getByRole("button", { name: "PNGを生成", exact: true })
-      .click();
-    await expect(
-      page
-        .locator(".studio-preview-panel")
-        .getByRole("button", { name: "PNGを保存", exact: true }),
-    ).toBeEnabled();
     const pending = page.waitForEvent("download");
     await page
       .locator(".studio-preview-panel")
@@ -421,10 +409,6 @@ test("mobile studio fits the viewport and exports a custom free flyer as A4 PNG 
       () => document.documentElement.scrollWidth <= innerWidth + 1,
     ),
   ).toBe(true);
-  await page.getByRole("button", { name: "PNGを生成", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "PNGを保存", exact: true }),
-  ).toBeEnabled();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "PNGを保存", exact: true }).click();
   await (await download).saveAs("test-results/free-a4.png");

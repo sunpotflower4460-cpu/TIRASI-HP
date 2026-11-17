@@ -1,3 +1,4 @@
+import type React from "react";
 import { onAssetsStored } from "../../storage/assetEvents";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CreativeDocument } from "../../studio/document";
@@ -190,7 +191,12 @@ function CanvasDocumentPreview({
       )}
       <div
         className={`studio-paper ${size.print ? "print-a4" : "print-hidden"}`}
-        style={{ aspectRatio: `${size.width}/${size.height}` }}
+        style={
+          {
+            aspectRatio: `${size.width}/${size.height}`,
+            "--paper-ratio": size.width / size.height,
+          } as React.CSSProperties
+        }
         aria-busy={busy}
       >
         <canvas

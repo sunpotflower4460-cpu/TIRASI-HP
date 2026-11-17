@@ -97,15 +97,6 @@ test("a live flyer starts ready to edit, copies the next edition independently a
     path: "docs/evidence/live-editor-desktop.png",
     fullPage: true,
   });
-  await page
-    .locator(".studio-preview-panel")
-    .getByRole("button", { name: "PNGを生成", exact: true })
-    .click();
-  await expect(
-    page
-      .locator(".studio-preview-panel")
-      .getByRole("button", { name: "PNGを保存", exact: true }),
-  ).toBeEnabled({ timeout: 30000 });
   const pending = page.waitForEvent("download");
   await page
     .locator(".studio-preview-panel")
