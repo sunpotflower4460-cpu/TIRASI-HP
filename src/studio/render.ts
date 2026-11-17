@@ -3,6 +3,7 @@ import { drawArtwork } from "./artwork";
 import { balanceHeadline } from "./typography";
 import { defaultPlacement } from "./document";
 import { canvasBlob, withTimeout } from "../export/files";
+import { loadDisplayFonts } from "./displayFonts";
 export type Measurement = {
   id: string;
   lines: number;
@@ -210,6 +211,7 @@ export async function renderScene(
   outputHeight?: number,
 ): Promise<RenderResult> {
   const size = scene.document.design.sizeId;
+  await withTimeout(loadDisplayFonts());
   await withTimeout(document.fonts.ready);
   // Explicitly request glyph subsets for Canvas text (FontFaceSet.ready alone cannot discover canvas content).
   await withTimeout(

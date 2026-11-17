@@ -87,6 +87,6 @@ Node.js 22.12以上を使用してください。Vercel: Vite / Build `npm run b
 - 初回の再制作記録（5042252時点）: [以前の20種](docs/evidence/designs-before-polish.png) / [変更前後](docs/evidence/designs-before-after.png)。`node scripts/render-design-proof.mjs` で現在のA4・正方形・Storyを描画できます。自由制作は `--fixture=free` を指定します。
 - 実iPhone/SafariのOS共有UIと物理印刷は未検証。Chromiumの390px画面とA4ブラウザPDF（1ページ）は検証済みです。
 
-フォントはFontsourceからローカル配信します（Noto Sans JP / Noto Serif JP / Zen Maru Gothic / Barlow Condensed / Cormorant Garamond、OFL-1.1。ライセンスは `public/licenses`）。和文見出しはGoogle BudouX v0.10.4（Apache-2.0）の純粋なparserと日本語モデルだけを同梱します。文節分割は端末内で行い、本文を外部に送信しません。出典・変更点は `src/vendor/budoux/NOTICE.md`。sharp（Apache-2.0）はOG画像と検証用比較画像の生成用です。Vitest（MIT）、Playwright（Apache-2.0）、fake-indexeddb（Apache-2.0）はテスト用でブラウザに配布しません。PNG用html2canvasは旧版の出力時に遅延読み込みします。
+フォントはFontsourceからローカル配信します（Noto Sans JP / Noto Serif JP / Zen Maru Gothic / Barlow Condensed / Cormorant Garamond、チラシ見出し用に Dela Gothic One / Shippori Mincho B1 / Zen Kaku Gothic New / RocknRoll One / Kaisei Decol、すべてOFL-1.1。ライセンスは `public/licenses`）。見出し用書体はCanvasのチラシ描画時にだけ遅延読み込みします。和文見出しはGoogle BudouX v0.10.4（Apache-2.0）の純粋なparserと日本語モデルだけを同梱します。文節分割は端末内で行い、本文を外部に送信しません。出典・変更点は `src/vendor/budoux/NOTICE.md`。sharp（Apache-2.0）はOG画像と検証用比較画像の生成用です。Vitest（MIT）、Playwright（Apache-2.0）、fake-indexeddb（Apache-2.0）はテスト用でブラウザに配布しません。PNG用html2canvasは旧版の出力時に遅延読み込みします。
 
 仕様の正本: [DA-01〜DA-23](docs/V2_DESIGN_AUDIT_AND_CONTRACTS.md)。[受入台帳](docs/ACCEPTANCE_LEDGER.md) / [進捗](docs/IMPLEMENTATION_PROGRESS.md)。実装は安定化PR-Aと拡張PR-Bの2本にまとめ、自動マージ・本番デプロイは行いません。

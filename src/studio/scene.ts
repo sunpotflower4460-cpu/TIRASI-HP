@@ -59,10 +59,56 @@ export type Scene = {
 };
 
 const sans = '"Noto Sans JP", sans-serif';
-const serif = '"Noto Serif JP", serif';
-const rounded = '"Zen Maru Gothic", "Noto Sans JP", sans-serif';
 const condensed = '"Barlow Condensed", "Noto Sans JP", sans-serif';
 const elegant = '"Cormorant Garamond", "Noto Serif JP", serif';
+// Display faces chosen per composition. Each is a single real weight, so the
+// canvas never synthesises a fake bold.
+type Face = { family: string; weight: number };
+const faces = {
+  dela: {
+    family: '"Dela Gothic One", "Noto Sans JP", sans-serif',
+    weight: 400,
+  },
+  mincho: {
+    family: '"Shippori Mincho B1", "Noto Serif JP", serif',
+    weight: 800,
+  },
+  kaku: {
+    family: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif',
+    weight: 900,
+  },
+  rock: {
+    family: '"RocknRoll One", "Zen Maru Gothic", sans-serif',
+    weight: 400,
+  },
+  decol: { family: '"Kaisei Decol", "Noto Serif JP", serif', weight: 700 },
+  maru: {
+    family: '"Zen Maru Gothic", "Noto Sans JP", sans-serif',
+    weight: 700,
+  },
+} satisfies Record<string, Face>;
+const titleFaces: Record<string, Face> = {
+  livehouse: faces.dela,
+  citypop: faces.decol,
+  neon: faces.kaku,
+  riso: faces.dela,
+  acoustic: faces.mincho,
+  indie: faces.dela,
+  festival: faces.kaku,
+  botanical: faces.mincho,
+  forest: faces.decol,
+  watercolor: faces.maru,
+  swiss: faces.kaku,
+  gallery: faces.mincho,
+  magazine: faces.mincho,
+  showa: faces.dela,
+  washi: faces.mincho,
+  sticker: faces.rock,
+  party: faces.rock,
+  deco: faces.decol,
+  serif: faces.mincho,
+  information: faces.kaku,
+};
 const displayUrl = (url: string) =>
   url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
@@ -381,21 +427,28 @@ export function composeScene(
     "deco",
     "serif",
   ].includes(templateId);
-  const roundDefault = ["party", "watercolor", "showa", "sticker"].includes(
-    templateId,
-  );
-  const family =
+  const face: Face =
     doc.design.fontSet === "serif"
-      ? serif
+      ? faces.mincho
       : doc.design.fontSet === "rounded"
-        ? rounded
+        ? faces.maru
         : doc.design.fontSet === "sans"
-          ? sans
-          : serifDefault
-            ? serif
-            : roundDefault
-              ? rounded
-              : sans;
+          ? { family: sans, weight: 700 }
+          : (titleFaces[templateId] ?? { family: sans, weight: 700 });
+  const family = face.family;
+  // Artist names follow the headline's voice in a lighter, legible cut.
+  const nameFace: Face =
+    doc.design.fontSet === "sans"
+      ? { family: sans, weight: 700 }
+      : face === faces.mincho || face === faces.decol
+        ? faces.mincho
+        : face === faces.rock
+          ? faces.rock
+          : face === faces.maru
+            ? faces.maru
+            : face === faces.dela || face === faces.kaku
+              ? { family: faces.kaku.family, weight: 700 }
+              : { family: sans, weight: 700 };
   const color = reversed ? palette.paper : palette.ink;
   const inset = {
     x: hero.x + heroPad,
@@ -439,7 +492,7 @@ export function composeScene(
     recipe.titleSize,
     28,
     color,
-    700,
+    face.weight,
     family,
     recipe.align,
     {
@@ -552,7 +605,7 @@ export function composeScene(
               ) + 10;
             const fixed = numberWidth + 16 + sideWidth + (beside ? 56 : 0);
             const need = beside
-              ? fixed + Math.min(infoText(infoSize), 150)
+              ? fixed + Math.min(infoText(infoSize), 260)
               : fixed;
             if (need <= inner.w || big <= 44)
               return {
@@ -796,8 +849,8 @@ export function composeScene(
               wide ? 36 : 42,
               18,
               palette.ink,
-              700,
-              sans,
+              nameFace.weight,
+              nameFace.family,
               "left",
               { lineHeight: 1.15 },
             );
@@ -828,8 +881,8 @@ export function composeScene(
               showTimes ? 36 : 44,
               18,
               palette.ink,
-              700,
-              sans,
+              nameFace.weight,
+              nameFace.family,
               "left",
               { lineHeight: 1.2, valign: "center" },
             );

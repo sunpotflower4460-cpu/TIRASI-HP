@@ -1,5 +1,6 @@
 import type { ModernTemplateId } from "./registry";
 import type { Rect } from "./scene";
+import { drawRefinedHero, refinedAspect } from "./artworkRefined";
 
 export type ArtworkNode = Rect & {
   kind: "art";
@@ -49,7 +50,10 @@ export function drawArtwork(ctx: CanvasRenderingContext2D, node: ArtworkNode) {
     party: 0.65,
     indie: 1,
   };
-  const aspect = node.role === "hero" ? intrinsicAspect[node.art] : undefined;
+  const aspect =
+    node.role === "hero"
+      ? (refinedAspect[node.art] ?? intrinsicAspect[node.art])
+      : undefined;
   const sx = aspect ? Math.min(w / 1000, (h * aspect) / 1000) : w / 1000;
   const sy = aspect ? sx / aspect : h / 1000;
   ctx.translate(x + (w - sx * 1000) / 2, y + (h - sy * 1000) / 2);
@@ -297,6 +301,10 @@ export function drawArtwork(ctx: CanvasRenderingContext2D, node: ArtworkNode) {
     return;
   }
 
+  if (drawRefinedHero(ctx, node, sx, sy)) {
+    ctx.restore();
+    return;
+  }
   switch (node.art) {
     case "livehouse": {
       // A cut strip of printed sound, rather than a generic decorative barcode.
