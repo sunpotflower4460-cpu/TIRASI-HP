@@ -1251,3 +1251,71 @@
     display: none !important;
   }
 }
+.design-section {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--studio-line);
+}
+.design-section:last-of-type {
+  border-bottom: 0;
+}
+.studio-inspector .design-section-title {
+  font-size: 14px;
+  margin: 0 0 12px;
+  color: var(--studio-ink);
+}
+details.design-section > summary.design-section-title {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  margin: 0;
+}
+details.design-section[open] > summary.design-section-title {
+  margin-bottom: 14px;
+}
+.design-filter-row {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.design-filter-row .studio-field {
+  margin-bottom: 4px;
+}
+.design-pick .template-gallery {
+  padding: 2px;
+}
+/* While a flyer is open the page is a workbench: keep the intro short so the
+   form and the sheet start above the fold. */
+@media (min-width: 761px) {
+  .studio-page.has-document .studio-header {
+    margin-bottom: 18px;
+  }
+  .studio-page.has-document .studio-header h1 {
+    font-size: 26px;
+    margin: 4px 0 0;
+  }
+  .studio-page.has-document .studio-header > div > p:last-child {
+    display: none;
+  }
+  .studio-page.has-document .studio-save {
+    padding: 10px 14px;
+  }
+  .studio-page.has-document .studio-create > button {
+    padding: 10px 16px;
+    min-height: 0;
+  }
+  .studio-page.has-document .studio-create {
+    margin-bottom: 8px;
+  }
+}
+/* With a flyer open, "create new" is a secondary action; the open flyer's own
+   "次回分を作る" stays the single strong call to action. */
+.studio-page.has-document .studio-create .live-create-primary {
+  background: #fdfdf8;
+  border-color: var(--studio-line);
+  color: var(--studio-ink);
+}
+.studio-page.has-document .studio-create > button > strong::before {
+  content: "＋ ";
+  color: var(--studio-accent);
+}
