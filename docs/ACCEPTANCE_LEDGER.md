@@ -1,29 +1,40 @@
 # v2 受入台帳
 
-正本: V2_DESIGN_AUDIT_AND_CONTRACTS.md。2026-11-16、PR-A時点。
+正本: V2_DESIGN_AUDIT_AND_CONTRACTS.md。2026-11-16、PR-A/B実装・ローカル検証。
 
 | 契約 | 実装・証拠 | 状態 |
 |---|---|---|
-| R01 / DA16,23 | published source / build meta / publication tests | A実装・検証 |
-| R02 | 紹介5名のtoggle E2E・無言のslice廃止 | A実装・検証 |
-| R03 / DA03,20 | public/draft/preview reload/back E2E | A実装・検証 |
-| R04,11 / DA04 | strict nested validation / v1,v2 roundtrip / import preview | A実装・検証 |
-| R05 | safeUrl / fallback / unsafe scheme拒否 | A実装・検証 |
-| R06 | クライアント認証を称する表現・固定パスコード廃止 | A実装 |
-| R07 / DA06,07,08 | legacy A4実測・PNG2480×3508・PDF1page / overflow block | A実装・Chromium検証 |
-| R08 | 生成と保存/共有の分離・連打制御・失敗回復 | A実装・OS共有UIは未検証 |
-| R09 / DA05,18 | IDB transaction・元JSON保護・中断4段階・CAS競合・保存エラー | A実装・検証、完全バックアップB |
-| R10 / DA10 | date/weekday/offset・元文字列保持・時刻警告 | A実装・検証 |
-| R12 / DA14,15 | lockfile / unit / Playwright / CI / ローカルフォント | A実装・検証 |
-| DA01 | CreativeDocument 3モード | Bで実装 |
-| DA02,19 | binding/override/visibility/undo/サイズ別編集保持 | Bで実装 |
-| DA09,22 | 20構図×4出力・配色対比・比較証跡 | Bで実装・実測 |
-| DA11 | 6非破壊加工・seed・強度・比較 | Bで実装 |
-| DA12 | 原画像IDB・復号・容量・完全バックアップ | Bで実装 |
-| DA13 | ギャラリー/簡易編集/詳細調整 | Bで実装 |
-| DA17 | 2PR・進捗・実装と検証の区別 | 継続 |
-| DA21 | 単一state transition・StrictMode・二タブ・storage失敗 | A実装・検証 |
+| R01 / DA16,23 | 公開元のみを表示。日時/曜日/JSON-LD/OG PNG/SVGを統一。vol.6を維持。 | 実装・検証 |
+| R02 | 旧版A4の紹介toggle・5名表示とoverflow。新Sceneにも表示設定を反映。 | 実装・検証 |
+| R03 / DA03,20 | public/draft/previewを分離。直URL/リロード/戻る/不明ID。URLへ本文を載せない。 | 実装・Chromium検証 |
+| R04,11 / DA04 | 入れ子まで検証、v1/v2 roundtrip、全件import確認。未知フィールドと元JSONを保持。 | 実装・検証 |
+| R05 | HTTP(S)限定URL、画像エラーfallback、unsafe scheme拒否。 | 実装・検証 |
+| R06 | 認証を称する固定パスコードを廃止。ローカル編集と表示。 | 実装 |
+| R07 / DA06,07,08 | Canvas共通Scene。旧版はDOM互換。実測overflow/文字衝突/必須不足/画像欠損をblock。4 PNG寸法。A4 PDF。 | 実装・検証 |
+| R08 | PNG生成→保存/共有を分離。世代ID、連打・離脱・timeout・toBlob null回復。 | 実装・Chromium検証 / OS共有UIは未検証 |
+| R09 / DA05,18 | IDB transactionとCAS、旧3キー保護、中断4段階・同時初期化・容量不足・競合試験。画像欠損で原子的にabort。 | 実装・検証 |
+| R10 / DA10 | 日付元表記を保持。曜日とtimezone offsetを算出。時刻の重複・逆転・曖昧さを通知。 | 実装・検証 |
+| R12 / DA14,15 | lockfile・npm ci・unit・Playwright・CI。ローカル日本語フォントとfallback。 | 実装・検証 |
+| DA01 | event-flyer / free-flyer / image-treatment。EventとDocumentを分離。自由制作にschedule/venue/openMic不要。 | 実装・検証 |
+| DA02,19 | linked/snapshot、文書だけの上書き、visibility、サイズ別配置、Undo/Redo。配置変更は元を残すコピーを選択。 | 実装・検証 |
+| DA05,12 | 原画像IDB保存、magic bytesと実デコード、8MB/16MP制限、SHA-256。原画像込み64MB JSONパッケージ。別コンテキスト復元・破損拒否。 | 実装・検証 |
+| DA06,11 | 6非破壊フィルター、強度・網点・粒子等・演出スタンプ、Before/After。seed再現性・元画像SHA不変を検査。 | 実装・PNG検証 / 物理印刷は未検証 |
+| DA07 | A4 2480×3508/軽量1240×1754・縦1080×1350・正方形1080×1080・Story1080×1920。原稿実寸と画素数を区別。負荷の目安・軽量版・印刷設定を案内。 | 実装・検証 |
+| DA09,22 | 新20構図×4サイズ=80 PNGを全生成・デコード・測定。12配色の文字ペアを4.5:1以上で検査。比較ギャラリー。 | 実装・検証 / 好みの最終承認はレビュー対象 |
+| DA13 | 3制作動線、6用途ひな形、実描画サムネイルと絞り込み、フォームlabel、キーボードtab/slider、modal、aria-live、モバイル。 | 実装・Chromium検証 |
+| DA17 | 原則2PR・作業ログ・実装と測定の区別・自動マージ/デプロイなし。 | 継続 |
+| DA21 | pure state transition、StrictMode、別タブ、storage例外、ID生成を入力イベント境界へ配置。 | 実装・検証 |
+| 追加ユーザー要望 | 旧版をギャラリーから選択。従来4配色・丸ゴシック維持。新20種を個別に文字組み・日付・余白・表・装飾へ調整。 | 実装・検証 |
+| ライブ制作を優先 | 新規イベントチラシは旧版A4とライブ情報タブ。タイトル・日時・出演者の直接入力、過去の名前候補、複数行追加、時刻一括、名前だけの表示。ライブ向け8候補を先に表示。 | 実装・390px操作検証 |
+| 次回の手間を省く | 日付と回数を確認して新イベント＋新チラシを同時追加。本文・固定情報・全サイズ配置・原画像参照・未知項目を保持し、前回は不変。共有本文のUndo/Redoと他デザインの更新保護。 | 単体・保存/再読込・PNG検証 |
 
-物理印刷・実iPhone/Safariの共有・端末メモリ制約は別の手動確認。未実測をpassとしない。
+## 実測と限界
 
-追加レビュー: raw Workspace退避の復元、URL指定イベントの配色、入力と保存の件数上限一致、日本語フォントを同梱したOG PNGを修正。最終ローカル検証はunit28件・Chromium E2E8件・buildがpass。PR-A #36（base main）、PR-B #37（base PR-A）。
+- unit 56件、Chromium E2E 24件（通常80・名前だけ80・画像入りイベントと自由制作160、計320 PNGを含む）。追加レビューの8指摘も対応。最新CIは各PRのChecksを参照。
+- 画像と数値: `docs/evidence/`。PNG原寸・PDF・全テキスト測定はPlaywrightのCI artifactへ保存。Git管理するJSONは80組の要約。A4 PDFはpdfinfoでも1ページ・A4を確認。
+- 実iPhone/SafariのOS共有、物理プリンター、全機種のメモリ上限は未検証。これらをpassとしない。
+- 旧版はイベントA4用の互換デザイン。新20構図の数には含めない。新構図は4サイズ、SNSはPNG専用。
+- ZIPではなく原本のbase64とmanifestを持つJSONパッケージ。ZIPの展開処理・任意のパスの展開は行わない。容量・件数・形式・hashを検査し、画像欠損は完全復元扱いにしない。
+- 外部認証・クラウド同期・生成AI・課金・自動公開は範囲外。
+- 入力・保存・復元の件数上限を共通化し、上限到達後も編集・保存・復元できることを確認。日本語のOG PNGも同梱フォントで生成し、ビルドホストのフォントに依存しない。
+- 品質再制作: 大見出し、オリジナルベクター画、絵の固有縦横比、サイズ別構図、会場等の階層付きflow組版、BudouXによる和文見出しの文節改行。旧版・本文・原画像・Undoは維持。比較と個別評価はDESIGN_QUALITY_REVIEW.md。

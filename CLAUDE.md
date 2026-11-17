@@ -15,7 +15,7 @@ This repository is a React/TypeScript/Vite event website and flyer generator. It
 
 If these documents conflict with repository code, investigate and update the status log with evidence; do not silently discard requirements. Re-check current `origin/main`, open PRs, working-tree changes and CI before implementation.
 
-**As of 2026-10-09, only design documents have been added. v2 code implementation has NOT started.** The presence of this file is not an instruction to begin implementation without an explicit user request.
+**As of 2026-11-16, the user explicitly requested implementation. PR-A (reliability) and a stacked PR-B (Studio) implement v2 on feature branches. Read docs/IMPLEMENTATION_PROGRESS.md and the current diff before continuing; do not mistake the old design-only status for the state of this branch.** Main merge and deployment remain separate actions.
 
 ## Execution policy once implementation is requested
 
@@ -54,7 +54,7 @@ When context resets or CLI usage pauses, begin again from `docs/IMPLEMENTATION_P
 
 ## Run commands
 
-Current baseline: `npm install`, `npm run dev`, `npm run build`, `npm run preview`. The existing CI only tests builds. After introducing a lockfile and test scripts, use `npm ci`, unit tests, browser smoke tests and representative PNG/A4 visual regression tests.
+Current verification: `npm ci`, `npm run test`, `npm run build`, `npx playwright install chromium`, `npm run test:e2e`. CI runs dependency audit, unit, build and Chromium browser tests including the 80 PNG matrix. The selected published source is unchanged; Studio drafts do not publish.
 
 ## Final status reporting
 

@@ -1,3 +1,7 @@
+import "@fontsource/zen-maru-gothic/700.css";
+import "@fontsource/barlow-condensed/700.css";
+import "@fontsource/cormorant-garamond/700.css";
+import "@fontsource/noto-serif-jp/700.css";
 import "@fontsource/noto-sans-jp/400.css";
 import "@fontsource/noto-sans-jp/700.css";
 import React from "react";
@@ -12,5 +16,5 @@ import "./styles/ui-ux-polish.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

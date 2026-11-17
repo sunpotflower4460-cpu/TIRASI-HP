@@ -56,9 +56,7 @@ test('public source stays separate from migrated draft across navigation and rel
 });
 test('A4 PNG export is staged, exact size, print remains one A4 page', async ({ page }) => {
   await page.goto('/flyer'); await page.evaluate(() => document.fonts.ready);
-  await expect(page.getByRole('button', { name: 'PNGを生成', exact: true })).toBeEnabled();
-  await page.getByRole('button', { name: 'PNGを生成', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'PNGを保存', exact: true })).toBeEnabled({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: 'PNGを保存', exact: true })).toBeEnabled();
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'PNGを保存', exact: true }).click();
   const file = await download; await file.saveAs('test-results/legacy-a4.png');
   const sharp = (await import('sharp')).default;
@@ -73,6 +71,9 @@ test('mobile editor does not overflow and malformed imports leave existing conte
   await expect(page.getByText('venue: オブジェクトが必要です。')).toBeVisible();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('生音');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.getByLabel('テーマ', {exact:true}).selectOption('night');
+  await expect(page.getByLabel('イベント名', {exact:true})).toBeVisible();
+  expect(await page.getByLabel('イベント名', {exact:true}).evaluate(el => { const style = getComputedStyle(el); return style.color !== style.backgroundColor; })).toBe(true);
 });
 test('performer visibility is connected and overflow blocks export without clipping', async ({ page }) => {
   const performers = Array.from({ length: 5 }, (_, i) => ({ id: `p${i}`, name: `出演者 ${i}`, catchcopy: '紹介文', bio: '', imageUrl: '', linkUrl: '' }));
@@ -84,7 +85,7 @@ test('performer visibility is connected and overflow blocks export without clipp
   await page.getByLabel('注意書き', { exact: true }).first().fill('長い案内文を確認します。'.repeat(500));
   await page.getByRole('button', { name: '下書きA4を見る', exact: true }).click();
   await expect(page.locator('.flyer-performer-item')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'PNGを生成', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'PNGを保存', exact: true })).toBeDisabled();
   await expect(page.getByText('内容がA4の紙面からはみ出しています。', { exact: false })).toBeVisible();
 });
 test('a second tab cannot silently overwrite a newer workspace', async ({ page, context }) => {

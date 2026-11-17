@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { EventRecord } from "../../hooks/useEventData";
-import { parseLibrary } from '../../domain/workspace';
+import { parseLibrary, newId } from '../../domain/workspace';
 import { errorMessage, readJsonFile } from '../../domain/validation';
 import { MAX_EVENTS } from '../../domain/limits';
 
@@ -66,7 +66,7 @@ export function EventManager({
   };
   const applyImport = (merge: boolean) => {
     if (!pending) return;
-    const records = merge ? [...eventRecords, ...pending.map(r => ({ ...r, id: crypto.randomUUID() }))] : pending;
+    const records = merge ? [...eventRecords, ...pending.map(r => ({ ...r, id: newId() }))] : pending;
     if (records.length > MAX_EVENTS) { setNotice(`イベントは${MAX_EVENTS}件までです。追加するには不要なイベントを削除するか、一覧を置き換えてください。`); return; }
     try {
       if (onReplaceEventLibrary(records)) { setPending(undefined); setNotice('イベント一覧を復元しました。'); }
