@@ -427,8 +427,34 @@ export function composeScene(
     recipe.hero = [0, 0, 1, 0.28];
     recipe.facts = [0, 0.31, 1, 0.07];
     recipe.art = [0, 0.43, 0.53, 0.57];
-    recipe.program = [0.61, 0.43, 0.39, additionalBlocks.length ? 0.31 : 0.57];
-    recipe.info = [0.61, 0.79, 0.39, 0.21];
+    // Split the column between body and details by how much text each has,
+    // instead of a fixed 31 / 21 split.
+    const columnWidth = 0.39 * (1000 - 2 * safeX);
+    const detailsPx = additionalBlocks.reduce(
+      (sum, block) =>
+        sum +
+        block.text
+          .split("\n")
+          .reduce(
+            (n, line) =>
+              n + Math.max(1, Math.ceil(estimate(line, 19) / columnWidth)),
+            0,
+          ) *
+          19 *
+          1.45 +
+        8,
+      14,
+    );
+    const infoHeight = additionalBlocks.length
+      ? Math.min(0.3, Math.max(0.1, detailsPx / usableH))
+      : 0;
+    recipe.program = [
+      0.61,
+      0.43,
+      0.39,
+      0.57 - (infoHeight ? infoHeight + 0.03 : 0),
+    ];
+    recipe.info = [0.61, 1 - (infoHeight || 0.21), 0.39, infoHeight || 0.21];
   } else if (
     doc.kind === "free-flyer" &&
     !additionalBlocks.length &&
@@ -511,6 +537,54 @@ export function composeScene(
       recipe.hero = [0.33, top, 0.67, height];
       recipe.art = [0, top, 0.29, height];
     }
+  }
+  // A multi-line date/price block needs room for each of its lines. When the
+  // strip is shorter than that (square layouts), grow it and push the content
+  // below it down instead of failing.
+  if (
+    facts &&
+    !dateParts &&
+    !(recipe.factsStyle === "date" && eventDayNumber) &&
+    facts.includes("\n")
+  ) {
+    const stripWidth = recipe.facts[2] * (1000 - 2 * safeX);
+    const oneLineFits =
+      stripWidth > 440 &&
+      estimate(facts.replace(/\n/g, "   /   "), 22) <= stripWidth - 24;
+    const lines = facts.split("\n").length;
+    // Tall canvases have room to set these lines at a readable size.
+    const perLine =
+      doc.design.sizeId === "story"
+        ? 46
+        : doc.design.sizeId === "portrait"
+          ? 38
+          : 30;
+    const needed = (lines * perLine + 20) / usableH;
+    if (!oneLineFits) {
+      const [fx, fy, fw] = recipe.facts;
+      const height = Math.max(recipe.facts[3], needed);
+      const oldBottom = fy + recipe.facts[3];
+      recipe.facts[3] = height;
+      for (const slot of [recipe.program, recipe.info]) {
+        const overlapsX = slot[0] < fx + fw && slot[0] + slot[2] > fx;
+        if (overlapsX && slot[1] >= oldBottom - 0.03) {
+          const push = Math.max(0, fy + height + 0.015 - slot[1]);
+          slot[1] += push;
+          slot[3] -= push;
+        }
+      }
+    }
+  }
+  // Forest keeps its headline in a narrow column beside the mountains; a long
+  // title borrows width from the picture.
+  if (
+    templateId === "forest" &&
+    recipe.art &&
+    Array.from(title).length > 12 &&
+    recipe.hero[2] < 0.5
+  ) {
+    recipe.hero = [0, recipe.hero[1], 0.56, recipe.hero[3]];
+    recipe.art = [0.6, recipe.art[1], 0.4, recipe.art[3]];
   }
   if (recipe.art) {
     const art = box(recipe.art);
@@ -877,10 +951,14 @@ export function composeScene(
         );
       }
     } else {
-      const wide = fb.w > 440 && fb.h < 160;
+      // A wide, short strip joins the lines with slashes only if the result
+      // still reads at a comfortable size; otherwise the lines stay stacked.
+      const oneLine = facts.replace(/\n/g, "   /   ");
+      const wide =
+        fb.w > 440 && fb.h < 160 && estimate(oneLine, 22) <= fb.w - 24;
       text(
         "facts",
-        wide ? facts.replace(/\n/g, "   /   ") : facts,
+        wide ? oneLine : facts,
         { x: fb.x + 12, y: fb.y + 6, w: fb.w - 24, h: fb.h - 12 },
         wide ? 32 : 35,
         18,

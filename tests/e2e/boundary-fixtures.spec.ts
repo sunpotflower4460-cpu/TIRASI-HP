@@ -71,3 +71,101 @@ test("twelve acts, a long title, a long price and a long venue fit every layout 
     failures.filter((f) => !f.startsWith("price/magazine/square")),
   ).toEqual([]);
 });
+
+test("free flyers with a long title, a three-line date block and a medium body fit every layout and size", async ({
+  page,
+}) => {
+  test.setTimeout(240000);
+  await page.goto("/studio");
+  const failures = await page.evaluate(async () => {
+    const root = "/src";
+    const { defaultEvent } = await import(`${root}/data/defaultEvent.ts`);
+    const { createDocument } = await import(`${root}/studio/document.ts`);
+    const { composeScene } = await import(`${root}/studio/scene.ts`);
+    const { renderScene } = await import(`${root}/studio/render.ts`);
+    const { templates, sizes } = await import(`${root}/studio/registry.ts`);
+    const record = {
+      id: "f",
+      name: "f",
+      eventData: defaultEvent,
+      updatedAt: "",
+    };
+    const kana = "あいうえおかきくけこさしすせそたちつてと".repeat(13);
+    const fixtures: Record<
+      string,
+      {
+        title: string;
+        subtitle: string;
+        facts: string;
+        body: string;
+        details: string;
+      }
+    > = {
+      longtitle: {
+        title: "週末のよりみちマーケット春の手仕事とコーヒーの小さな祭り",
+        subtitle: "Small discoveries, good company",
+        facts: "2026.5.9 / 11:00–18:00",
+        body: "お気に入りに出会う。",
+        details: "まちのアトリエ",
+      },
+      threelinedate: {
+        title: "週末の、よりみち。",
+        subtitle: "",
+        facts:
+          "2026年5月9日（土）11:00〜18:00\n雨天決行・入場無料\nお問い合わせ: info@example.com",
+        body: kana.slice(0, 120),
+        details: "",
+      },
+      midbody: {
+        title: "週末の、よりみち。",
+        subtitle: "Small discoveries, good company.",
+        facts: "2026.5.9 / 11:00–18:00",
+        body: kana.slice(0, 250),
+        details: kana.slice(0, 80),
+      },
+    };
+    const failed: string[] = [];
+    for (const [name, fixture] of Object.entries(fixtures))
+      for (const template of templates as { id: string; palette: string }[])
+        for (const sizeId of Object.keys(sizes)) {
+          const doc = createDocument("free-flyer", record);
+          doc.content = {
+            title: fixture.title,
+            subtitle: fixture.subtitle,
+            facts: fixture.facts,
+            blocks: [
+              ...(fixture.body
+                ? [{ id: "b", type: "text", visible: true, text: fixture.body }]
+                : []),
+              ...(fixture.details
+                ? [
+                    {
+                      id: "d",
+                      type: "details",
+                      visible: true,
+                      text: fixture.details,
+                    },
+                  ]
+                : []),
+            ],
+          };
+          doc.design.templateId = template.id;
+          doc.design.paletteId = template.palette;
+          doc.design.sizeId = sizeId;
+          const rendered = await renderScene(
+            composeScene(doc, [record]),
+            new Map(),
+          );
+          if (rendered.errors.length)
+            failed.push(
+              `${name}/${template.id}/${sizeId}: ${rendered.errors[0]}`,
+            );
+        }
+    return failed;
+  });
+  // A 250-character body beside the large gallery picture on a square is a
+  // documented limit; every other combination must render cleanly.
+  expect(
+    failures.filter((f) => !f.startsWith("midbody/gallery/square")),
+  ).toEqual([]);
+});

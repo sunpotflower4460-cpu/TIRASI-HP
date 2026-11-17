@@ -9,7 +9,9 @@ const origin = process.argv[3] ?? "http://127.0.0.1:5173/studio";
 const only = process.argv[4]?.split(",");
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch(
-  process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
+  process.env.CHROMIUM_PATH
+    ? { executablePath: process.env.CHROMIUM_PATH }
+    : {},
 );
 const page = await browser.newPage();
 const consoleErrors = [];
@@ -27,12 +29,17 @@ try {
     const act = (name, time = "14:30-14:50") => ({ type: "act", time, name });
     const many = (n) =>
       Array.from({ length: n }, (_, i) =>
-        act(`出演者${i + 1}`, `${String(12 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}-${String(12 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "55" : "25"}`),
+        act(
+          `出演者${i + 1}`,
+          `${String(12 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}-${String(12 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "55" : "25"}`,
+        ),
       );
     const fixtures = {
       one: { schedule: [act("ひとり")] },
       zero: { schedule: [] },
-      twelve: { schedule: [...many(12), { type: "end", label: "- 企画終了 -" }] },
+      twelve: {
+        schedule: [...many(12), { type: "end", label: "- 企画終了 -" }],
+      },
       longnames: {
         schedule: [
           act("しののめむすびとゆかいななかまたち feat. 館林ストリングス"),
@@ -46,31 +53,57 @@ try {
         subtitle: "Spring Acoustic Music Festival in Tatebayashi",
         volume: "vol.12",
       },
-      english: { title: "ACOUSTIC NIGHT", subtitle: "Live at the Public House", volume: "Vol.3" },
+      english: {
+        title: "ACOUSTIC NIGHT",
+        subtitle: "Live at the Public House",
+        volume: "Vol.3",
+      },
       shorttitle: { title: "音", subtitle: "", volume: "" },
       freedate: { date: "5月上旬", day: "未定", dayOverride: true },
       isodate: { date: "2027-01-02", day: "土" },
       longvenue: {
         venue: {
           name: "館林パブリックハウス ミツデ 2階 イベントスペース オーロラホール",
-          address: "〒374-0029 群馬県館林市仲町1-10 館林ミツデ2F 奥のエレベーター横の階段を上がってすぐ右手",
+          address:
+            "〒374-0029 群馬県館林市仲町1-10 館林ミツデ2F 奥のエレベーター横の階段を上がってすぐ右手",
           url: "https://tph.mitsude.com/events/long/path/to/the/page",
         },
       },
       longnote: {
-        statusNote: "※雨天の場合は屋内に会場を変更して開催いたします。\n※駐車場には限りがございますので、公共交通機関でのご来場にご協力ください。\n※飲食物の持ち込みはご遠慮ください。",
-        organizer: "企画・運営: 館林音楽まつり実行委員会 × しののめむすび × Flower pot studio × 館林市商工会",
+        statusNote:
+          "※雨天の場合は屋内に会場を変更して開催いたします。\n※駐車場には限りがございますので、公共交通機関でのご来場にご協力ください。\n※飲食物の持ち込みはご遠慮ください。",
+        organizer:
+          "企画・運営: 館林音楽まつり実行委員会 × しののめむすび × Flower pot studio × 館林市商工会",
       },
       mednote: {
-        statusNote: "※雨天の場合は屋内で開催します。\n※駐車場には限りがございます。公共交通機関でのご来場にご協力ください。",
+        statusNote:
+          "※雨天の場合は屋内で開催します。\n※駐車場には限りがございます。公共交通機関でのご来場にご協力ください。",
       },
       mednote2: {
-        statusNote: "※雨天決行（荒天中止）。\n※飲食物の持ち込みはご遠慮ください。\n※会場内での撮影は出演者の指示に従ってください。",
+        statusNote:
+          "※雨天決行（荒天中止）。\n※飲食物の持ち込みはご遠慮ください。\n※会場内での撮影は出演者の指示に従ってください。",
         organizer: "企画: しののめむすび × Flower pot studio × 館林市商工会",
       },
-      noopenmic: { openMic: { title: "", time: "", lastOrder: "", headline: "", note: "", closeNote: "" } },
-      price: { price: "前売 2,500円 / 当日 3,000円（1ドリンク別）", startTime: "18:00" },
-      midnight: { date: "2026.12.31", day: "木", startTime: "23:00", schedule: [act("カウントダウン", "23:00-00:30")] },
+      noopenmic: {
+        openMic: {
+          title: "",
+          time: "",
+          lastOrder: "",
+          headline: "",
+          note: "",
+          closeNote: "",
+        },
+      },
+      price: {
+        price: "前売 2,500円 / 当日 3,000円（1ドリンク別）",
+        startTime: "18:00",
+      },
+      midnight: {
+        date: "2026.12.31",
+        day: "木",
+        startTime: "23:00",
+        schedule: [act("カウントダウン", "23:00-00:30")],
+      },
     };
     const names = only ?? Object.keys(fixtures);
     const rows = [];
@@ -92,11 +125,20 @@ try {
               template: template.id,
               size: sizeId,
               errors: rendered.errors,
-              smallest: Math.min(...rendered.measurements.map((m) => m.fontSize)),
-              png: rendered.errors.length ? rendered.canvas.toDataURL("image/png").split(",")[1] : undefined,
+              smallest: Math.min(
+                ...rendered.measurements.map((m) => m.fontSize),
+              ),
+              png: rendered.errors.length
+                ? rendered.canvas.toDataURL("image/png").split(",")[1]
+                : undefined,
             };
           } catch (e) {
-            row = { name, template: template.id, size: sizeId, errors: ["EXCEPTION " + String(e)] };
+            row = {
+              name,
+              template: template.id,
+              size: sizeId,
+              errors: ["EXCEPTION " + String(e)],
+            };
           }
           rows.push(row);
         }
@@ -105,7 +147,11 @@ try {
   }, only);
   const failures = results.filter((r) => r.errors.length);
   for (const r of failures)
-    if (r.png) await writeFile(`${out}/${r.name}-${r.template}-${r.size}.png`, Buffer.from(r.png, "base64"));
+    if (r.png)
+      await writeFile(
+        `${out}/${r.name}-${r.template}-${r.size}.png`,
+        Buffer.from(r.png, "base64"),
+      );
   const slim = results.map(({ png, ...rest }) => rest);
   await writeFile(`${out}/report.json`, JSON.stringify(slim, null, 1));
   const byFixture = {};

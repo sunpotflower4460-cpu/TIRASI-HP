@@ -225,7 +225,10 @@ export async function renderScene(
   outputHeight?: number,
 ): Promise<RenderResult> {
   const size = scene.document.design.sizeId;
-  await withTimeout(loadDisplayFonts());
+  // Display faces are a refinement: if their stylesheet cannot be fetched
+  // (offline, blocked), the layout still renders with the bundled fallbacks
+  // instead of failing the preview and every export.
+  await withTimeout(loadDisplayFonts()).catch(() => undefined);
   await withTimeout(document.fonts.ready);
   // Explicitly request glyph subsets for Canvas text (FontFaceSet.ready alone cannot discover canvas content).
   await withTimeout(

@@ -22,6 +22,7 @@ export function ExportActions({
 }) {
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const [busyKind, setBusyKind] = useState<"png" | "print">("png");
   const [blob, setBlob] = useState<Blob>();
   const [light, setLight] = useState(false);
   const generation = useRef(0);
@@ -42,6 +43,7 @@ export function ExportActions({
     if (locked.current || errors.length) return undefined;
     locked.current = true;
     const id = ++generation.current;
+    setBusyKind("png");
     setBusy(true);
     setStatus("PNGを作成しています…");
     try {
@@ -110,6 +112,7 @@ export function ExportActions({
     if (locked.current || errors.length) return;
     locked.current = true;
     const id = ++generation.current;
+    setBusyKind("print");
     setBusy(true);
     setStatus("印刷用の紙面を準備しています…");
     try {
@@ -136,7 +139,7 @@ export function ExportActions({
           onClick={() => void save()}
           disabled={busy || !!errors.length}
         >
-          {busy ? "作成中…" : "PNGを保存"}
+          {busy && busyKind === "png" ? "作成中…" : "PNGを保存"}
         </button>
         {canPrint && (
           <button
