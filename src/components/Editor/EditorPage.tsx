@@ -1,6 +1,11 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 import { normalizeEventData } from "../../hooks/useEventData";
+import { errorMessage, parseEventFile, readJsonFile } from '../../domain/validation';
+import { eventWarnings, weekday } from '../../domain/date';
+import { EVENT_LIMITS } from '../../domain/limits';
+import { PerformerEditor } from './PerformerEditor';
+import { FlyerOptionsEditor } from './FlyerOptionsEditor';
 import type { EventData, ScheduleItem, SocialLink } from "../../types/event";
 import { FlyerView } from "../Flyer/FlyerView";
 
@@ -9,6 +14,7 @@ type EditorPageProps = {
   setEventData: Dispatch<SetStateAction<EventData>>;
   resetEventData: () => void;
   hasCustomData: boolean;
+  saveStatus?: string;
   onOpenFlyer: () => void;
 };
 
@@ -42,24 +48,6 @@ function updateLabelItem(item: ScheduleItem, label: string): ScheduleItem {
   return { ...item, label };
 }
 
-function isEventData(value: unknown): value is EventData {
-  if (!value || typeof value !== "object") return false;
-
-  const candidate = value as Partial<EventData>;
-  return (
-    typeof candidate.title === "string" &&
-    typeof candidate.subtitle === "string" &&
-    typeof candidate.volume === "string" &&
-    typeof candidate.date === "string" &&
-    typeof candidate.day === "string" &&
-    typeof candidate.startTime === "string" &&
-    Array.isArray(candidate.schedule) &&
-    Boolean(candidate.openMic) &&
-    Boolean(candidate.venue) &&
-    Array.isArray(candidate.socials)
-  );
-}
-
 function makeExportFileName(eventData: EventData) {
   const safeTitle = `${eventData.title}-${eventData.volume}`.replace(/[\\/:*?"<>|\s]+/g, "-");
   return `${safeTitle || "event-flyer"}.json`;
@@ -84,7 +72,7 @@ function downloadJson(json: string, fileName: string) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
 function copyTextFallback(text: string) {
@@ -105,10 +93,11 @@ export function EditorPage({
   eventData,
   setEventData,
   resetEventData,
-  hasCustomData,
+  saveStatus = "保存状態を確認中",
   onOpenFlyer
 }: EditorPageProps) {
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [pending, setPending] = useState<EventData>();
   const [notice, setNotice] = useState<string>("");
 
   const actCount = eventData.schedule.filter((item) => item.type === "act").length;
@@ -197,7 +186,7 @@ export function EditorPage({
   };
 
   const handleReset = () => {
-    const shouldReset = window.confirm("編集内容をすべて初期値に戻しますか？このブラウザに保存された内容も消えます。");
+    const shouldReset = window.confirm("現在のイベントだけを公開初期値に戻しますか？他のイベントは保持されます。");
     if (!shouldReset) return;
 
     resetEventData();
@@ -205,7 +194,7 @@ export function EditorPage({
   };
 
   const downloadEventJson = () => {
-    downloadJson(getPublicEventJson(eventData), makeExportFileName(eventData));
+    downloadJson(JSON.stringify({ schemaVersion: 2, kind: "event", eventData }, null, 2), makeExportFileName(eventData));
     setNotice("JSONを書き出しました。");
   };
 
@@ -235,29 +224,13 @@ export function EditorPage({
     setNotice("defaultEvent用JSONを書き出しました。この内容をGitHubの公開データへ反映できます。");
   };
 
-  const importEventJson = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const importEventJson = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = '';
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result));
-        if (!isEventData(parsed)) {
-          setNotice("読み込みに失敗しました。イベントJSONの形式を確認してください。");
-          return;
-        }
-
-        setEventData(normalizeEventData(parsed));
-        setNotice("JSONからイベント内容を読み込みました。");
-      } catch {
-        setNotice("読み込みに失敗しました。JSONファイルを確認してください。");
-      } finally {
-        event.target.value = "";
-      }
-    };
-
-    reader.readAsText(file);
+    try { setPending(parseEventFile(await readJsonFile(file))); setNotice('内容を確認してから読み込みを確定してください。'); }
+    catch (error) { setNotice(errorMessage(error)); }
   };
 
   return (
@@ -267,11 +240,11 @@ export function EditorPage({
           <div>
             <p className="eyebrow">Editable Flyer</p>
             <h1>チラシ内容を編集</h1>
-            <p>入力した内容はこのブラウザに保存され、HP表示とA4チラシに反映されます。</p>
+            <p>このブラウザ内の下書きを編集します。公開HPには反映されません。</p>
           </div>
 
           <div className="editor-actions">
-            <button type="button" onClick={onOpenFlyer}>A4を見る</button>
+            <button type="button" onClick={onOpenFlyer}>下書きA4を見る</button>
             <button type="button" onClick={downloadEventJson}>JSON保存</button>
             <button type="button" onClick={() => importInputRef.current?.click()}>JSON読込</button>
             <button type="button" className="ghost" onClick={handleReset}>
@@ -288,10 +261,12 @@ export function EditorPage({
         </div>
 
         <p className="save-status">
-          {hasCustomData ? "編集内容を保存中です。" : "現在は初期データを表示しています。"}
+          {saveStatus}（バックアップはJSON保存から）
         </p>
 
-        {notice ? <p className="editor-notice">{notice}</p> : null}
+        {notice ? <p className="editor-notice" role="status">{notice}</p> : null}
+        {pending && <div className="editor-warning"><h2>読み込み内容の確認</h2><p>{eventData.title} → {pending.title} / {pending.date} / {pending.schedule.length}項目 / 出演者{pending.performers.length}名</p><button onClick={() => { setEventData(pending); setPending(undefined); setNotice('イベントを読み込みました。公開HPは変更されません。'); }}>このイベントを置き換える</button><button onClick={() => setPending(undefined)}>キャンセル</button></div>}
+        {eventWarnings(eventData).map(message => <p className="editor-warning" key={message}>{message}</p>)}
 
         {hasA4Warning ? (
           <div className="editor-warning">
@@ -302,7 +277,7 @@ export function EditorPage({
         <section className="editor-card public-data-card">
           <h2>公開用データ</h2>
           <p>
-            管理画面の編集内容は、このブラウザ内に保存されています。サイトを見た全員へ反映したい時は、ここから公開用データをコピーして共有してください。
+            管理画面の編集内容は、このブラウザ内に保存されています。サイトを見た全員へ反映したい時は、ここからデータを書き出し、リポジトリの公開元 src/data/defaultEvent.ts を更新して、レビュー・ビルド・公開作業を行ってください。ファイル生成だけでは公開されません。
           </p>
           <div className="public-data-actions">
             <button type="button" onClick={copyPublicEventJson}>公開用データをコピー</button>
@@ -317,8 +292,10 @@ export function EditorPage({
             <Field label="イベント名" value={eventData.title} onChange={(value) => updateRoot({ title: value })} />
             <Field label="サブタイトル" value={eventData.subtitle} onChange={(value) => updateRoot({ subtitle: value })} />
             <Field label="vol" value={eventData.volume} onChange={(value) => updateRoot({ volume: value })} />
-            <Field label="日付" value={eventData.date} onChange={(value) => updateRoot({ date: value })} />
-            <Field label="曜日" value={eventData.day} onChange={(value) => updateRoot({ day: value })} />
+            <Field label="日付（YYYY-MM-DD / 従来表記も保持）" value={eventData.date} onChange={(value) => updateRoot({ date: value, day: weekday(value) ?? eventData.day })} />
+            <label className="editor-field"><span>曜日（自動計算）</span><input value={weekday(eventData.date) ?? '日付を確認してください'} readOnly /></label>
+            <label className="inline-check"><input type="checkbox" checked={eventData.dayOverride ?? false} onChange={e => updateRoot({ dayOverride: e.target.checked })} />曜日を特殊表示</label>
+            {eventData.dayOverride && <Field label="曜日の特殊表示" value={eventData.day} onChange={value => updateRoot({ day: value })} />}
             <Field label="開始時間" value={eventData.startTime} onChange={(value) => updateRoot({ startTime: value })} />
             <Field label="料金" value={eventData.price} onChange={(value) => updateRoot({ price: value })} />
           </div>
@@ -329,14 +306,16 @@ export function EditorPage({
         <section className="editor-card">
           <div className="card-heading">
             <h2>タイムスケジュール</h2>
-            <button type="button" onClick={addAct}>出演者を追加</button>
+            <button type="button" onClick={addAct} disabled={eventData.schedule.length >= EVENT_LIMITS.schedule}>出演者を追加</button>
           </div>
+          {eventData.schedule.length >= EVENT_LIMITS.schedule && <p role="status">スケジュールは{EVENT_LIMITS.schedule}件までです。追加するには不要な項目を削除してください。</p>}
 
           <div className="schedule-editor-list">
             {eventData.schedule.map((item, index) => (
               <div className="schedule-editor-item" key={`${item.type}-${index}`}>
                 <select
                   value={item.type}
+                  aria-label="スケジュールの種類"
                   onChange={(event) => {
                     const type = event.target.value as ScheduleItem["type"];
                     if (type === "act") updateScheduleItem(index, { type: "act", time: "00:00 - 00:00", name: "出演者名" });
@@ -371,10 +350,10 @@ export function EditorPage({
                 )}
 
                 <div className="row-actions">
-                  <button type="button" onClick={() => moveScheduleItem(index, -1)} disabled={index === 0}>
+                  <button type="button" aria-label="スケジュールを上へ" onClick={() => moveScheduleItem(index, -1)} disabled={index === 0}>
                     ↑
                   </button>
-                  <button type="button" onClick={() => moveScheduleItem(index, 1)} disabled={index === eventData.schedule.length - 1}>
+                  <button type="button" aria-label="スケジュールを下へ" onClick={() => moveScheduleItem(index, 1)} disabled={index === eventData.schedule.length - 1}>
                     ↓
                   </button>
                   <button type="button" className="danger" onClick={() => removeScheduleItem(index)}>
@@ -386,6 +365,8 @@ export function EditorPage({
           </div>
         </section>
 
+        <PerformerEditor eventData={eventData} setEventData={setEventData} />
+        <FlyerOptionsEditor eventData={eventData} setEventData={setEventData} />
         <section className="editor-card">
           <h2>Open Mic</h2>
           <div className="editor-grid">
@@ -408,12 +389,13 @@ export function EditorPage({
         <section className="editor-card">
           <div className="card-heading">
             <h2>SNSリンク</h2>
-            <button type="button" onClick={addSocial}>SNSを追加</button>
+            <button type="button" onClick={addSocial} disabled={eventData.socials.length >= EVENT_LIMITS.socials}>SNSを追加</button>
           </div>
+          {eventData.socials.length >= EVENT_LIMITS.socials && <p role="status">SNSリンクは{EVENT_LIMITS.socials}件までです。追加するには不要なリンクを削除してください。</p>}
           {eventData.socials.map((social, index) => (
-            <div className="social-editor-item" key={`${social.label}-${index}`}>
-              <input value={social.label} onChange={(event) => updateSocial(index, { label: event.target.value })} />
-              <input value={social.url} onChange={(event) => updateSocial(index, { url: event.target.value })} />
+            <div className="social-editor-item" key={index}>
+              <input aria-label="SNS表示名" value={social.label} onChange={(event) => updateSocial(index, { label: event.target.value })} />
+              <input aria-label="SNS URL" value={social.url} onChange={(event) => updateSocial(index, { url: event.target.value })} />
               <button type="button" className="danger" onClick={() => removeSocial(index)}>
                 削除
               </button>
@@ -423,7 +405,7 @@ export function EditorPage({
       </section>
 
       <aside className="editor-preview">
-        <FlyerView eventData={eventData} variant="web" onEdit={() => undefined} onPrint={() => window.print()} />
+        <h2>下書きの簡易表示</h2><p>印刷・PNG出力は「下書きA4を見る」から確認できます。</p><FlyerView eventData={eventData} variant="web" showEditButton={false} />
       </aside>
     </main>
   );

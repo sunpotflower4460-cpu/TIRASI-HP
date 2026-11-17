@@ -1,3 +1,5 @@
+import { eventDay } from "../../domain/date";
+import { safeUrl } from "../../domain/validation";
 import type { EventData } from "../../types/event";
 import "../../styles/home.css";
 import "../../styles/home-extra.css";
@@ -23,7 +25,7 @@ export function HomePage({ eventData, onOpenFlyer, onEdit, showEditButton = fals
             <span>{eventData.subtitle} {eventData.volume}</span>
           </h1>
           <p className="home-lead">
-            館林でひらく小さなアコースティックライブ。音、おむすび、人の気配がふわっと重なる春のイベントです。
+            {eventData.venue.name}で開催する{eventData.subtitle}。出演時間・料金・当日のご案内をご確認いただけます。
           </p>
           <div className="home-cta-row">
             <button type="button" onClick={onOpenFlyer}>A4チラシを見る</button>
@@ -35,7 +37,7 @@ export function HomePage({ eventData, onOpenFlyer, onEdit, showEditButton = fals
 
         <aside className="home-event-card">
           <p className="card-label">Event</p>
-          <div className="home-date">{eventData.date} <span>({eventData.day})</span></div>
+          <div className="home-date">{eventData.date} <span>({eventDay(eventData)})</span></div>
           <p className="home-start">Start {eventData.startTime}</p>
           <p className="home-price">{eventData.price}</p>
           <p className="home-place">{eventData.venue.name}</p>
@@ -47,7 +49,7 @@ export function HomePage({ eventData, onOpenFlyer, onEdit, showEditButton = fals
           <p className="home-section-label">About</p>
           <h2>イベント概要</h2>
           <p>{eventData.organizer}</p>
-          <p className="soft-text">しののめむすびは11:00より営業中。ライブ開始まで、会場の空気ごとゆっくり楽しめます。</p>
+          <p className="soft-text">{eventData.statusNote}</p>
         </article>
         <article>
           <p className="home-section-label">Open Mic</p>
@@ -100,13 +102,13 @@ export function HomePage({ eventData, onOpenFlyer, onEdit, showEditButton = fals
           <p className="home-section-label">Access</p>
           <h2>{eventData.venue.name}</h2>
           <p>{eventData.venue.address}</p>
-          <a href={eventData.venue.url} target="_blank" rel="noreferrer">
+          <a href={safeUrl(eventData.venue.url)} target="_blank" rel="noreferrer">
             {eventData.venue.url.replace("https://", "")}
           </a>
         </div>
         <div className="home-socials">
           {eventData.socials.map((social) => (
-            <a href={social.url} target="_blank" rel="noreferrer" key={social.label}>
+            <a href={safeUrl(social.url)} target="_blank" rel="noreferrer" key={social.label}>
               ◎ {social.label}
             </a>
           ))}

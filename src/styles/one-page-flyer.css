@@ -54,7 +54,7 @@
   top: 0;
   width: 210mm;
   height: 297mm;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
   z-index: -1;
 }
@@ -62,26 +62,16 @@
 .one-page-sheet {
   width: 210mm;
   height: 297mm;
-  max-width: calc(100vw - 20px);
+  max-width: none;
   background: var(--bg-color);
   color: var(--text-color);
   box-shadow: var(--shadow);
   border-radius: 6px;
-  overflow: hidden;
+  overflow: visible;
   padding: 9.5mm;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   gap: 5mm;
-}
-
-.one-page-sheet.exporting-for-image {
-  width: 210mm;
-  height: 297mm;
-  max-width: none;
-  transform: none !important;
-  margin: 0 !important;
-  box-shadow: none;
-  border-radius: 0;
 }
 
 .one-page-header {
@@ -98,14 +88,6 @@
   margin-bottom: 3.5mm;
 }
 
-.one-page-sheet.export-image-copy .one-page-kicker {
-  width: 112mm;
-  max-width: 112mm;
-  margin: 0 auto 3.5mm;
-  transform: translateX(3mm);
-  text-align: center;
-}
-
 .one-page-title-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -113,34 +95,11 @@
   gap: 6mm;
 }
 
-.one-page-sheet.export-image-copy .one-page-title-row {
-  grid-template-columns: minmax(0, 1fr) 40mm;
-  gap: 3.5mm;
-  align-items: start;
-}
-
-.one-page-sheet.export-image-copy .one-page-title-row > div:first-child {
-  width: 112mm;
-  max-width: 112mm;
-  justify-self: center;
-  padding-left: 0;
-  padding-right: 0;
-  transform: translate(21mm, 2mm);
-  text-align: center;
-}
-
 .one-page-title-row h1 {
   color: var(--primary-color);
-  font-family: "Zen Maru Gothic", sans-serif;
+  font-family: "Noto Sans JP", sans-serif;
   font-size: 4.55rem;
   line-height: 0.98;
-}
-
-.one-page-sheet.export-image-copy .one-page-title-row h1 {
-  font-size: 4.96rem;
-  line-height: 0.94;
-  letter-spacing: -0.035em;
-  transform: translateX(2mm);
 }
 
 .one-page-subtitle {
@@ -153,17 +112,6 @@
   color: var(--primary-color);
   font-size: 0.72em;
   margin-left: 3mm;
-}
-
-.one-page-sheet.export-image-copy .one-page-subtitle {
-  font-size: 1.92rem;
-  margin-top: 1.6mm;
-  letter-spacing: -0.03em;
-  transform: translateX(4mm);
-}
-
-.one-page-sheet.export-image-copy .one-page-subtitle span {
-  margin-left: 3.5mm;
 }
 
 .one-page-date {
@@ -180,15 +128,6 @@
   align-content: center;
   justify-content: center;
   box-sizing: border-box;
-}
-
-.one-page-sheet.export-image-copy .one-page-date {
-  min-width: 40mm;
-  min-height: 38mm;
-  padding: 7.5mm 6.5mm;
-  justify-self: center;
-  align-self: start;
-  transform: translate(-6mm, 2mm);
 }
 
 .one-page-date strong {
@@ -217,15 +156,6 @@
   font-size: 1.06rem;
 }
 
-.one-page-sheet.export-image-copy .one-page-organizer {
-  width: 112mm;
-  max-width: 112mm;
-  margin: 3.2mm auto 0;
-  transform: translateX(3mm);
-  font-size: 1.1rem;
-  text-align: center;
-}
-
 .one-page-badges {
   display: flex;
   gap: 3mm;
@@ -242,18 +172,6 @@
   font-size: 1rem;
 }
 
-.one-page-sheet.export-image-copy .one-page-badges {
-  width: 112mm;
-  max-width: 112mm;
-  justify-content: center;
-  margin: 3.3mm auto 0;
-  transform: translateX(3mm);
-}
-
-.one-page-sheet.export-image-copy .one-page-badges span {
-  padding-inline: 7.1mm;
-}
-
 .one-page-badges span:nth-child(2) {
   background: var(--accent-color);
 }
@@ -263,16 +181,6 @@
   color: #6d6062;
   font-size: 0.88rem;
   line-height: 1.45;
-}
-
-.one-page-sheet.export-image-copy .one-page-note {
-  width: 112mm;
-  max-width: 112mm;
-  margin: 2.1mm auto 0;
-  transform: translateX(3mm);
-  font-size: 0.76rem;
-  line-height: 1.34;
-  text-align: center;
 }
 
 .one-page-main-grid {
@@ -294,21 +202,16 @@
 .one-page-schedule {
   display: grid;
   grid-template-rows: auto 1fr;
-  min-height: 148mm;
+  min-height: 0;
 }
 
 .one-page-schedule h2,
 .one-page-open-mic h2,
 .one-page-access h2 {
   color: var(--primary-color);
-  font-family: "Zen Maru Gothic", sans-serif;
-  font-size: 1.45rem;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 1.2rem;
   margin-bottom: 5mm;
-}
-
-.one-page-sheet.export-image-copy .one-page-access h2 {
-  width: 100%;
-  text-align: center;
 }
 
 .one-page-schedule-list {
@@ -320,8 +223,8 @@
 
 .one-page-schedule-row {
   display: grid;
-  grid-template-columns: 38mm 1fr;
-  gap: 5mm;
+  grid-template-columns: 30mm 1fr;
+  gap: 3mm;
   align-items: baseline;
   padding-bottom: 3.5mm;
   border-bottom: 1px dotted rgba(209, 122, 134, 0.32);
@@ -349,7 +252,7 @@
   text-align: center;
   position: relative;
   z-index: 1;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: none;
 }
 
@@ -417,50 +320,34 @@
   font-size: 0.88rem;
 }
 
-@media screen and (max-width: 760px) {
-  .one-page-flyer-page {
-    overflow-x: auto;
-    align-items: flex-start;
-  }
 
-  .one-page-sheet {
-    transform: scale(0.46);
-    transform-origin: top left;
-    max-width: none;
-    margin-left: 8px;
-    margin-bottom: -150mm;
-  }
-
-  .one-page-toolbar {
-    width: 100%;
-  }
-}
-
+.one-page-sheet { flex-shrink: 0; box-sizing: border-box; border-radius: 0; }
+.one-page-sheet * { min-width: 0; overflow-wrap: anywhere; }
+.one-page-main-grid { flex: 1; }
+.one-page-footer { flex-wrap: wrap; }
+.one-page-title-row h1 { font-size: 4.2rem; }
+.one-page-date { padding: 5mm; }
+.one-page-schedule, .one-page-open-mic, .one-page-access { padding: 5mm; }
+.one-page-schedule-row strong { font-size: 1rem; }
+.sheet-viewport { width: 100%; margin: 0 auto; }
+.sheet-spacer { position: relative; }
+.sheet-transform { position: absolute; left: 0; top: 0; transform-origin: top left; }
+.export-actions { width: min(100%, 800px); margin: 0 auto 24px; padding: 18px; background: #fff; border: 1px solid #d5dcd8; border-radius: 14px; color: #22382c; }
+.action-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.inline-check { display: inline-flex; gap: 8px; align-items: center; margin-top: 12px; }
+.helper { font-size: .8rem; line-height: 1.7; color: #506156; margin-top: 10px; }
+@page { size: A4 portrait; margin: 0; }
 @media print {
-  html,
-  body {
-    width: 210mm;
-    min-height: 297mm;
-    background: white !important;
-  }
-
-  .one-page-flyer-page {
-    display: block;
-    width: 210mm;
-    height: 297mm;
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
-  }
-
-  .one-page-sheet {
-    width: 210mm;
-    height: 297mm;
-    max-width: 210mm;
-    box-shadow: none;
-    border-radius: 0;
-    padding: 8.5mm;
-    page-break-after: avoid;
-    break-after: avoid;
-  }
+  html, body, #root, .app-shell { width: 210mm !important; margin: 0 !important; padding: 0 !important; min-height: 0 !important; }
+  .print-hidden, .app-nav, .export-actions { display: none !important; }
+  .one-page-flyer-page { padding: 0; margin: 0; display: block; }
+  .sheet-viewport { width: 210mm !important; max-width: none !important; }
+  .sheet-spacer { height: auto !important; }
+  .sheet-transform { position: static; width: 210mm !important; height: auto !important; transform: none !important; }
+  .one-page-sheet { width: 210mm; height: 297mm; padding: 9.5mm; margin: 0; box-shadow: none !important; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
+.theme-night .one-page-date, .theme-night .one-page-schedule, .theme-night .one-page-access { background: #faf6f0; color: #24233d; }
+.theme-night .one-page-date strong, .theme-night .one-page-schedule h2, .theme-night .one-page-access h2, .theme-night .one-page-time { color: #655017; }
+.theme-night .one-page-open-mic { color: #24233d; }
+.theme-night .one-page-open-mic h2, .theme-night .one-page-badges span { color: #24233d; }
+.theme-night .one-page-note, .theme-night .one-page-footer { color: #f3edf0; }

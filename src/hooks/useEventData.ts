@@ -1,231 +1,109 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
-import { defaultEvent } from "../data/defaultEvent";
-import type { EventData } from "../types/event";
-
-const LEGACY_STORAGE_KEY = "tirasi-hp:event-data:v1";
-const LIBRARY_STORAGE_KEY = "tirasi-hp:event-library:v1";
-const ACTIVE_EVENT_ID_KEY = "tirasi-hp:active-event-id:v1";
-
-export type EventRecord = {
-  id: string;
-  name: string;
-  eventData: EventData;
-  updatedAt: string;
-};
-
-function createEventId() {
-  return `event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-export function normalizeEventData(eventData: EventData): EventData {
-  return {
-    ...eventData,
-    themeId: eventData.themeId || defaultEvent.themeId,
-    performers: Array.isArray(eventData.performers) ? eventData.performers : [],
-    flyerOptions: {
-      ...defaultEvent.flyerOptions,
-      ...(eventData.flyerOptions ?? {})
-    }
-  };
-}
-
-function buildEventName(eventData: EventData) {
-  return `${eventData.title} ${eventData.subtitle} ${eventData.volume}`.trim();
-}
-
-function createRecord(eventData: EventData, name = buildEventName(eventData)): EventRecord {
-  return {
-    id: createEventId(),
-    name,
-    eventData: normalizeEventData(eventData),
-    updatedAt: nowIso()
-  };
-}
-
-function safeParseEventData(value: string | null): EventData | null {
-  if (!value) return null;
-
-  try {
-    const parsed = JSON.parse(value) as EventData;
-    if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.schedule)) {
-      return null;
-    }
-    return normalizeEventData(parsed);
-  } catch {
-    return null;
-  }
-}
-
-function normalizeEventRecord(record: EventRecord): EventRecord {
-  return {
-    ...record,
-    id: record.id || createEventId(),
-    name: record.name || buildEventName(record.eventData),
-    eventData: normalizeEventData(record.eventData),
-    updatedAt: record.updatedAt || nowIso()
-  };
-}
-
-export function safeParseEventLibrary(value: string | null): EventRecord[] | null {
-  if (!value) return null;
-
-  try {
-    const parsed = JSON.parse(value) as EventRecord[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return null;
-
-    const records = parsed
-      .filter((record) => record && typeof record === "object")
-      .filter((record) => record.eventData && Array.isArray(record.eventData.schedule))
-      .map((record) => normalizeEventRecord(record));
-
-    return records.length > 0 ? records : null;
-  } catch {
-    return null;
-  }
-}
-
-function getInitialRecords() {
-  if (typeof window === "undefined") return [createRecord(defaultEvent)];
-
-  const library = safeParseEventLibrary(window.localStorage.getItem(LIBRARY_STORAGE_KEY));
-  if (library) return library;
-
-  const legacyEvent = safeParseEventData(window.localStorage.getItem(LEGACY_STORAGE_KEY));
-  return [createRecord(legacyEvent ?? defaultEvent)];
-}
-
-function getInitialActiveId(records: EventRecord[]) {
-  if (typeof window === "undefined") return records[0]?.id ?? "";
-
-  const savedActiveId = window.localStorage.getItem(ACTIVE_EVENT_ID_KEY);
-  if (savedActiveId && records.some((record) => record.id === savedActiveId)) return savedActiveId;
-  return records[0]?.id ?? "";
-}
+import { useEffect, useRef, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+import { defaultEvent } from '../data/defaultEvent';
+import type { EventData } from '../types/event';
+import { initialWorkspace, parseLibrary, parseRecords, recordFor, workspaceReducer } from '../domain/workspace';
+import type { Workspace } from '../domain/workspace';
+import { errorMessage, parseEvent } from '../domain/validation';
+import { ConflictError, initializeWorkspace, readWorkspace, saveWorkspace } from '../storage/database';
+export type { EventRecord } from '../domain/workspace';
+export const normalizeEventData = parseEvent;
+export function safeParseEventLibrary(value: string | null) { try { return value ? parseLibrary(value) : null; } catch { return null; } }
 
 export function useEventData() {
-  const [eventRecords, setEventRecords] = useState<EventRecord[]>(getInitialRecords);
-  const [activeEventId, setActiveEventId] = useState<string>(() => getInitialActiveId(eventRecords));
-
-  const activeRecord = useMemo(() => {
-    return eventRecords.find((record) => record.id === activeEventId) ?? eventRecords[0];
-  }, [activeEventId, eventRecords]);
-
-  const eventData = activeRecord?.eventData ?? defaultEvent;
-
-  const setEventData: Dispatch<SetStateAction<EventData>> = (action) => {
-    setEventRecords((records) =>
-      records.map((record) => {
-        if (record.id !== activeEventId) return record;
-        const nextEventData = typeof action === "function" ? action(record.eventData) : action;
-        return {
-          ...record,
-          name: record.name || buildEventName(nextEventData),
-          eventData: normalizeEventData(nextEventData),
-          updatedAt: nowIso()
-        };
-      })
-    );
-  };
-
-  const hasCustomData = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return (
-      window.localStorage.getItem(LIBRARY_STORAGE_KEY) !== null ||
-      window.localStorage.getItem(LEGACY_STORAGE_KEY) !== null
-    );
-  }, [eventRecords]);
-
+  const [workspace, setWorkspace] = useState<Workspace>(() => initialWorkspace());
+  const [ready, setReady] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('保存領域を読み込んでいます…');
+  const [storageError, setStorageError] = useState('');
+  const [conflict, setConflict] = useState(false);
+  const current = useRef(workspace);
+  current.current = workspace;
+  const revision = useRef(0);
+  const persisted = useRef<Workspace | undefined>(undefined);
+  const saving = useRef(false);
+  const dirty = useRef(false);
   useEffect(() => {
-    if (!activeRecord) return;
-    window.localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(eventRecords));
-    window.localStorage.setItem(ACTIVE_EVENT_ID_KEY, activeRecord.id);
-    window.localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(activeRecord.eventData));
-  }, [activeRecord, eventRecords]);
-
-  const resetEventData = () => {
-    const resetRecord = createRecord(defaultEvent);
-    window.localStorage.removeItem(LIBRARY_STORAGE_KEY);
-    window.localStorage.removeItem(ACTIVE_EVENT_ID_KEY);
-    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-    setEventRecords([resetRecord]);
-    setActiveEventId(resetRecord.id);
-  };
-
-  const selectEvent = (eventId: string) => {
-    if (!eventRecords.some((record) => record.id === eventId)) return;
-    setActiveEventId(eventId);
-  };
-
-  const createNewEvent = () => {
-    const record = createRecord(
-      {
-        ...defaultEvent,
-        title: "新しいイベント",
-        volume: "vol.1"
-      },
-      "新しいイベント"
-    );
-    setEventRecords((records) => [...records, record]);
-    setActiveEventId(record.id);
-  };
-
-  const duplicateActiveEvent = () => {
-    const source = activeRecord ?? createRecord(defaultEvent);
-    const record = createRecord(source.eventData, `${source.name} コピー`);
-    setEventRecords((records) => [...records, record]);
-    setActiveEventId(record.id);
-  };
-
-  const renameActiveEvent = (name: string) => {
-    setEventRecords((records) =>
-      records.map((record) =>
-        record.id === activeEventId
-          ? { ...record, name: name.trim() || buildEventName(record.eventData), updatedAt: nowIso() }
-          : record
-      )
-    );
-  };
-
-  const deleteActiveEvent = () => {
-    setEventRecords((records) => {
-      if (records.length <= 1) {
-        const resetRecord = createRecord(defaultEvent);
-        setActiveEventId(resetRecord.id);
-        return [resetRecord];
+    let cancelled = false;
+    Promise.resolve().then(() => initializeWorkspace(window.localStorage)).then(value => {
+      if (cancelled) return;
+      revision.current = value.revision; persisted.current = value;
+      setWorkspace(value); setReady(true); setSaveStatus('このブラウザに保存済み');
+    }).catch(error => {
+      if (cancelled) return;
+      // Keep the source untouched. Editing in memory and backup remain available.
+      let legacyBackup: Record<string, string | null> = {};
+      try { legacyBackup = Object.fromEntries(['tirasi-hp:event-library:v1', 'tirasi-hp:event-data:v1', 'tirasi-hp:active-event-id:v1'].map(key => [key, window.localStorage.getItem(key)])); } catch { /* Storage may be disabled. */ }
+      const fallback = { ...current.current, legacyBackup };
+      persisted.current = fallback; setWorkspace(fallback);
+      setReady(true); setStorageError(`未保存: ${errorMessage(error)} 旧データは削除していません。JSON保存で退避できます。`); setSaveStatus('未保存（メモリ内）');
+    });
+    return () => { cancelled = true; };
+  }, []);
+  const flush = async () => {
+    if (saving.current || conflict || !dirty.current) return;
+    saving.current = true;
+    try {
+      while (dirty.current) {
+        dirty.current = false;
+        const value = current.current;
+        setSaveStatus('保存中…');
+        const saved = await saveWorkspace(value, revision.current);
+        revision.current = saved.revision; persisted.current = value;
+        new BroadcastChannelSafe().notify(saved.revision);
+        setStorageError(''); setSaveStatus('このブラウザに保存済み');
       }
-
-      const nextRecords = records.filter((record) => record.id !== activeEventId);
-      setActiveEventId(nextRecords[0]?.id ?? "");
-      return nextRecords;
+    } catch (error) {
+      dirty.current = true;
+      setStorageError(`未保存: ${errorMessage(error)} JSON保存で現在の内容を退避してください。`); setSaveStatus('未保存（メモリ内）');
+      if (error instanceof ConflictError) setConflict(true);
+    } finally { saving.current = false; }
+  };
+  useEffect(() => {
+    if (!ready || persisted.current === workspace) return;
+    dirty.current = true; setSaveStatus('未保存');
+    const timer = setTimeout(() => void flush(), 350);
+    return () => clearTimeout(timer);
+  }, [workspace, ready]); // Persist only after a completed edit; no storage writes in state updaters.
+  useEffect(() => {
+    const onChange = async () => {
+      try {
+        const other = await readWorkspace();
+        if (other && other.revision > revision.current) { setConflict(true); setStorageError('別のタブで更新されました。現在の内容をJSON保存してから再読み込みしてください。'); setSaveStatus('保存を停止（競合）'); }
+      } catch { /* The next explicit save surfaces storage errors. */ }
+    };
+    const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('tirasi-workspace') : null;
+    if (channel) channel.onmessage = () => void onChange();
+    window.addEventListener('focus', onChange);
+    const beforeUnload = (event: BeforeUnloadEvent) => { if (dirty.current || saving.current) { event.preventDefault(); event.returnValue = ''; } };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => { channel?.close(); window.removeEventListener('focus', onChange); window.removeEventListener('beforeunload', beforeUnload); };
+  }, []);
+  const activeRecord = workspace.events.find(e => e.id === workspace.activeEventId)!;
+  const setEventData: Dispatch<SetStateAction<EventData>> = action => {
+    const id = workspace.activeEventId;
+    const updatedAt = new Date().toISOString();
+    setWorkspace(previous => {
+      const record = previous.events.find(e => e.id === id);
+      if (!record) return previous;
+      const eventData = typeof action === 'function' ? action(record.eventData) : action;
+      return workspaceReducer(previous, { type: 'edit', id, eventData, updatedAt });
     });
   };
-
-  const replaceEventLibrary = (records: EventRecord[]) => {
-    const normalizedRecords = records.map((record) => normalizeEventRecord(record));
-    if (normalizedRecords.length === 0) return false;
-
-    setEventRecords(normalizedRecords);
-    setActiveEventId(normalizedRecords[0].id);
-    return true;
-  };
-
   return {
-    eventData,
-    setEventData,
-    resetEventData,
-    hasCustomData,
-    eventRecords,
-    activeEventId,
-    selectEvent,
-    createNewEvent,
-    duplicateActiveEvent,
-    renameActiveEvent,
-    deleteActiveEvent,
-    replaceEventLibrary
+    workspace, setWorkspace, ready, saveStatus, storageError, conflict,
+    retrySave: () => { dirty.current = true; void flush(); },
+    eventData: activeRecord.eventData, setEventData,
+    eventRecords: workspace.events, activeEventId: workspace.activeEventId,
+    hasCustomData: ready,
+    selectEvent: (id: string) => setWorkspace(s => workspaceReducer(s, { type: 'select', id })),
+    createNewEvent: () => { const record = recordFor({ ...structuredClone(defaultEvent), title: '新しいイベント', volume: '', date: '', day: '', startTime: '', schedule: [], performers: [] }); setWorkspace(s => workspaceReducer(s, { type: 'add', record })); },
+    duplicateActiveEvent: () => { const record = recordFor(activeRecord.eventData, undefined, `${activeRecord.name} コピー`); setWorkspace(s => workspaceReducer(s, { type: 'add', record })); },
+    renameActiveEvent: (name: string) => setWorkspace(s => workspaceReducer(s, { type: 'rename', id: workspace.activeEventId, name })),
+    deleteActiveEvent: () => { const fallback = recordFor(defaultEvent); setWorkspace(s => workspaceReducer(s, { type: 'delete', id: workspace.activeEventId, fallback })); },
+    resetEventData: () => setEventData(structuredClone(defaultEvent)),
+    replaceEventLibrary: (records: import('../domain/workspace').EventRecord[]) => { const valid = parseRecords(records); setWorkspace(s => workspaceReducer(s, { type: 'replace', records: valid })); return true; }
   };
+}
+class BroadcastChannelSafe {
+  notify(revision: number) { if (typeof BroadcastChannel !== 'undefined') { const channel = new BroadcastChannel('tirasi-workspace'); channel.postMessage(revision); channel.close(); } }
 }

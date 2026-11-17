@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { EventRecord } from "../../hooks/useEventData";
-import { safeParseEventLibrary } from "../../hooks/useEventData";
+import { parseLibrary } from '../../domain/workspace';
+import { errorMessage, readJsonFile } from '../../domain/validation';
+import { MAX_EVENTS } from '../../domain/limits';
 
 type EventManagerProps = {
   eventRecords: EventRecord[];
@@ -30,6 +32,7 @@ export function EventManager({
   onReplaceEventLibrary
 }: EventManagerProps) {
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [pending, setPending] = useState<EventRecord[]>();
   const [notice, setNotice] = useState("");
   const activeRecord = eventRecords.find((record) => record.id === activeEventId) ?? eventRecords[0];
 
@@ -40,7 +43,7 @@ export function EventManager({
   };
 
   const exportLibrary = () => {
-    const json = JSON.stringify(eventRecords, null, 2);
+    const json = JSON.stringify({ schemaVersion: 2, kind: "event-library", records: eventRecords }, null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -50,36 +53,24 @@ export function EventManager({
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 30000);
     setNotice("イベント一覧を書き出しました。");
   };
 
-  const importLibrary = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const importLibrary = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0]; input.value = '';
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = safeParseEventLibrary(String(reader.result));
-        if (!parsed) {
-          setNotice("読み込みに失敗しました。イベント一覧JSONの形式を確認してください。");
-          return;
-        }
-
-        const shouldReplace = window.confirm("現在のイベント一覧を読み込んだ内容で置き換えますか？");
-        if (!shouldReplace) return;
-
-        const replaced = onReplaceEventLibrary(parsed);
-        setNotice(replaced ? "イベント一覧を復元しました。" : "読み込みに失敗しました。");
-      } catch {
-        setNotice("読み込みに失敗しました。JSONファイルを確認してください。");
-      } finally {
-        event.target.value = "";
-      }
-    };
-
-    reader.readAsText(file);
+    try { setPending(parseLibrary(await readJsonFile(file))); setNotice('全件の形式を確認しました。読み込み方法を選んでください。'); }
+    catch (error) { setNotice(errorMessage(error)); }
+  };
+  const applyImport = (merge: boolean) => {
+    if (!pending) return;
+    const records = merge ? [...eventRecords, ...pending.map(r => ({ ...r, id: crypto.randomUUID() }))] : pending;
+    if (records.length > MAX_EVENTS) { setNotice(`イベントは${MAX_EVENTS}件までです。追加するには不要なイベントを削除するか、一覧を置き換えてください。`); return; }
+    try {
+      if (onReplaceEventLibrary(records)) { setPending(undefined); setNotice('イベント一覧を復元しました。'); }
+    } catch (error) { setNotice(errorMessage(error)); }
   };
 
   return (
@@ -87,11 +78,11 @@ export function EventManager({
       <div className="card-heading">
         <div>
           <h2>イベント管理</h2>
-          <p className="event-manager-note">vol.5を複製して、vol.6や次回イベントを作れます。</p>
+          <p className="event-manager-note">現在のイベントを複製して、次のチラシを作れます。公開イベントは切り替わりません。</p>
         </div>
         <div className="event-manager-actions">
-          <button type="button" onClick={onCreateNewEvent}>新規</button>
-          <button type="button" onClick={onDuplicateActiveEvent}>複製</button>
+          <button type="button" onClick={onCreateNewEvent} disabled={eventRecords.length >= MAX_EVENTS}>新規</button>
+          <button type="button" onClick={onDuplicateActiveEvent} disabled={eventRecords.length >= MAX_EVENTS}>複製</button>
           <button type="button" onClick={exportLibrary}>一覧保存</button>
           <button type="button" onClick={() => importInputRef.current?.click()}>一覧復元</button>
           <button type="button" className="danger" onClick={handleDelete}>削除</button>
@@ -104,9 +95,11 @@ export function EventManager({
           />
         </div>
       </div>
+      {eventRecords.length >= MAX_EVENTS && <p role="status">イベントは{MAX_EVENTS}件までです。追加するには不要なイベントを削除してください。</p>}
 
-      {notice ? <p className="editor-notice event-manager-notice">{notice}</p> : null}
+      {notice ? <p role="status" className="editor-notice event-manager-notice">{notice}</p> : null}
 
+      {pending && <div className="editor-warning"><h3>イベント一覧を読み込み</h3><p>現在{eventRecords.length}件 / 読み込むデータ{pending.length}件</p><ul>{pending.map(r => <li key={r.id}>{r.name} / {r.eventData.date}</li>)}</ul><button onClick={() => applyImport(true)}>一覧に追加</button><button onClick={() => { if (window.confirm('現在の一覧を置き換えますか？事前に一覧保存をおすすめします。')) applyImport(false); }}>一覧を置き換える</button><button onClick={() => setPending(undefined)}>キャンセル</button></div>}
       <div className="event-manager-grid">
         <label className="editor-field">
           <span>編集中のイベント</span>

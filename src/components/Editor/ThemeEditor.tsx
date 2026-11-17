@@ -3,8 +3,6 @@ import { themeOptions } from "../../data/themes";
 import type { EventData } from "../../types/event";
 import { AdminGuide } from "./AdminGuide";
 import { EditorNotice } from "./EditorNotice";
-import { FlyerOptionsEditor } from "./FlyerOptionsEditor";
-import { PerformerEditor } from "./PerformerEditor";
 
 type ThemeEditorProps = {
   eventData: EventData;
@@ -17,7 +15,7 @@ export function ThemeEditor({ eventData, setEventData }: ThemeEditorProps) {
   return (
     <>
       <EditorNotice />
-      <AdminGuide />
+      <details className="editor-card"><summary>編集ガイドを開く</summary><AdminGuide /></details>
       <section className="editor-card">
         <h2>色テーマ</h2>
         <label className="editor-field">
@@ -38,8 +36,6 @@ export function ThemeEditor({ eventData, setEventData }: ThemeEditorProps) {
         </label>
         <p className="theme-description">{selectedTheme.description}</p>
       </section>
-      <FlyerOptionsEditor eventData={eventData} setEventData={setEventData} />
-      <PerformerEditor eventData={eventData} setEventData={setEventData} />
     </>
   );
 }

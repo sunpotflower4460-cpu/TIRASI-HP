@@ -1,14 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
-import { getThemeClassName } from "../../data/themes";
+import { eventDay } from '../../domain/date';
+import { canvasBlob, withTimeout } from '../../export/files';
+import { ExportActions } from '../../export/ExportActions';
+import { SheetViewport } from './SheetViewport';
+import { FlyerPerformerProfiles } from './FlyerPerformerProfiles';
 import type { EventData, ScheduleItem } from "../../types/event";
 import "../../styles/one-page-flyer.css";
-
-type ShareFileData = { files: File[]; title: string; text?: string };
-type NavigatorWithFileShare = Navigator & {
-  canShare?: (data: ShareFileData) => boolean;
-  share?: (data: ShareFileData) => Promise<void>;
-};
 
 function nl2br(text: string) {
   const lines = text.split("\n");
@@ -37,155 +35,39 @@ function ScheduleRow({ item }: { item: ScheduleItem }) {
   );
 }
 
-function waitForFrame() {
-  return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-}
-
-function withTimeout<T>(promise: Promise<T>, ms: number) {
-  return new Promise<T>((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error("timeout")), ms);
-    promise
-      .then((value) => {
-        window.clearTimeout(timer);
-        resolve(value);
-      })
-      .catch((error) => {
-        window.clearTimeout(timer);
-        reject(error);
-      });
-  });
-}
-
-function createExportClone(sheet: HTMLElement, themeClassName: string) {
-  const stage = document.createElement("div");
-  stage.className = `one-page-export-stage ${themeClassName}`;
-
-  const clone = sheet.cloneNode(true) as HTMLElement;
-  clone.classList.add("exporting-for-image", "export-image-copy");
-
-  stage.appendChild(clone);
-  document.body.appendChild(stage);
-
-  return { stage, clone };
-}
-
-function makePngFileName(eventData: EventData) {
-  const safeTitle = `${eventData.title}-${eventData.subtitle}-${eventData.volume}`
-    .replace(/[\\/:*?"<>|\s]+/g, "-")
-    .toLowerCase();
-  return `${safeTitle || "event-flyer"}.png`;
-}
-
-function downloadBlob(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 30000);
-}
-
-async function shareOrOpenPng(blob: Blob, eventData: EventData, setNotice: (message: string) => void) {
-  const fileName = makePngFileName(eventData);
-  const file = new File([blob], fileName, { type: "image/png" });
-  const shareData: ShareFileData = {
-    files: [file],
-    title: `${eventData.title} ${eventData.subtitle} ${eventData.volume}`,
-    text: "A4チラシPNG"
-  };
-  const nav = navigator as NavigatorWithFileShare;
-
-  if (nav.canShare?.(shareData) && nav.share) {
-    try {
-      await nav.share(shareData);
-      setNotice("共有画面を開きました。写真に保存、またはファイルに保存を選んでください。");
-      return;
-    } catch {
-      setNotice("共有を開けなかったため、PNG表示/保存に切り替えます。");
-    }
-  }
-
-  const url = URL.createObjectURL(blob);
-  const opened = window.open(url, "_blank", "noopener,noreferrer");
-  if (opened) {
-    setNotice("PNGを新しい画面で開きました。長押し保存、または共有から保存してください。");
-    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-    return;
-  }
-
-  downloadBlob(blob, fileName);
-  setNotice("PNGを書き出しました。保存先をご確認ください。");
-}
-
 export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onPrint: () => void }) {
-  const [notice, setNotice] = useState("");
   const sheetRef = useRef<HTMLElement | null>(null);
-  const themeClassName = getThemeClassName(eventData.themeId);
-
-  const handlePrint = () => {
-    setNotice("印刷画面を開きます。反応しない場合は、共有ボタンからSafari/ブラウザで開いてPDF保存してください。");
-    onPrint();
-  };
-
-  const handlePngExport = async () => {
+  const [errors, setErrors] = useState<string[]>([]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const sheet = sheetRef.current;
+      if (!sheet) return;
+      const bounds = sheet.getBoundingClientRect();
+      const out: string[] = [];
+      if (!eventData.title.trim() || !eventData.date.trim() || !eventData.startTime.trim() || !eventData.price.trim() || !eventData.venue.name.trim()) out.push('イベント名・日付・開始時間・料金・会場名を入力してください。');
+      if (sheet.scrollHeight > sheet.clientHeight + 2 || sheet.scrollWidth > sheet.clientWidth + 2 || [...sheet.querySelectorAll('p, strong, h1, h2, small, .one-page-time')].some(el => { const box = el.getBoundingClientRect(); return box.right > bounds.right + 1 || box.bottom > bounds.bottom + 1; })) out.push('内容がA4の紙面からはみ出しています。文章を短くするか、出演者紹介を減らしてください。');
+      setErrors(out);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [eventData]);
+  const generate = async (light: boolean) => {
     const sheet = sheetRef.current;
-    if (!sheet) return;
-
-    let stage: HTMLDivElement | null = null;
-
-    try {
-      setNotice("PNGを書き出しています。共有画面が開くまで少しお待ちください。");
-      await document.fonts?.ready;
-
-      const exportClone = createExportClone(sheet, themeClassName);
-      stage = exportClone.stage;
-      await waitForFrame();
-
-      const canvas = await withTimeout(
-        html2canvas(exportClone.clone, {
-          backgroundColor: null,
-          scale: 3,
-          useCORS: true,
-          logging: false,
-          windowWidth: exportClone.clone.scrollWidth,
-          windowHeight: exportClone.clone.scrollHeight
-        }),
-        20000
-      );
-
-      stage.remove();
-      stage = null;
-
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          setNotice("PNG書き出しに失敗しました。スクリーンショット保存をお試しください。");
-          return;
-        }
-
-        try {
-          await shareOrOpenPng(blob, eventData, setNotice);
-        } catch {
-          setNotice("共有処理中にエラーが発生しました。Safariで開くか、スクリーンショット保存をお試しください。");
-        }
-      }, "image/png");
-    } catch {
-      stage?.remove();
-      setNotice("このブラウザではPNG書き出しが止まりました。Safariで開いて再試行、またはスクリーンショット保存をお試しください。");
-    }
+    if (!sheet) throw new Error('紙面の準備ができていません。');
+    await withTimeout(document.fonts.ready);
+    const width = light ? 1240 : 2480;
+    const height = light ? 1754 : 3508;
+    const canvas = await withTimeout(html2canvas(sheet, {
+      width: 793.7, height: 1122.52, scale: width / 793.7, useCORS: true, logging: false,
+      onclone: doc => { const clone = doc.querySelector<HTMLElement>('.one-page-sheet'); if (clone) { clone.style.transform = 'none'; const parent = clone.closest<HTMLElement>('.sheet-transform'); if (parent) parent.style.transform = 'none'; } }
+    }));
+    const output = document.createElement('canvas'); output.width = width; output.height = height;
+    output.getContext('2d')!.drawImage(canvas, 0, 0, width, height);
+    return canvasBlob(output);
   };
-
   return (
     <main className="one-page-flyer-page">
-      <div className="one-page-toolbar print-hidden">
-        <div className="one-page-toolbar-actions">
-          <button type="button" onClick={handlePrint}>PDF / 印刷</button>
-          <button type="button" className="secondary" onClick={handlePngExport}>PNG保存</button>
-        </div>
-        {notice ? <p className="one-page-print-notice">{notice}</p> : null}
-      </div>
-
+      <ExportActions generate={generate} source={eventData} name={`${eventData.title}-${eventData.volume}`} errors={errors} onPrint={onPrint} />
+      <SheetViewport width={793.7} height={1122.52}>
       <article className="one-page-sheet" ref={sheetRef}>
         <header className="one-page-header">
           <p className="one-page-kicker">{eventData.venueSubtitle}</p>
@@ -196,7 +78,7 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
             </div>
             <div className="one-page-date">
               <strong>{eventData.date}</strong>
-              <span>({eventData.day})</span>
+              <span>({eventDay(eventData)})</span>
             </div>
           </div>
           <p className="one-page-organizer">{eventData.organizer}</p>
@@ -234,12 +116,14 @@ export function OnePageFlyer({ eventData, onPrint }: { eventData: EventData; onP
           </aside>
         </section>
 
+        {eventData.flyerOptions.showPerformerProfiles && eventData.performers.length > 0 && <FlyerPerformerProfiles performers={eventData.performers} />}
         <footer className="one-page-footer">
           {eventData.socials.map((social) => (
             <span key={social.label}>◎ {social.label}</span>
           ))}
         </footer>
       </article>
+      </SheetViewport>
     </main>
   );
 }

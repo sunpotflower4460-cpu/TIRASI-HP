@@ -1,0 +1,13 @@
+.workspace-banner { max-width: 1200px; margin: 16px auto; padding: 20px 24px; background: #edf4ee; border: 1px solid #acbeaf; border-radius: 14px; color: #233a2b; }
+.workspace-banner p { margin: 8px 0; line-height: 1.7; }
+.workspace-banner.error { background: #fff4e8; border-color: #b87330; }
+.workspace-banner button { margin: 6px; }
+.public-label { text-align: center; padding-top: 20px; color: #42574d; }
+.empty-state { max-width: 800px; padding: 48px 24px; margin: auto; }
+.skip-link { position: fixed; left: 16px; top: -100px; z-index: 100; padding: 12px; background: #fff; }
+.skip-link:focus { top: 16px; }
+@media (max-width: 700px) { .workspace-banner { margin: 12px; padding: 16px; } .action-row button { min-height: 44px; } }
+@media print { .workspace-banner, .public-label { display: none !important; } #page-content { outline: none; } }
+.export-actions button, .workspace-banner button, .empty-state button { border: 1px solid #b3c2b8; border-radius: 9px; background: #f8faf7; color: #234334; font-weight: 700; padding: 10px 14px; min-height: 44px; cursor: pointer; }
+.export-actions .action-row button:first-child { color: white; background: #245f49; border-color: #245f49; }
+.export-actions button:hover:enabled { background: #e5ede6; color: #173a2a; }
