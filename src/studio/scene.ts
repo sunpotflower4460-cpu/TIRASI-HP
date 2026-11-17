@@ -7,6 +7,7 @@ import { paletteById, sizes, templateById } from "./registry";
 import type { Palette } from "./registry";
 import type { ArtworkNode } from "./artwork";
 import { responsiveRecipe, liveRecipe } from "./layouts";
+import type { Slot } from "./layouts";
 import { missingArtistNames } from "./live";
 export { compositions, responsiveRecipe } from "./layouts";
 
@@ -109,6 +110,21 @@ const titleFaces: Record<string, Face> = {
   serif: faces.mincho,
   information: faces.kaku,
 };
+/** Rough advance width in px; Latin and digits are narrower than CJK glyphs. */
+const estimate = (value: string, px: number, narrow = false) =>
+  Array.from(value).reduce(
+    (sum, char) =>
+      sum +
+      px *
+        (/[^\u0000-\u007f]/.test(char)
+          ? 1
+          : narrow
+            ? /[0-9]/.test(char)
+              ? 0.5
+              : 0.34
+            : 0.6),
+    0,
+  );
 const displayUrl = (url: string) =>
   url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
@@ -222,6 +238,7 @@ export function composeScene(
         price: string;
       }
     | undefined;
+  let priceInDetails = false;
   let schedule: ScheduleItem[] | undefined;
   let venueBlocks: FlowBlock[] = [],
     additionalBlocks: FlowBlock[] = [];
@@ -242,7 +259,14 @@ export function composeScene(
       doc.content.subtitleOverride ??
       `${event.subtitle} ${event.volume}`.trim();
     kicker = event.venueSubtitle;
-    facts = `${event.date} (${eventDay(event)})\n開始 ${event.startTime}   /   ${event.price}`;
+    // A long price ("前売 2,500円 / 当日 3,000円（1ドリンク別）") cannot live in
+    // the date strip without shrinking everything; it moves to the details
+    // column, which wraps and scales gracefully.
+    const priceText = event.price.trim();
+    priceInDetails = priceText.includes("\n") || estimate(priceText, 22) > 230;
+    facts = priceInDetails
+      ? `${event.date} (${eventDay(event)})\n開始 ${event.startTime}`
+      : `${event.date} (${eventDay(event)})\n開始 ${event.startTime}   /   ${event.price}`;
     const parsedDate = dateISO(event.date);
     eventDayNumber = parsedDate ? parsedDate.slice(8) : "";
     if (parsedDate) {
@@ -264,7 +288,7 @@ export function composeScene(
             ? englishDays[japaneseIndex]
             : "",
         start: event.startTime.trim() ? `開始 ${event.startTime.trim()}` : "",
-        price: event.price.trim(),
+        price: priceInDetails ? "" : priceText,
       };
     }
     if (
@@ -299,7 +323,34 @@ export function composeScene(
     if (doc.design.visibility.performers && event.performers.length)
       program += `\n\n${event.performers.map((artist) => [artist.name, artist.catchcopy, artist.bio].filter(Boolean).join("\n")).join("\n\n")}`;
     venueBlocks = [
-      flowBlock("details-label", "会場", 18, 700, palette.accent, 0),
+      ...(priceInDetails
+        ? [
+            flowBlock(
+              "details-price-label",
+              "料金",
+              18,
+              700,
+              palette.accent,
+              0,
+            ),
+            flowBlock(
+              "details-price",
+              event.price.trim(),
+              25,
+              700,
+              palette.ink,
+              4,
+            ),
+          ]
+        : []),
+      flowBlock(
+        "details-label",
+        "会場",
+        18,
+        700,
+        palette.accent,
+        priceInDetails ? 18 : 0,
+      ),
       flowBlock("details-venue", event.venue.name, 25, 700),
       flowBlock("details-address", event.venue.address, 21),
       flowBlock("details-url", displayUrl(event.venue.url), 20),
@@ -376,8 +427,34 @@ export function composeScene(
     recipe.hero = [0, 0, 1, 0.28];
     recipe.facts = [0, 0.31, 1, 0.07];
     recipe.art = [0, 0.43, 0.53, 0.57];
-    recipe.program = [0.61, 0.43, 0.39, additionalBlocks.length ? 0.31 : 0.57];
-    recipe.info = [0.61, 0.79, 0.39, 0.21];
+    // Split the column between body and details by how much text each has,
+    // instead of a fixed 31 / 21 split.
+    const columnWidth = 0.39 * (1000 - 2 * safeX);
+    const detailsPx = additionalBlocks.reduce(
+      (sum, block) =>
+        sum +
+        block.text
+          .split("\n")
+          .reduce(
+            (n, line) =>
+              n + Math.max(1, Math.ceil(estimate(line, 19) / columnWidth)),
+            0,
+          ) *
+          19 *
+          1.45 +
+        8,
+      14,
+    );
+    const infoHeight = additionalBlocks.length
+      ? Math.min(0.3, Math.max(0.1, detailsPx / usableH))
+      : 0;
+    recipe.program = [
+      0.61,
+      0.43,
+      0.39,
+      0.57 - (infoHeight ? infoHeight + 0.03 : 0),
+    ];
+    recipe.info = [0.61, 1 - (infoHeight || 0.21), 0.39, infoHeight || 0.21];
   } else if (
     doc.kind === "free-flyer" &&
     !additionalBlocks.length &&
@@ -385,6 +462,47 @@ export function composeScene(
   ) {
     recipe.program[0] = 0;
     recipe.program[2] = 1;
+  }
+  // If the details column cannot hold its text even at the smallest allowed
+  // sizes, let it span the full width under a compact two-column lineup rather
+  // than failing the export (the common case is a long note on a square).
+  if (
+    doc.kind === "event-flyer" &&
+    (venueBlocks.length || additionalBlocks.length)
+  ) {
+    const flowNeed = (blocks: FlowBlock[], width: number) =>
+      blocks
+        .filter((block) => block.text.trim())
+        .reduce((sum, block, index) => {
+          const lines = block.text
+            .split("\n")
+            .reduce(
+              (n, line) =>
+                n +
+                Math.max(1, Math.ceil(estimate(line, block.minSize) / width)),
+              0,
+            );
+          return (
+            sum +
+            lines * block.minSize * (block.lineHeight ?? 1.4) +
+            (index ? (block.gapBefore ?? 7) : 0)
+          );
+        }, 0);
+    if (recipe.program[2] <= 0.9) {
+      const info = box(recipe.info);
+      if (flowNeed([...venueBlocks, ...additionalBlocks], info.w) > info.h) {
+        const headerEnd = Math.max(
+          ...[recipe.hero, recipe.facts, recipe.art]
+            .filter((slot): slot is Slot => !!slot)
+            .map((slot) => slot[1] + slot[3]),
+        );
+        const start = headerEnd + 0.02;
+        const programHeight = doc.design.sizeId === "story" ? 0.23 : 0.27;
+        const infoStart = start + programHeight + 0.022;
+        recipe.program = [0, start, 1, programHeight];
+        recipe.info = [0, infoStart, 1, 1 - infoStart];
+      }
+    }
   }
   const artwork = (role: ArtworkNode["role"], b: Rect): ArtworkNode => ({
     ...b,
@@ -398,6 +516,76 @@ export function composeScene(
   });
   if (doc.design.decorations)
     nodes.push(artwork("ambient", { x: 0, y: 0, w: 1000, h: size.baseHeight }));
+  // Washi sets a short title vertically in a narrow column. A longer title gets
+  // a wide headline slot next to a smaller brush mark instead of failing.
+  const kickerPx = Array.from(kicker).reduce(
+    (sum, char) => sum + (/[^\u0000-\u007f]/.test(char) ? 18 : 9.5),
+    0,
+  );
+  const titleHeightIn = (b: Rect) => {
+    const kh = kicker ? Math.max(27, Math.ceil(kickerPx / b.w) * 26) : 0;
+    return Math.max(38, b.h * 0.79 - (kicker ? kh + 7 : 0));
+  };
+  let vertical = false;
+  if (templateId === "washi") {
+    vertical =
+      /^[^A-Za-z0-9]{1,8}$/.test(title) &&
+      Array.from(title).length * 28 * 1.08 <= titleHeightIn(box(recipe.hero));
+    if (!vertical && recipe.art) {
+      const top = Math.min(recipe.hero[1], recipe.art[1]);
+      const height = Math.max(0.16, recipe.facts[1] - top - 0.02);
+      recipe.hero = [0.33, top, 0.67, height];
+      recipe.art = [0, top, 0.29, height];
+    }
+  }
+  // A multi-line date/price block needs room for each of its lines. When the
+  // strip is shorter than that (square layouts), grow it and push the content
+  // below it down instead of failing.
+  if (
+    facts &&
+    !dateParts &&
+    !(recipe.factsStyle === "date" && eventDayNumber) &&
+    facts.includes("\n")
+  ) {
+    const stripWidth = recipe.facts[2] * (1000 - 2 * safeX);
+    const oneLineFits =
+      stripWidth > 440 &&
+      estimate(facts.replace(/\n/g, "   /   "), 22) <= stripWidth - 24;
+    const lines = facts.split("\n").length;
+    // Tall canvases have room to set these lines at a readable size.
+    const perLine =
+      doc.design.sizeId === "story"
+        ? 46
+        : doc.design.sizeId === "portrait"
+          ? 38
+          : 30;
+    const needed = (lines * perLine + 20) / usableH;
+    if (!oneLineFits) {
+      const [fx, fy, fw] = recipe.facts;
+      const height = Math.max(recipe.facts[3], needed);
+      const oldBottom = fy + recipe.facts[3];
+      recipe.facts[3] = height;
+      for (const slot of [recipe.program, recipe.info]) {
+        const overlapsX = slot[0] < fx + fw && slot[0] + slot[2] > fx;
+        if (overlapsX && slot[1] >= oldBottom - 0.03) {
+          const push = Math.max(0, fy + height + 0.015 - slot[1]);
+          slot[1] += push;
+          slot[3] -= push;
+        }
+      }
+    }
+  }
+  // Forest keeps its headline in a narrow column beside the mountains; a long
+  // title borrows width from the picture.
+  if (
+    templateId === "forest" &&
+    recipe.art &&
+    Array.from(title).length > 12 &&
+    recipe.hero[2] < 0.5
+  ) {
+    recipe.hero = [0, recipe.hero[1], 0.56, recipe.hero[3]];
+    recipe.art = [0.6, recipe.art[1], 0.4, recipe.art[3]];
+  }
   if (recipe.art) {
     const art = box(recipe.art);
     if (doc.assetRefs[0])
@@ -472,12 +660,8 @@ export function composeScene(
     w: hero.w - heroPad * 2,
     h: hero.h - heroPad * 2,
   };
-  const kickerWidth = Array.from(kicker).reduce(
-    (sum, char) => sum + (/[^\u0000-\u007f]/.test(char) ? 18 : 9.5),
-    0,
-  );
   const kickerHeight = kicker
-    ? Math.max(27, Math.ceil(kickerWidth / inset.w) * 26)
+    ? Math.max(27, Math.ceil(kickerPx / inset.w) * 26)
     : 0;
   if (kicker)
     text(
@@ -497,10 +681,6 @@ export function composeScene(
     y: inset.y + titleOffset,
     h: Math.max(38, inset.h * 0.79 - titleOffset),
   };
-  const vertical =
-    templateId === "washi" &&
-    /^[^A-Za-z0-9]{1,8}$/.test(title) &&
-    Array.from(title).length * 28 * 1.08 <= titleBox.h;
   text(
     "title",
     title,
@@ -583,20 +763,6 @@ export function composeScene(
       const pad = filled ? 22 : 12;
       const inner = { x: fb.x + pad, y: fb.y, w: fb.w - pad * 2, h: fb.h };
       const accentInk = filled ? palette.onAccent : palette.accent;
-      const estimate = (value: string, px: number, narrow = false) =>
-        Array.from(value).reduce(
-          (sum, char) =>
-            sum +
-            px *
-              (/[^\u0000-\u007f]/.test(char)
-                ? 1
-                : narrow
-                  ? /[0-9]/.test(char)
-                    ? 0.5
-                    : 0.34
-                  : 0.6),
-          0,
-        );
       const weekdayLabel = d.english
         ? `${d.english} (${d.weekday})`
         : d.weekday
@@ -785,10 +951,14 @@ export function composeScene(
         );
       }
     } else {
-      const wide = fb.w > 440 && fb.h < 160;
+      // A wide, short strip joins the lines with slashes only if the result
+      // still reads at a comfortable size; otherwise the lines stay stacked.
+      const oneLine = facts.replace(/\n/g, "   /   ");
+      const wide =
+        fb.w > 440 && fb.h < 160 && estimate(oneLine, 22) <= fb.w - 24;
       text(
         "facts",
-        wide ? facts.replace(/\n/g, "   /   ") : facts,
+        wide ? oneLine : facts,
         { x: fb.x + 12, y: fb.y + 6, w: fb.w - 24, h: fb.h - 12 },
         wide ? 32 : 35,
         18,
@@ -872,11 +1042,14 @@ export function composeScene(
             );
           } else {
             const timeWidth = showTimes ? columnWidth * 0.35 : 0;
+            // Dense lineups (10+ acts in a square) get less padding instead of
+            // text boxes shorter than their own minimum font size.
+            const pad = Math.max(1, Math.min(6, (rowHeight - 24) / 2));
             if (showTimes)
               text(
                 `time-${index}`,
                 item.time,
-                { x, y: y + 6, w: timeWidth - 10, h: rowHeight - 12 },
+                { x, y: y + pad, w: timeWidth - 10, h: rowHeight - pad * 2 },
                 22,
                 18,
                 palette.accent,
@@ -890,9 +1063,9 @@ export function composeScene(
               item.name,
               {
                 x: x + timeWidth,
-                y: y + 5,
+                y: y + pad,
                 w: columnWidth - timeWidth,
-                h: rowHeight - 10,
+                h: rowHeight - pad * 2,
               },
               showTimes ? 36 : 44,
               18,

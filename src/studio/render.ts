@@ -225,7 +225,10 @@ export async function renderScene(
   outputHeight?: number,
 ): Promise<RenderResult> {
   const size = scene.document.design.sizeId;
-  await withTimeout(loadDisplayFonts());
+  // Display faces are a refinement: if their stylesheet cannot be fetched
+  // (offline, blocked), the layout still renders with the bundled fallbacks
+  // instead of failing the preview and every export.
+  await withTimeout(loadDisplayFonts()).catch(() => undefined);
   await withTimeout(document.fonts.ready);
   // Explicitly request glyph subsets for Canvas text (FontFaceSet.ready alone cannot discover canvas content).
   await withTimeout(
@@ -261,7 +264,9 @@ export async function renderScene(
       const laidOut = layoutFlow(ctx, node);
       if (!laidOut.fits)
         errors.push(
-          "会場・詳細が収まりません。文章を短くするか、別の構図や大きなサイズを選んでください。",
+          scene.document.kind === "event-flyer"
+            ? "会場・詳細が収まりません。「本文」タブの『載せる情報』で注意書き・Open Mic・SNS表示名を非表示にするか、A4など大きなサイズを選ぶと収まる場合があります。"
+            : "会場・詳細が収まりません。文章を短くするか、別の構図や大きなサイズを選んでください。",
         );
       return laidOut.nodes;
     },
