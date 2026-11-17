@@ -52,6 +52,9 @@ export const refinedAspect: Partial<Record<ArtworkNode["art"], number>> = {
   washi: 1.08,
   botanical: 0.6,
   serif: 0.62,
+  watercolor: 0.7,
+  party: 0.66,
+  indie: 1,
 };
 
 /**
@@ -695,6 +698,291 @@ export function drawRefinedHero(
           0.6,
         );
         grain(0.06, 19);
+        return true;
+      }
+      case "watercolor": {
+        // Cosmos in layered washes: translucent glazes, pooled wet edges,
+        // a few splatters, all deterministic.
+        const rnd = seeded(53);
+        const stemInk = mixHex(ink, soft, 0.45);
+        const stems: [Pt, Pt, Pt, Pt][] = [
+          [
+            [520, H],
+            [470, H * 0.75],
+            [330, H * 0.5],
+            [330, H * 0.27],
+          ],
+          [
+            [540, H],
+            [600, H * 0.78],
+            [700, H * 0.62],
+            [700, H * 0.47],
+          ],
+          [
+            [530, H],
+            [500, H * 0.85],
+            [430, H * 0.76],
+            [400, H * 0.68],
+          ],
+        ];
+        for (const [a, b, c, d] of stems)
+          stroke(`M${a} C${b} ${c} ${d}`, stemInk, 3.5, 0.55);
+        leaf(
+          500,
+          H * 0.86,
+          210,
+          -1.0,
+          mixHex(soft, stemInk, 0.35),
+          stemInk,
+          0.3,
+        );
+        leaf(560, H * 0.8, 180, 0.9, mixHex(soft, stemInk, 0.35), stemInk, 0.3);
+        const petalPath =
+          "M0 0 C-62 -34 -88 -170 -58 -240 Q-30 -222 -14 -250 Q0 -232 14 -250 Q30 -222 58 -240 C88 -170 62 -34 0 0Z";
+        const blooms: [number, number, number, number][] = [
+          [330, H * 0.27, 1.25, 0.2],
+          [700, H * 0.47, 1.0, 0.9],
+          [400, H * 0.68, 0.7, 0.5],
+        ];
+        blooms.forEach(([cx, cy, scale, turn], bloom) => {
+          for (let i = 0; i < 8; i++) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(turn + (i * Math.PI) / 4 + (rnd() - 0.5) * 0.12);
+            ctx.scale(scale * (0.92 + rnd() * 0.14), scale);
+            const tone = i % 2 ? accent : mixHex(accent, soft, 0.45);
+            for (let layer = 0; layer < 4; layer++) {
+              ctx.save();
+              ctx.translate((rnd() - 0.5) * 8, (rnd() - 0.5) * 8);
+              ctx.scale(1 - layer * 0.08, 1 - layer * 0.1);
+              fill(petalPath, tone, 0.16);
+              ctx.restore();
+            }
+            stroke(petalPath, mixHex(tone, ink, 0.25), 2.2, 0.22);
+            stroke("M0 -20 Q-4 -120 0 -210", mixHex(tone, ink, 0.3), 1.2, 0.25);
+            ctx.restore();
+          }
+          fill(circle(cx, cy, 30 * scale), mixHex(accent, ink, 0.45), 0.85);
+          for (let i = 0; i < 16; i++) {
+            const a = i * 2.39 + bloom,
+              r = (12 + (i % 5) * 6) * scale;
+            fill(
+              circle(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 4 * scale),
+              mixHex(soft, paper, 0.3),
+              0.9,
+            );
+          }
+        });
+        for (let i = 0; i < 26; i++)
+          fill(
+            circle(rnd() * 1000, rnd() * H, 2 + rnd() * 7),
+            i % 3 ? accent : stemInk,
+            0.12 + rnd() * 0.18,
+          );
+        grain(0.04, 59);
+        return true;
+      }
+      case "party": {
+        // Bunting, glossy balloons with curled ribbons and confetti.
+        const rnd = seeded(61);
+        const flagColors = [accent, soft, mixHex(accent, paper, 0.5), ink];
+        stroke(`M-20 70 Q500 230 1020 60`, ink, 2.5, 0.8);
+        for (let i = 0; i < 11; i++) {
+          const t = (i + 0.5) / 11;
+          const x = -20 + t * 1040;
+          const y = (1 - t) * (1 - t) * 70 + 2 * (1 - t) * t * 230 + t * t * 60;
+          fill(
+            `M${x - 38} ${y - 4} L${x + 38} ${y - 4} L${x} ${y + 82}Z`,
+            flagColors[i % 4],
+            0.92,
+          );
+        }
+        const balloons: [number, number, number, string][] = [
+          [300, H * 0.36, -0.14, mixHex(soft, paper, 0.2)],
+          [700, H * 0.3, 0.12, mixHex(accent, paper, 0.35)],
+          [520, H * 0.52, 0.04, accent],
+        ];
+        for (const [cx, cy, r, c] of balloons) {
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(r);
+          const body =
+            "M0 -200 C-250 -195 -225 125 0 210 C225 125 250 -195 0 -200Z";
+          const g = ctx.createRadialGradient(-70, -90, 10, 0, 0, 260);
+          g.addColorStop(0, mixHex(c, "#ffffff", 0.55));
+          g.addColorStop(0.55, c);
+          g.addColorStop(1, mixHex(c, ink, 0.25));
+          fill(body, g);
+          stroke(body, mixHex(c, ink, 0.45), 2.5, 0.7);
+          fill("M0 210 L-24 246 L26 246Z", mixHex(c, ink, 0.2));
+          fill(
+            "M-120 -110 C-140 -40 -120 20 -92 50 C-110 -5 -112 -60 -96 -118Z",
+            "#ffffff",
+            0.45,
+          );
+          stroke(
+            `M0 246 C-60 330 70 380 -10 470 C-80 550 50 600 0 ${H * 0.5}`,
+            ink,
+            2,
+            0.55,
+          );
+          ctx.restore();
+        }
+        for (let i = 0; i < 46; i++) {
+          const x = rnd() * 1000,
+            y = 120 + rnd() * (H - 160);
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(rnd() * Math.PI);
+          ctx.globalAlpha = 0.75;
+          ctx.fillStyle = flagColors[i % 4];
+          if (i % 3) ctx.fillRect(-9, -4, 18, 8);
+          else ctx.fill(circle(0, 0, 6));
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+        return true;
+      }
+      case "indie": {
+        // Punk collage: torn card, halftone burst, a record and masking tape.
+        const rnd = seeded(71);
+        const torn: string[] = [];
+        for (let i = 0; i <= 20; i++)
+          torn.push(`${40 + i * 46} ${60 + (i % 2 ? 12 : -4) + rnd() * 10}`);
+        for (let i = 0; i <= 20; i++)
+          torn.push(`${960 - i * 2 + (rnd() - 0.5) * 12} ${60 + i * 44}`);
+        for (let i = 0; i <= 20; i++)
+          torn.push(`${960 - i * 46} ${940 + (i % 2 ? -12 : 4) - rnd() * 10}`);
+        for (let i = 0; i <= 20; i++)
+          torn.push(`${40 + (rnd() - 0.5) * 12} ${940 - i * 44}`);
+        ctx.save();
+        ctx.translate(500, 500);
+        ctx.rotate(-0.06);
+        ctx.translate(-500, -500);
+        fill(`M${torn.join(" L")}Z`, ink, 0.18);
+        ctx.translate(-10, -12);
+        fill(`M${torn.join(" L")}Z`, soft);
+        ctx.restore();
+        // Halftone sunburst.
+        ctx.save();
+        ctx.translate(430, 420);
+        ctx.rotate(-0.13);
+        const pts = Array.from({ length: 36 }, (_, i) => {
+          const a = (i * Math.PI) / 18,
+            r = i % 2 ? 210 : 400;
+          return `${Math.cos(a) * r} ${Math.sin(a) * r}`;
+        });
+        const burst = new Path2D("M" + pts.join(" L") + "Z");
+        fill(burst, accent);
+        ctx.save();
+        ctx.clip(burst);
+        for (let y = -420; y < 420; y += 20)
+          for (let x = -420; x < 420; x += 20) {
+            const d = Math.hypot(x, y) / 420;
+            fill(circle(x + ((y / 20) % 2) * 10, y, 2 + d * 6), ink, 0.28);
+          }
+        ctx.restore();
+        fill(circle(0, 0, 150), paper);
+        ctx.restore();
+        // Vinyl record peeking from the lower right.
+        fill(circle(740, 720, 250), ink);
+        for (let r = 110; r < 245; r += 9)
+          stroke(circle(740, 720, r), mixHex(ink, paper, 0.2), 1, 0.6);
+        stroke(`M600 560 A210 210 0 0 1 900 610`, paper, 5, 0.25);
+        fill(circle(740, 720, 88), accent);
+        fill(circle(740, 720, 10), paper);
+        // Masking tape.
+        for (const [x, y, a] of [
+          [150, 110, -0.5],
+          [860, 150, 0.6],
+          [140, 870, 0.4],
+        ] as const) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(a);
+          fill(
+            "M-90 -26 L90 -22 L86 26 L-88 22Z",
+            mixHex(paper, "#f1e3b5", 0.4),
+            0.85,
+          );
+          ctx.restore();
+        }
+        grain(0.16, 73);
+        return true;
+      }
+      case "festival": {
+        // Open-air stage at dusk: sun, rolling hills, truss with lights, bunting.
+        const sky = ctx.createLinearGradient(0, 0, 0, H * 0.7);
+        sky.addColorStop(0, mixHex(paper, soft, 0.2));
+        sky.addColorStop(1, mixHex(soft, "#f3c86a", 0.35));
+        fill(`M0 0 H1000 V${H} H0Z`, sky);
+        fill(circle(720, H * 0.33, 170), mixHex(soft, "#f0bf58", 0.55));
+        fill(
+          `M0 ${H * 0.62} Q260 ${H * 0.42} 520 ${H * 0.6} T1000 ${H * 0.55} V${H} H0Z`,
+          mixHex(accent, soft, 0.5),
+        );
+        fill(
+          `M0 ${H * 0.74} Q380 ${H * 0.56} 700 ${H * 0.72} T1000 ${H * 0.68} V${H} H0Z`,
+          accent,
+        );
+        // Stage: backdrop, truss towers, roof and light beams.
+        const base = H * 0.82,
+          roof = H * 0.3;
+        fill(`M232 ${roof} H768 V${base} H232Z`, mixHex(ink, accent, 0.35));
+        for (let i = 0; i < 6; i++) {
+          const x = 290 + i * 84;
+          fill(
+            `M${x - 10} ${roof + 30} L${x - 64} ${base} L${x + 64} ${base} L${x + 10} ${roof + 30}Z`,
+            mixHex(paper, "#fff1c4", 0.5),
+            0.2,
+          );
+          fill(
+            `M${x - 13} ${roof + 12} h26 v20 h-26Z`,
+            mixHex(paper, "#fff1c4", 0.5),
+          );
+        }
+        for (const x of [206, 768]) {
+          fill(`M${x} ${roof - 10} h26 V${base} h-26Z`, ink);
+          for (let y = base; y > roof; y -= 34)
+            stroke(`M${x + 4} ${y} L${x + 22} ${y - 34}`, paper, 1.6, 0.45);
+        }
+        fill(
+          `M180 ${roof - 52} L820 ${roof - 52} L800 ${roof} L200 ${roof}Z`,
+          ink,
+        );
+        for (let x = 210; x < 800; x += 36)
+          stroke(
+            `M${x} ${roof - 44} L${x + 18} ${roof - 8} L${x + 36} ${roof - 44}`,
+            paper,
+            1.6,
+            0.4,
+          );
+        fill(`M170 ${base} H830 V${base + 44} H170Z`, ink);
+        // Crowd silhouette.
+        const rnd = seeded(83);
+        for (let i = 0; i < 26; i++) {
+          const x = i * 40 + rnd() * 10,
+            r = 18 + rnd() * 6;
+          fill(circle(x, H - 80 - rnd() * 16, r), ink);
+          fill(
+            `M${x - r * 1.3} ${H} Q${x} ${H - 120} ${x + r * 1.3} ${H}Z`,
+            ink,
+          );
+          if (i % 5 === 2)
+            stroke(`M${x + 10} ${H - 90} L${x + 40} ${H - 190}`, ink, 9);
+        }
+        // Bunting along the top.
+        stroke(`M0 40 Q500 150 1000 40`, ink, 2, 0.7);
+        for (let i = 0; i < 9; i++) {
+          const t = (i + 0.5) / 9,
+            x = t * 1000,
+            y = (1 - t) * (1 - t) * 40 + 2 * (1 - t) * t * 150 + t * t * 40;
+          fill(
+            `M${x - 30} ${y - 3} L${x + 30} ${y - 3} L${x} ${y + 60}Z`,
+            i % 2 ? accent : ink,
+            0.9,
+          );
+        }
         return true;
       }
       default:

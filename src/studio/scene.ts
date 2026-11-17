@@ -446,9 +446,25 @@ export function composeScene(
           ? faces.rock
           : face === faces.maru
             ? faces.maru
-            : face === faces.dela || face === faces.kaku
-              ? { family: faces.kaku.family, weight: 700 }
-              : { family: sans, weight: 700 };
+            : { family: sans, weight: 700 };
+  // The Open Mic heading speaks in the layout's own voice: Latin serif for the
+  // mincho layouts, condensed grotesk for the gothic ones.
+  const openMicTitle = additionalBlocks.find(
+    (block) => block.id === "details-openmic-title",
+  );
+  if (openMicTitle && doc.design.fontSet !== "serif") {
+    const latinFace =
+      face === faces.rock || face === faces.maru
+        ? face
+        : face === faces.mincho || face === faces.decol
+          ? { family: elegant, weight: 700 }
+          : { family: condensed, weight: 700 };
+    openMicTitle.family = latinFace.family;
+    openMicTitle.weight = latinFace.weight;
+    if (latinFace.family === condensed) openMicTitle.size = 36;
+    if (latinFace === faces.rock || latinFace === faces.maru)
+      openMicTitle.size = 29;
+  }
   const color = reversed ? palette.paper : palette.ink;
   const inset = {
     x: hero.x + heroPad,

@@ -128,7 +128,9 @@ export function layoutFlow(
   ctx: CanvasRenderingContext2D,
   node: FlowNode,
 ): { nodes: TextNode[]; fits: boolean } {
-  let reduction = 0;
+  // Start slightly larger than the base sizes; a roomy column is set bigger
+  // instead of leaving an empty band under the details.
+  let reduction = -4;
   let items: {
     block: FlowNode["blocks"][number];
     size: number;
@@ -136,10 +138,24 @@ export function layoutFlow(
   }[] = [];
   let total = 0;
   for (; reduction <= 40; reduction++) {
+    let orphan = false;
     items = node.blocks.map((block) => {
       const size = Math.max(block.minSize, block.size - reduction);
       ctx.font = `${block.weight ?? 400} ${size}px ${block.family}`;
       const lines = wrapText(ctx, block.text, node.w);
+      // Wrapped lines of one or two characters read as mistakes; only allow
+      // them at the base size, never as the result of enlarging.
+      const paragraphs = new Set(block.text.split("\n").map((p) => p.trim()));
+      if (
+        reduction < 0 &&
+        lines.some(
+          (line) =>
+            line.trim() &&
+            Array.from(line.trim()).length <= 2 &&
+            !paragraphs.has(line.trim()),
+        )
+      )
+        orphan = true;
       return {
         block,
         size,
@@ -151,11 +167,9 @@ export function layoutFlow(
         sum + item.height + (index ? (item.block.gapBefore ?? 7) : 0),
       0,
     );
-    if (
-      total <= node.h ||
-      items.every((item) => item.size === item.block.minSize)
-    )
+    if (reduction < 0 ? !orphan && total <= node.h * 0.88 : total <= node.h)
       break;
+    if (items.every((item) => item.size === item.block.minSize)) break;
   }
   let y = node.y;
   return {
