@@ -1,16 +1,27 @@
 import { test, expect } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
+import { createRequire } from "node:module";
+import { effects } from "../../src/studio/document";
 test("six reproducible non-destructive effects preserve source bytes, reject invalid assets and keep all output dimensions", async ({
   page,
 }) => {
   await page.goto("/studio");
   await mkdir("test-results/effects", { recursive: true });
-  const png = await sharp(
-    Buffer.from(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="700"><rect width="500" height="700" fill="#f4edda"/><circle cx="250" cy="260" r="180" fill="#cc6380"/><rect x="55" y="310" width="390" height="270" fill="#28546c"/><text x="250" y="90" text-anchor="middle" font-size="30" font-family="sans-serif" fill="#15394a">ORIGINAL TYPE</text><text x="250" y="640" text-anchor="middle" font-size="24" font-family="sans-serif" fill="#15394a">KEEP TEXT / 1985</text></svg>',
-    ),
-  )
+  const image = await sharp("src/assets/posters/citypop.webp")
+    .resize(500, 500)
+    .png()
+    .toBuffer();
+  const caption = Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="125"><rect width="500" height="125" fill="#fff1de"/><text x="22" y="68" font-family="serif" font-size="52" fill="#3d2545">Acoustic Live</text><text x="25" y="102" font-family="sans-serif" font-size="20" fill="#933252">2026.5/9</text></svg>',
+  );
+  const png = await sharp({
+    create: { width: 500, height: 625, channels: 3, background: "#fff1de" },
+  })
+    .composite([
+      { input: image, left: 0, top: 0 },
+      { input: caption, left: 0, top: 500 },
+    ])
     .png()
     .toBuffer();
   const output = await page.evaluate(async (base64) => {
@@ -136,13 +147,30 @@ test("six reproducible non-destructive effects preserve source bytes, reject inv
       top: Math.floor(i / 4) * 320 + 10,
     })),
   );
-  const labels = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640">${images.map((image, i) => `<text x="${(i % 4) * 250 + 12}" y="${Math.floor(i / 4) * 320 + 314}" font-family="sans-serif" font-size="12" fill="#244333">${image.id}</text>`).join("")}</svg>`,
+  const fontfile = createRequire(import.meta.url).resolve(
+    "@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-700-normal.woff2",
+  );
+  const labels = await Promise.all(
+    images.map(async (image, i) => ({
+      input: await sharp({
+        text: {
+          text:
+            effects.find((effect) => effect.id === image.id)?.label ?? "元画像",
+          font: "Noto Sans JP Thin Bold 13",
+          fontfile,
+          rgba: true,
+        },
+      })
+        .png()
+        .toBuffer(),
+      left: (i % 4) * 250 + 12,
+      top: Math.floor(i / 4) * 320 + 301,
+    })),
   );
   await sharp({
     create: { width: 1000, height: 640, channels: 3, background: "#e7e8e0" },
   })
-    .composite([...tiles, { input: labels, left: 0, top: 0 }])
+    .composite([...tiles, ...labels])
     .png()
     .toFile("docs/evidence/effect-contact-sheet.png");
 });

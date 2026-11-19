@@ -7,6 +7,7 @@ import { defaultEvent } from "../../src/data/defaultEvent";
 import { templates, sizes } from "../../src/studio/registry";
 test("all 20 compositions × 4 sizes produce decodable PNGs with every measured text inside safe areas", async ({
   page,
+  browser,
 }) => {
   test.setTimeout(180000);
   await page.goto("/studio");
@@ -159,7 +160,7 @@ test("all 20 compositions × 4 sizes produce decodable PNGs with every measured 
     JSON.stringify(
       {
         schemaVersion: 1,
-        renderer: "Chromium 159 / Linux",
+        renderer: `Chromium ${browser.version()} / ${process.platform}`,
         combinations: summary.length,
         fullMeasurements: "CI artifact: test-results/render-matrix-full.json",
         results: summary,

@@ -1,6 +1,6 @@
 import { getThemeClassName } from "../../data/themes";
 import { useEffect, useRef, useState } from "react";
-import { eventDay } from "../../domain/date";
+import { dateISO, eventDay } from "../../domain/date";
 import { canvasBlob, withTimeout } from "../../export/files";
 import { ExportActions } from "../../export/ExportActions";
 import { SheetViewport } from "./SheetViewport";
@@ -26,7 +26,7 @@ function ScheduleRow({
   showTime?: boolean;
 }) {
   if (item.type === "break") {
-    return <div className="one-page-break">☕ {item.label}</div>;
+    return <div className="one-page-break">{item.label}</div>;
   }
 
   if (item.type === "end") {
@@ -67,6 +67,8 @@ export function OnePageFlyer({
   extraBlocks?: { id: string; text: string; visible: boolean }[];
 }) {
   const sheetRef = useRef<HTMLElement | null>(null);
+  const date = eventData.date.trim();
+  const splitDate = dateISO(date) && date.match(/^(\d{4})[.年/\-](.+)$/u);
   const [errors, setErrors] = useState<string[]>([]);
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -153,7 +155,16 @@ export function OnePageFlyer({
                 </p>
               </div>
               <div className="one-page-date">
-                <strong>{eventData.date}</strong>
+                {splitDate ? (
+                  <>
+                    <span className="one-page-year">{splitDate[1]}</span>
+                    <strong className="one-page-month-day">
+                      {splitDate[2]}
+                    </strong>
+                  </>
+                ) : (
+                  <strong>{eventData.date}</strong>
+                )}
                 <span>({eventDay(eventData)})</span>
               </div>
             </div>

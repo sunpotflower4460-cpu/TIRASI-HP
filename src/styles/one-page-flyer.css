@@ -75,15 +75,18 @@
 }
 
 .one-page-header {
-  border-bottom: 2px dashed var(--secondary-color);
+  border-bottom: 1.5px solid var(--primary-color);
   padding-bottom: 5mm;
 }
 
 .one-page-kicker {
   color: var(--secondary-color);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 4mm;
   font-size: 0.86rem;
   margin-bottom: 3.5mm;
 }
@@ -122,7 +125,7 @@
   min-height: 38mm;
   padding: 7.5mm 8mm;
   text-align: center;
-  box-shadow: 0 10px 20px rgba(209, 122, 134, 0.14);
+  border-top: 4px solid var(--primary-color);
   display: grid;
   place-items: center;
   align-content: center;
@@ -138,7 +141,7 @@
   line-height: 1.08;
   letter-spacing: 0;
   text-align: center;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .one-page-date span {
@@ -227,13 +230,15 @@
   gap: 3mm;
   align-items: baseline;
   padding-bottom: 3.5mm;
-  border-bottom: 1px dotted rgba(209, 122, 134, 0.32);
+  border-bottom: 1px solid var(--secondary-color);
 }
 
 .one-page-time {
   color: var(--primary-color);
-  font-family: "Roboto", sans-serif;
-  font-size: 0.96rem;
+  font-family: "Barlow Condensed", "Noto Sans JP", sans-serif;
+  font-size: 1.26rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
 
@@ -280,7 +285,7 @@
 .one-page-open-mic {
   background: var(--primary-color);
   color: white;
-  box-shadow: 0 10px 18px rgba(209, 122, 134, 0.18);
+  border-color: transparent;
 }
 
 .one-page-open-mic h2 {
@@ -315,7 +320,7 @@
   display: flex;
   justify-content: center;
   gap: 8mm;
-  border-top: 2px dashed var(--secondary-color);
+  border-top: 1.5px solid var(--secondary-color);
   padding-top: 4.5mm;
   color: #6d6062;
   font-weight: 700;
@@ -327,10 +332,30 @@
 .one-page-sheet * { min-width: 0; overflow-wrap: anywhere; }
 .one-page-main-grid { flex: 1; }
 .one-page-footer { flex-wrap: wrap; }
-.one-page-title-row h1 { font-size: 4.2rem; }
-.one-page-date { padding: 5mm; }
+.one-page-title-row h1 { font-size: 4.7rem; }
+.one-page-kicker::after {
+  content: "";
+  flex: 1;
+  height: 1.3mm;
+  border-block: 1px solid var(--secondary-color);
+}
+.one-page-date .one-page-year {
+  font: 700 1rem/1.2 "Barlow Condensed", sans-serif;
+  letter-spacing: .12em;
+}
+.one-page-date .one-page-month-day {
+  font: 700 3.1rem/1 "Barlow Condensed", "Zen Maru Gothic", sans-serif;
+}
+.one-page-subtitle { font-family: "Barlow Condensed", "Zen Maru Gothic", sans-serif; }
+.one-page-schedule h2, .one-page-open-mic h2 {
+  font-family: "Barlow Condensed", "Zen Maru Gothic", sans-serif;
+  font-size: 1.7rem;
+  line-height: 1.15;
+}
+.one-page-access h2 { line-height: 1.35; }
+.one-page-sheet .one-page-date { min-width: 43mm; padding: 4mm 5mm; }
 .one-page-schedule, .one-page-open-mic, .one-page-access { padding: 5mm; }
-.one-page-schedule-row strong { font-size: 1rem; }
+.one-page-schedule-row strong { font-size: 1.13rem; }
 .sheet-viewport { width: 100%; margin: 0 auto; }
 .sheet-spacer { position: relative; }
 .sheet-transform { position: absolute; left: 0; top: 0; transform-origin: top left; }
@@ -349,7 +374,7 @@
   .one-page-sheet { width: 210mm; height: 297mm; padding: 9.5mm; margin: 0; box-shadow: none !important; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
 .one-page-flyer-page.theme-night .one-page-date, .one-page-flyer-page.theme-night .one-page-schedule, .one-page-flyer-page.theme-night .one-page-access { background: #faf6f0; color: #24233d; }
-.one-page-flyer-page.theme-night .one-page-date strong, .one-page-flyer-page.theme-night .one-page-schedule h2, .one-page-flyer-page.theme-night .one-page-access h2, .one-page-flyer-page.theme-night .one-page-time { color: #655017; }
+.one-page-flyer-page.theme-night .one-page-date strong, .one-page-flyer-page.theme-night .one-page-schedule h2, .one-page-flyer-page.theme-night .one-page-access h2, .one-page-flyer-page.theme-night .one-page-time, .one-page-flyer-page.theme-night .one-page-end { color: #655017; }
 .one-page-flyer-page.theme-night .one-page-open-mic { color: #24233d; }
 .one-page-flyer-page.theme-night .one-page-open-mic h2, .one-page-flyer-page.theme-night .one-page-badges span { color: #24233d; }
 .one-page-flyer-page.theme-night .one-page-note, .one-page-flyer-page.theme-night .one-page-footer { color: #f3edf0; }

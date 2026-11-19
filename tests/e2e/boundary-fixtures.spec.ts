@@ -1,9 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 // Realistic-but-demanding event data must render in every layout, never fail
-// with a "does not fit" diagnostic. Extremely long notes on a square are a
-// documented limit and are not part of this contract (see stress-fixtures.mjs).
-test("twelve acts, a long title, a long price and a long venue fit every layout on A4 and square", async ({
+// with a "does not fit" diagnostic, including the square with a full setlist.
+test("twelve acts, long notices, titles, prices and venues fit every layout on A4 and square", async ({
   page,
 }) => {
   test.setTimeout(240000);
@@ -18,12 +17,15 @@ test("twelve acts, a long title, a long price and a long venue fit every layout 
     const act = (name: string, time: string) => ({ type: "act", time, name });
     const fixtures: Record<string, Record<string, unknown>> = {
       twelve: {
-        schedule: Array.from({ length: 12 }, (_, i) =>
-          act(
-            `出演者${i + 1}`,
-            `${12 + (i >> 1)}:${i % 2 ? "30-12:55" : "00-12:25"}`,
+        schedule: [
+          ...Array.from({ length: 12 }, (_, i) =>
+            act(
+              `出演者${i + 1}`,
+              `${12 + (i >> 1)}:${i % 2 ? "30-12:55" : "00-12:25"}`,
+            ),
           ),
-        ),
+          { type: "end", label: "- 企画終了 -" },
+        ],
       },
       longtitle: {
         title: "館林みつで通り春のおおきな音楽祭スペシャル",
@@ -33,6 +35,12 @@ test("twelve acts, a long title, a long price and a long venue fit every layout 
       price: {
         price: "前売 2,500円 / 当日 3,000円（1ドリンク別）",
         startTime: "18:00",
+      },
+      longnote: {
+        statusNote:
+          "※雨天の場合は屋内に会場を変更して開催いたします。\n※駐車場には限りがございますので、公共交通機関でのご来場にご協力ください。\n※飲食物の持ち込みはご遠慮ください。",
+        organizer:
+          "企画・運営: 館林音楽まつり実行委員会 × しののめむすび × Flower pot studio × 館林市商工会",
       },
       longvenue: {
         venue: {
@@ -57,8 +65,6 @@ test("twelve acts, a long title, a long price and a long venue fit every layout 
             composeScene(doc, [record]),
             new Map(),
           );
-          // The only accepted exception is a magazine-square price block that
-          // misses by a few pixels; everything else must be clean.
           if (rendered.errors.length)
             failed.push(
               `${name}/${template.id}/${sizeId}: ${rendered.errors[0]}`,
@@ -67,9 +73,7 @@ test("twelve acts, a long title, a long price and a long venue fit every layout 
     }
     return failed;
   });
-  expect(
-    failures.filter((f) => !f.startsWith("price/magazine/square")),
-  ).toEqual([]);
+  expect(failures).toEqual([]);
 });
 
 test("free flyers with a long title, a three-line date block and a medium body fit every layout and size", async ({
@@ -163,9 +167,5 @@ test("free flyers with a long title, a three-line date block and a medium body f
         }
     return failed;
   });
-  // A 250-character body beside the large gallery picture on a square is a
-  // documented limit; every other combination must render cleanly.
-  expect(
-    failures.filter((f) => !f.startsWith("midbody/gallery/square")),
-  ).toEqual([]);
+  expect(failures).toEqual([]);
 });

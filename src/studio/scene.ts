@@ -5,8 +5,9 @@ import type { CreativeDocument } from "./document";
 import { defaultPlacement, eventForDocument } from "./document";
 import { paletteById, sizes, templateById } from "./registry";
 import type { Palette } from "./registry";
-import type { ArtworkNode } from "./artwork";
-import { responsiveRecipe, liveRecipe } from "./layouts";
+import { mix, type ArtworkNode } from "./artwork";
+import { posterStyles, stockInks } from "./posterStyles";
+import { responsiveRecipe, liveRecipe, freePosterLayout } from "./layouts";
 import type { Slot } from "./layouts";
 import { missingArtistNames } from "./live";
 export { compositions, responsiveRecipe } from "./layouts";
@@ -226,8 +227,7 @@ export function composeScene(
     subtitle = "",
     kicker = "",
     facts = "",
-    program = "",
-    eventDayNumber = "";
+    program = "";
   let dateParts:
     | {
         year: string;
@@ -268,7 +268,6 @@ export function composeScene(
       ? `${event.date} (${eventDay(event)})\n開始 ${event.startTime}`
       : `${event.date} (${eventDay(event)})\n開始 ${event.startTime}   /   ${event.price}`;
     const parsedDate = dateISO(event.date);
-    eventDayNumber = parsedDate ? parsedDate.slice(8) : "";
     if (parsedDate) {
       // Keep the writer's own month/day separator ("5/9", "5.9") so the
       // flyer reads the way it was typed, only larger.
@@ -313,8 +312,10 @@ export function composeScene(
         )
         .join("\n");
       if (
-        !doc.design.visibility.performers &&
-        !doc.content.blocks.some((block) => block.visible)
+        !(doc.design.visibility.performers && event.performers.length) &&
+        !doc.content.blocks.some(
+          (block) => block.visible && block.type !== "details",
+        )
       )
         schedule = event.schedule.filter(
           (item) => showTimes || item.type === "act",
@@ -455,6 +456,22 @@ export function composeScene(
       0.57 - (infoHeight ? infoHeight + 0.03 : 0),
     ];
     recipe.info = [0.61, 1 - (infoHeight || 0.21), 0.39, infoHeight || 0.21];
+    const bodyLines = program
+      .split("\n")
+      .reduce(
+        (sum, line) =>
+          sum + Math.max(1, Math.ceil(estimate(line, 21) / columnWidth)),
+        0,
+      );
+    if (bodyLines * 21 * 1.52 + detailsPx + 30 > usableH * 0.57) {
+      // A crowded exhibition flyer moves the photograph up beside the title;
+      // the catalogue notes get the wider columns below it.
+      recipe.hero = [0, 0.02, 0.51, 0.26];
+      recipe.art = [0.57, 0, 0.43, 0.28];
+      recipe.facts = [0, 0.31, 1, 0.09];
+      recipe.program = [0, 0.45, additionalBlocks.length ? 0.58 : 1, 0.55];
+      recipe.info = [0.64, 0.45, 0.36, 0.55];
+    }
   } else if (
     doc.kind === "free-flyer" &&
     !additionalBlocks.length &&
@@ -463,6 +480,16 @@ export function composeScene(
     recipe.program[0] = 0;
     recipe.program[2] = 1;
   }
+  if (doc.kind === "free-flyer")
+    freePosterLayout(
+      recipe,
+      templateId,
+      doc.design.sizeId,
+      program,
+      additionalBlocks.map((block) => block.text).join("\n"),
+      facts,
+      usableH,
+    );
   // If the details column cannot hold its text even at the smallest allowed
   // sizes, let it span the full width under a compact two-column lineup rather
   // than failing the export (the common case is a long note on a square).
@@ -488,6 +515,7 @@ export function composeScene(
             (index ? (block.gapBefore ?? 7) : 0)
           );
         }, 0);
+    const notesOnLeft = recipe.info[0] < recipe.program[0];
     if (recipe.program[2] <= 0.9) {
       const info = box(recipe.info);
       if (flowNeed([...venueBlocks, ...additionalBlocks], info.w) > info.h) {
@@ -503,19 +531,27 @@ export function composeScene(
         recipe.info = [0, infoStart, 1, 1 - infoStart];
       }
     }
+    const footer = box(recipe.info);
+    if (footer.w > 700 && schedule?.length && schedule.length <= 10) {
+      const half = (footer.w - 40) / 2;
+      const required = Math.max(
+        flowNeed(venueBlocks, half),
+        flowNeed(additionalBlocks, half),
+      );
+      if (required + 12 > footer.h) {
+        // Keep a long address, tariff or notice together down one wide side.
+        // A short setlist can use the other side at its normal font sizes.
+        const headerEnd = Math.max(
+          ...[recipe.hero, recipe.art, recipe.facts]
+            .filter((slot): slot is Slot => !!slot)
+            .map((slot) => slot[1] + slot[3]),
+        );
+        const start = headerEnd + 0.03;
+        recipe.program = [notesOnLeft ? 0.6 : 0, start, 0.4, 1 - start];
+        recipe.info = [notesOnLeft ? 0 : 0.44, start, 0.56, 1 - start];
+      }
+    }
   }
-  const artwork = (role: ArtworkNode["role"], b: Rect): ArtworkNode => ({
-    ...b,
-    kind: "art",
-    art: templateId,
-    role,
-    color: palette.accent,
-    soft: palette.soft,
-    ink: palette.ink,
-    paper: palette.paper,
-  });
-  if (doc.design.decorations)
-    nodes.push(artwork("ambient", { x: 0, y: 0, w: 1000, h: size.baseHeight }));
   // Washi sets a short title vertically in a narrow column. A longer title gets
   // a wide headline slot next to a smaller brush mark instead of failing.
   const kickerPx = Array.from(kicker).reduce(
@@ -541,12 +577,7 @@ export function composeScene(
   // A multi-line date/price block needs room for each of its lines. When the
   // strip is shorter than that (square layouts), grow it and push the content
   // below it down instead of failing.
-  if (
-    facts &&
-    !dateParts &&
-    !(recipe.factsStyle === "date" && eventDayNumber) &&
-    facts.includes("\n")
-  ) {
+  if (facts && !dateParts && facts.includes("\n")) {
     const stripWidth = recipe.facts[2] * (1000 - 2 * safeX);
     const oneLineFits =
       stripWidth > 440 &&
@@ -586,8 +617,64 @@ export function composeScene(
     recipe.hero = [0, recipe.hero[1], 0.56, recipe.hero[3]];
     recipe.art = [0.6, recipe.art[1], 0.4, recipe.art[3]];
   }
-  if (recipe.art) {
-    const art = box(recipe.art);
+  if (doc.kind === "free-flyer" && facts) {
+    const [x, y, w, h] = recipe.facts;
+    for (const slot of [recipe.program, recipe.info]) {
+      if (slot[1] >= y && slot[0] < x + w && slot[0] + slot[2] > x) {
+        const gap = Math.max(0, y + h + 0.016 - slot[1]);
+        slot[1] += gap;
+        slot[3] -= gap;
+      }
+    }
+  }
+  if (doc.kind === "event-flyer" && !program.trim()) {
+    recipe.info = [
+      0,
+      Math.max(recipe.info[1], recipe.facts[1] + recipe.facts[3] + 0.025),
+      1,
+      0,
+    ];
+    recipe.info[3] = 1 - recipe.info[1];
+  }
+
+  const style = posterStyles[templateId];
+  const fb = box(recipe.facts);
+  const pb = box(recipe.program);
+  const ib = box(recipe.info);
+  const hero = box(recipe.hero);
+  const art = recipe.art && box(recipe.art);
+  const upperArt =
+    art && art.y < hero.y + hero.h * 0.85 && art.y + art.h > hero.y + 8;
+  const factStrip = recipe.facts[2] > 0.8;
+  const nextRow = Math.min(pb.y, ib.y, factStrip && facts ? fb.y : Infinity);
+  const coverBottom = Math.min(
+    nextRow - 9,
+    Math.max(
+      hero.y + hero.h,
+      upperArt ? art.y + art.h : 0,
+      !factStrip && facts && fb.y < nextRow ? fb.y + fb.h : 0,
+    ) + 16,
+  );
+  const cover = { x: 0, y: 0, w: 1000, h: coverBottom };
+  const artwork = (role: ArtworkNode["role"], rect: Rect): ArtworkNode => ({
+    ...rect,
+    kind: "art",
+    art: templateId,
+    role,
+    palette,
+  });
+  const decorate = (role: ArtworkNode["role"], rect: Rect) => {
+    if (doc.design.decorations) nodes.push(artwork(role, rect));
+  };
+  if (style.stock !== "paper") shape(cover, palette[style.stock]);
+  decorate("masthead", cover);
+  decorate("foot", {
+    x: safeX,
+    y: size.baseHeight - safeY / 2 - 9,
+    w: 1000 - 2 * safeX,
+    h: 18,
+  });
+  if (art) {
     if (doc.assetRefs[0])
       nodes.push({
         ...art,
@@ -595,15 +682,35 @@ export function composeScene(
         id: "main-image",
         assetId: doc.assetRefs[0],
       });
-    else if (doc.design.decorations) nodes.push(artwork("hero", art));
+    else if (
+      art.w > (1000 - 2 * safeX) * 0.95 &&
+      style.illustration === "bleed"
+    ) {
+      const top = recipe.art?.[1] === 0 ? 0 : art.y;
+      decorate("hero", { x: 0, y: top, w: 1000, h: art.y + art.h - top });
+    } else if (upperArt && ["citypop", "neon", "forest"].includes(templateId)) {
+      if (doc.design.decorations)
+        nodes.push({ ...artwork("hero", cover), clearUntil: hero.x + hero.w });
+    } else if (upperArt && ["bleed", "torn"].includes(style.illustration)) {
+      // The built-in print extends to the trim. Author-supplied photos keep
+      // the exact rectangular crop shown by the placement controls.
+      const right = art.x > hero.x;
+      const x = right ? art.x : 0;
+      decorate("hero", {
+        x,
+        y: 0,
+        w: right ? 1000 - x : art.x + art.w,
+        h: coverBottom,
+      });
+    } else decorate("hero", art);
+  } else if (!facts && ["information", "swiss"].includes(templateId)) {
+    decorate("hero", fb);
   }
-
-  const hero = box(recipe.hero);
   hero.x += p.titleX;
   hero.y += p.titleY;
-  const reversed = templateId === "livehouse";
-  const heroPad = reversed ? 18 : 0;
-  if (reversed) shape(hero, palette.ink);
+  if (p.titleY && style.stock !== "paper" && hero.y + hero.h > coverBottom)
+    shape(hero, palette[style.stock]);
+  const titleInks = stockInks(palette, style.stock);
   const serifDefault = [
     "citypop",
     "acoustic",
@@ -653,13 +760,8 @@ export function composeScene(
     if (latinFace === faces.rock || latinFace === faces.maru)
       openMicTitle.size = 29;
   }
-  const color = reversed ? palette.paper : palette.ink;
-  const inset = {
-    x: hero.x + heroPad,
-    y: hero.y + heroPad,
-    w: hero.w - heroPad * 2,
-    h: hero.h - heroPad * 2,
-  };
+  const color = titleInks.text;
+  const inset = hero;
   const kickerHeight = kicker
     ? Math.max(27, Math.ceil(kickerPx / inset.w) * 26)
     : 0;
@@ -712,57 +814,169 @@ export function composeScene(
     { ...inset, y: inset.y + inset.h * 0.83, h: inset.h * 0.17 },
     35,
     18,
-    reversed ? palette.paper : palette.accent,
+    titleInks.accent,
     700,
     serifDefault ? elegant : condensed,
     recipe.align,
     { lineHeight: 1.16, maxLines: 1 },
   );
 
-  const fb = box(recipe.facts),
-    style = recipe.factsStyle;
+  const factsStyle = recipe.factsStyle;
   if (facts) {
-    const filled =
-      style === "band" ||
-      style === "ticket" ||
-      (style === "date" && templateId === "information");
-    if (filled) shape(fb, palette.accent);
-    if (style === "rule") {
-      rule(fb, palette.accent);
-      rule({ ...fb, y: fb.y + fb.h }, palette.accent);
+    const filled = ["band", "ticket", "date"].includes(factsStyle);
+    const onCover = fb.y + fb.h <= coverBottom + 0.5;
+    const inks = stockInks(palette, onCover ? style.stock : "paper");
+    if (filled) {
+      const ground =
+        templateId === "swiss" && fb.y + fb.h <= coverBottom
+          ? { x: 0, y: 0, w: fb.x + fb.w + 10, h: coverBottom - 3 }
+          : fb;
+      shape(ground, palette.accent);
     }
-    const factsColor = filled ? palette.onAccent : palette.ink;
-    if (style === "date" && eventDayNumber) {
+    if (factsStyle === "ticket") decorate("ticket", fb);
+    if (factsStyle === "rule") {
+      rule(fb, inks.accent);
+      rule({ ...fb, y: fb.y + fb.h }, inks.accent);
+    }
+    const factsColor = filled ? palette.onAccent : inks.text;
+    const freeDateMatch =
+      doc.kind === "free-flyer" && !facts.includes("\n")
+        ? facts.trim().match(/^(\S+)(?:[ \t]+(?:[/|・][ \t]+)?(.+))?$/u)
+        : null;
+    const freeDate =
+      freeDateMatch &&
+      dateISO(freeDateMatch[1]) &&
+      estimate(freeDateMatch[2] ?? "", 20) <= (fb.w - 28) * 0.7
+        ? { date: freeDateMatch[1], detail: freeDateMatch[2] ?? "" }
+        : undefined;
+    if (factsStyle === "date" && dateParts) {
+      const d = dateParts;
+      const left = fb.x + 14,
+        width = fb.w - 28;
+      const numeralHeight = fb.h * 0.47;
+      const day = d.english ? `${d.english} (${d.weekday})` : d.weekday;
+      const labelHeight = Math.min(38, fb.h * 0.2);
       text(
-        "facts",
-        facts,
-        { x: fb.x + 12, y: fb.y + 8, w: fb.w - 24, h: fb.h * 0.4 },
-        26,
-        18,
+        "facts-weekday",
+        [d.year, day].filter(Boolean).join("   "),
+        {
+          x: left,
+          y: fb.y + 4,
+          w: width,
+          h: labelHeight,
+        },
+        29,
+        16,
         factsColor,
-        700,
-        sans,
-      );
-      text(
-        "day-monument",
-        eventDayNumber,
-        { x: fb.x + 8, y: fb.y + fb.h * 0.43, w: fb.w - 16, h: fb.h * 0.55 },
-        190,
-        40,
-        filled ? palette.onAccent : palette.accent,
         700,
         condensed,
         "left",
         { lineHeight: 1, valign: "center" },
       );
-      if (!filled) rule({ ...fb, y: fb.y + fb.h }, palette.accent);
+      text(
+        "facts-date",
+        d.monthDay,
+        {
+          x: left,
+          y: fb.y + 5 + labelHeight,
+          w: width,
+          h: numeralHeight,
+        },
+        Math.min(190, numeralHeight),
+        30,
+        factsColor,
+        700,
+        condensed,
+        "left",
+        { lineHeight: 1, valign: "center", maxLines: 1 },
+      );
+      const detailY = fb.y + 8 + labelHeight + numeralHeight;
+      text(
+        "facts-detail",
+        [d.start, d.price].filter(Boolean).join("  "),
+        {
+          x: left,
+          y: detailY,
+          w: width,
+          h: fb.y + fb.h - detailY - 3,
+        },
+        27,
+        18,
+        factsColor,
+        700,
+        sans,
+        "left",
+        { lineHeight: 1.18, valign: "center" },
+      );
+    } else if (freeDate) {
+      const { date, detail } = freeDate;
+      const datePanel = factsStyle === "date";
+      const horizontal = !datePanel && fb.w / fb.h >= 3.6;
+      const pad = 14;
+      const width = fb.w - pad * 2;
+      const headlineWidth = horizontal && detail ? width * 0.48 : width;
+      const yearH = datePanel ? Math.min(40, fb.h * 0.18) : 0;
+      const headlineH =
+        (!horizontal && detail ? fb.h * 0.65 : fb.h - 6) - yearH;
+      const dateY = fb.y + yearH + 3;
+      if (datePanel)
+        text(
+          "facts-year",
+          date.slice(0, 4),
+          {
+            x: fb.x + pad,
+            y: fb.y + 3,
+            w: headlineWidth,
+            h: yearH,
+          },
+          29,
+          16,
+          factsColor,
+          700,
+          condensed,
+          "left",
+          { lineHeight: 1.05, valign: "center" },
+        );
+      text(
+        "facts-date",
+        datePanel ? date.slice(5) : date,
+        { x: fb.x + pad, y: dateY, w: headlineWidth, h: headlineH },
+        Math.min(120, headlineH * 0.88),
+        18,
+        factsColor,
+        700,
+        condensed,
+        "left",
+        { lineHeight: 1.08, valign: "center", maxLines: 1 },
+      );
+      if (detail) {
+        const offset = horizontal ? headlineWidth + 12 : 0;
+        const y = horizontal ? fb.y + 3 : dateY + headlineH;
+        text(
+          "facts-detail",
+          detail,
+          {
+            x: fb.x + pad + offset,
+            y,
+            w: width - offset,
+            h: fb.y + fb.h - y - 3,
+          },
+          32,
+          18,
+          factsColor,
+          700,
+          condensed,
+          "left",
+          { lineHeight: 1.18, valign: "center" },
+        );
+      }
     } else if (dateParts) {
       // A flyer is read for "when" right after "what": the date becomes a
       // display numeral instead of one more line of body copy.
       const d = dateParts;
       const pad = filled ? 22 : 12;
       const inner = { x: fb.x + pad, y: fb.y, w: fb.w - pad * 2, h: fb.h };
-      const accentInk = filled ? palette.onAccent : palette.accent;
+      const accentInk = filled ? palette.onAccent : inks.accent;
       const weekdayLabel = d.english
         ? `${d.english} (${d.weekday})`
         : d.weekday
@@ -810,7 +1024,7 @@ export function composeScene(
           ? 0
           : Math.max(120, Math.min(inner.w - fixed, infoText(infoSize)));
         const total = fixed + infoWidth;
-        const centered = recipe.align === "center" || style === "rule";
+        const centered = recipe.align === "center" || factsStyle === "rule";
         let x = centered
           ? inner.x + Math.max(0, (inner.w - total) / 2)
           : inner.x;
@@ -975,46 +1189,80 @@ export function composeScene(
     }
   }
 
-  const pb = box(recipe.program);
-  if (schedule) {
+  if (schedule?.length) {
     const wide = pb.w > 700,
       columns = wide ? 2 : 1,
       gap = wide ? 38 : 0;
     const rows = Math.ceil(schedule.length / columns),
       columnWidth = (pb.w - gap) / columns;
+    const { lineup } = style;
+    const solidHeading = lineup === "bill" || lineup === "table";
     const headingHeight = 42;
+    const actRows = Array.from(
+      { length: rows },
+      (_, row) =>
+        schedule[row].type === "act" || schedule[rows + row]?.type === "act",
+    );
+    const fullRows = actRows.filter(Boolean).length;
+    // An overfull setlist extends past its box for the overflow diagnostic.
+    // Keep even its interlude markers drawable while the author edits it.
+    const rowSpace =
+      (pb.h - headingHeight - (rows - fullRows) * 33) / Math.max(1, fullRows);
+    const unit = Math.max(24, Math.min(140, rowSpace));
+    if (solidHeading) shape({ ...pb, h: 33 }, palette.ink);
     text(
       "program-heading",
       showTimes ? "出演・タイムテーブル" : "出演者",
-      { ...pb, h: 31 },
+      {
+        ...pb,
+        x: pb.x + (solidHeading ? 11 : 0),
+        y: pb.y + 2,
+        w: pb.w - 12,
+        h: 31,
+      },
       22,
       18,
-      palette.accent,
+      solidHeading ? palette.paper : palette.accent,
       700,
     );
-    rule({ ...pb, y: pb.y + 35 }, palette.accent);
+    if (!solidHeading) rule({ ...pb, y: pb.y + 35 }, palette.accent);
     for (let column = 0; column < columns; column++) {
       const items = schedule.slice(column * rows, (column + 1) * rows);
-      const actCount = items.filter((item) => item.type === "act").length;
-      const unit =
-        (pb.h - headingHeight - (items.length - actCount) * 33) /
-        Math.max(1, actCount);
       let y = pb.y + headingHeight;
       items.forEach((item, row) => {
         const index = column * rows + row,
           x = pb.x + column * (columnWidth + gap);
-        const rowHeight = item.type === "act" ? unit : 33;
+        const rowHeight = actRows[row] ? unit : 33;
         if (item.type === "act") {
+          const timeline = lineup === "timeline";
+          const ruled = lineup === "table";
+          const gutter = timeline ? 18 : ruled ? 9 : 0;
+          const contentX = x + gutter;
+          const rowWidth = columnWidth - gutter - (ruled ? 7 : 0);
+          if (ruled && row % 2 === 0)
+            shape(
+              { x, y, w: columnWidth, h: rowHeight },
+              mix(palette.paper, palette.soft, 0.55),
+            );
+          if (timeline) {
+            shape({ x: x + 3, y, w: 1.5, h: rowHeight }, palette.soft);
+            nodes.push({
+              kind: "ellipse",
+              x,
+              y: y + rowHeight / 2 - 4,
+              w: 8,
+              h: 8,
+              color: palette.accent,
+            });
+          }
           const stacked =
-            showTimes &&
-            (wide || ["livehouse", "indie"].includes(templateId)) &&
-            rowHeight >= 65;
+            showTimes && (wide || lineup === "bill") && rowHeight >= 65;
           if (stacked) {
             const timeH = 25;
             text(
               `time-${index}`,
               item.time,
-              { x, y: y + 4, w: columnWidth, h: timeH },
+              { x: contentX, y: y + 4, w: rowWidth, h: timeH },
               21,
               18,
               palette.accent,
@@ -1027,9 +1275,9 @@ export function composeScene(
               `act-${index}`,
               item.name,
               {
-                x,
+                x: contentX,
                 y: y + timeH + 6,
-                w: columnWidth,
+                w: rowWidth,
                 h: rowHeight - timeH - 10,
               },
               wide ? 36 : 42,
@@ -1041,7 +1289,12 @@ export function composeScene(
               { lineHeight: 1.15 },
             );
           } else {
-            const timeWidth = showTimes ? columnWidth * 0.35 : 0;
+            const timeWidth = showTimes ? rowWidth * 0.35 : 0;
+            const namesFirst = lineup === "recital";
+            const nameX = namesFirst ? contentX : contentX + timeWidth;
+            const timeX = namesFirst
+              ? contentX + rowWidth - timeWidth + 10
+              : contentX;
             // Dense lineups (10+ acts in a square) get less padding instead of
             // text boxes shorter than their own minimum font size.
             const pad = Math.max(1, Math.min(6, (rowHeight - 24) / 2));
@@ -1049,22 +1302,27 @@ export function composeScene(
               text(
                 `time-${index}`,
                 item.time,
-                { x, y: y + pad, w: timeWidth - 10, h: rowHeight - pad * 2 },
+                {
+                  x: timeX,
+                  y: y + pad,
+                  w: timeWidth - 10,
+                  h: rowHeight - pad * 2,
+                },
                 22,
                 18,
                 palette.accent,
                 700,
                 condensed,
-                "left",
+                namesFirst ? "right" : "left",
                 { lineHeight: 1.2, valign: "center" },
               );
             text(
               `act-${index}`,
               item.name,
               {
-                x: x + timeWidth,
+                x: nameX,
                 y: y + pad,
-                w: columnWidth - timeWidth,
+                w: rowWidth - timeWidth,
                 h: rowHeight - pad * 2,
               },
               showTimes ? 36 : 44,
@@ -1076,9 +1334,17 @@ export function composeScene(
               { lineHeight: 1.2, valign: "center" },
             );
           }
-          rule({ x, y: y + rowHeight - 1, w: columnWidth, h: 1 });
+          if (!ruled && !timeline)
+            rule(
+              { x, y: y + rowHeight - 1, w: columnWidth, h: 1 },
+              lineup === "bill" ? palette.ink : palette.soft,
+              lineup === "recital" ? columnWidth * 0.26 : columnWidth,
+            );
         } else {
-          if (item.type === "break") {
+          const markerH = Math.min(rowHeight, 33);
+          const markerY = y + (rowHeight - markerH) / 2;
+          const labelPad = Math.max(0, Math.min(5, (markerH - 22) / 2));
+          if (item.type === "break" && lineup !== "recital") {
             // A quiet interlude marker: a short pill between hairlines rather
             // than a full-width bar competing with the artist names.
             const pill = Math.min(columnWidth * 0.62, 300);
@@ -1102,10 +1368,10 @@ export function composeScene(
               palette.soft,
             );
             shape(
-              { x: px, y: y + 4, w: pill, h: rowHeight - 8 },
+              { x: px, y: markerY + 4, w: pill, h: markerH - 8 },
               palette.soft,
               undefined,
-              (rowHeight - 8) / 2,
+              (markerH - 8) / 2,
             );
           }
           const labelWidth =
@@ -1117,9 +1383,9 @@ export function composeScene(
             item.label,
             {
               x: x + (columnWidth - labelWidth) / 2,
-              y: y + 5,
+              y: markerY + labelPad,
               w: labelWidth,
-              h: rowHeight - 10,
+              h: markerH - labelPad * 2,
             },
             19,
             18,
@@ -1133,22 +1399,41 @@ export function composeScene(
         y += rowHeight;
       });
     }
-  } else if (program) {
-    text(
+  } else if (doc.kind === "free-flyer") {
+    flow(
       "program",
-      program,
       pb,
-      doc.kind === "free-flyer" ? 31 : 28,
-      18,
-      palette.ink,
-      doc.kind === "free-flyer" ? 400 : 700,
-      sans,
-      "left",
-      { lineHeight: 1.65 },
+      blocks
+        .filter((block) => block.type !== "details")
+        .map((block) => {
+          const heading = block.type === "heading";
+          return {
+            ...flowBlock(
+              `body-${block.id}`,
+              block.text,
+              heading ? 43 : 30,
+              heading ? face.weight : 400,
+              heading ? palette.accent : palette.ink,
+              heading ? 18 : 12,
+              heading ? family : sans,
+            ),
+            minSize: heading ? 23 : 18,
+            lineHeight: heading ? 1.22 : 1.52,
+          };
+        }),
     );
+  } else if (program) {
+    text("program", program, pb, 28, 18, palette.ink, 700, sans, "left", {
+      lineHeight: 1.65,
+    });
   }
-  const ib = box(recipe.info);
   if (venueBlocks.length || additionalBlocks.length) {
+    if (templateId === "information" && ib.w > 700) {
+      shape(
+        { x: 0, y: ib.y - 13, w: 1000, h: size.baseHeight - ib.y + 13 },
+        mix(palette.paper, palette.soft, 0.48),
+      );
+    }
     rule(
       { ...ib, y: ib.y - 10 },
       palette.accent,

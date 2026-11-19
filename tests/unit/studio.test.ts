@@ -268,3 +268,27 @@ describe("boundary text handling", () => {
     expect(long.w).toBeGreaterThan(short.w * 2);
   });
 });
+
+describe("free-flyer typography", () => {
+  it("keeps the author's heading, body and details in their own typographic roles", () => {
+    const doc = createDocument("free-flyer");
+    if (doc.kind !== "free-flyer") throw new Error();
+    doc.content.blocks = [
+      { id: "h", type: "heading", text: "今月の展示", visible: true },
+      { id: "p", type: "text", text: "小さな陶器が並びます。", visible: true },
+      { id: "d", type: "details", text: "入場無料", visible: true },
+      { id: "x", type: "heading", text: "下書き", visible: false },
+    ];
+    const scene = composeScene(doc, []);
+    const runs = scene.nodes.flatMap((n) =>
+      n.kind === "flow" ? n.blocks : [],
+    );
+    expect(runs.map((n) => n.text)).toEqual([
+      "今月の展示",
+      "小さな陶器が並びます。",
+      "入場無料",
+    ]);
+    expect(runs[0].size).toBeGreaterThan(runs[1].size);
+    expect(runs[0].family).not.toBe(runs[1].family);
+  });
+});

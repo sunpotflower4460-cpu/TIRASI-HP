@@ -215,3 +215,56 @@ test("all layouts keep photographs apart from event and free-flyer text in every
   expect(report.movedTitleBlocked).toBe(true);
   expect(report.semanticHeadline).toEqual(["週末の、", "よりみち。"]);
 });
+
+test("a print plate loads on demand, retries after a failure and takes a second ink palette", async ({
+  page,
+}) => {
+  let fail = true;
+  let requests = 0;
+  await page.route(/\/posters\/citypop\.webp(?:\?|$)/, async (route) => {
+    if (route.request().resourceType() !== "image") return route.continue();
+    requests++;
+    if (fail) return route.abort();
+    return route.continue();
+  });
+  await page.goto("/studio");
+  const render = (mode: "plain" | "photo" | "color" | "ink") =>
+    page.evaluate(async (mode) => {
+      const root = "/src/studio";
+      const { createDocument } = await import(`${root}/document.ts`);
+      const { composeScene } = await import(`${root}/scene.ts`);
+      const { renderScene } = await import(`${root}/render.ts`);
+      const doc = createDocument("free-flyer");
+      doc.design.templateId = "citypop";
+      doc.design.paletteId = mode === "ink" ? "night" : "city";
+      doc.design.decorations = mode !== "plain";
+      const images = new Map();
+      if (mode === "photo") {
+        doc.assetRefs = ["my-photo"];
+        const upload = document.createElement("canvas");
+        upload.getContext("2d")!.fillRect(0, 0, 300, 150);
+        images.set("my-photo", upload);
+      }
+      try {
+        const scene = composeScene(doc, []);
+        const { canvas, errors } = await renderScene(scene, images, 320, 453);
+        if (errors.length) return errors.join("\n");
+        // This point lies in the illustration, outside the title and body.
+        const pixel = canvas.getContext("2d").getImageData(268, 64, 1, 1).data;
+        return Array.from(pixel);
+      } catch (error) {
+        return String(error);
+      }
+    }, mode);
+  await render("plain");
+  expect(await render("photo")).toEqual([0, 0, 0, 255]);
+  expect(requests).toBe(0);
+  expect(await render("color")).toContain("図版を読み込めません");
+  fail = false;
+  const color = await render("color");
+  const ink = await render("ink");
+  expect(color).toHaveLength(4);
+  expect(ink).toHaveLength(4);
+  expect(ink).not.toEqual(color);
+  expect(requests).toBe(2);
+});
