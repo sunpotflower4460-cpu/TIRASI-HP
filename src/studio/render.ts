@@ -1,5 +1,6 @@
 import type { Scene, SceneNode, TextNode, FlowNode, Rect } from "./scene";
-import { drawArtwork } from "./artwork";
+import { drawArtwork, type ArtworkNode } from "./artwork";
+import { loadPlate } from "./plates";
 import { balanceHeadline } from "./typography";
 import { defaultPlacement } from "./document";
 import { canvasBlob, withTimeout } from "../export/files";
@@ -22,6 +23,7 @@ export function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
   width: number,
+  balanceTail = false,
 ): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split("\n")) {
@@ -29,6 +31,7 @@ export function wrapText(
       lines.push("");
       continue;
     }
+    const start = lines.length;
     const tokens = paragraph.match(/[A-Za-z0-9_:/?.&=#@%+~'’\-]+|./gu) ?? [];
     let line = "";
     for (const token of tokens) {
@@ -54,6 +57,23 @@ export function wrapText(
       }
     }
     lines.push(line.trimEnd());
+    if (
+      balanceTail &&
+      lines.length - start >= 2 &&
+      Array.from(line.trim()).length <= 3
+    ) {
+      const pair = lines.slice(-2);
+      const tail = pair.join("");
+      if (/[ぁ-ヿ一-龯]/u.test(tail) && !/\s|[A-Za-z]/u.test(tail)) {
+        const balanced = balanceHeadline(
+          tail,
+          width,
+          (value) => ctx.measureText(value).width,
+          pair,
+        );
+        lines.splice(-2, 2, ...balanced);
+      }
+    }
   }
   return lines;
 }
@@ -69,6 +89,7 @@ export function measureText(
       ctx,
       node.vertical ? Array.from(node.text).join("\n") : node.text,
       node.w,
+      !node.vertical && node.minSize === node.size,
     );
     if (
       lines.length <= (node.maxLines ?? Infinity) &&
@@ -228,7 +249,13 @@ export async function renderScene(
   // Display faces are a refinement: if their stylesheet cannot be fetched
   // (offline, blocked), the layout still renders with the bundled fallbacks
   // instead of failing the preview and every export.
-  await withTimeout(loadDisplayFonts()).catch(() => undefined);
+  const illustration = scene.nodes.find(
+    (node): node is ArtworkNode => node.kind === "art" && node.role === "hero",
+  );
+  const [plate] = await Promise.all([
+    illustration ? loadPlate(illustration.art, scene.palette) : undefined,
+    withTimeout(loadDisplayFonts()).catch(() => undefined),
+  ]);
   await withTimeout(document.fonts.ready);
   // Explicitly request glyph subsets for Canvas text (FontFaceSet.ready alone cannot discover canvas content).
   await withTimeout(
@@ -264,9 +291,11 @@ export async function renderScene(
       const laidOut = layoutFlow(ctx, node);
       if (!laidOut.fits)
         errors.push(
-          scene.document.kind === "event-flyer"
-            ? "会場・詳細が収まりません。「本文」タブの『載せる情報』で注意書き・Open Mic・SNS表示名を非表示にするか、A4など大きなサイズを選ぶと収まる場合があります。"
-            : "会場・詳細が収まりません。文章を短くするか、別の構図や大きなサイズを選んでください。",
+          node.id === "program"
+            ? "本文が収まりません。文章や改行を調整するか、大きなサイズを選んでください。"
+            : scene.document.kind === "event-flyer"
+              ? "会場・詳細が収まりません。「本文」タブの『載せる情報』で注意書き・Open Mic・SNS表示名を非表示にするか、A4など大きなサイズを選ぶと収まる場合があります。"
+              : "会場・詳細が収まりません。文章を短くするか、別の構図や大きなサイズを選んでください。",
         );
       return laidOut.nodes;
     },
@@ -297,10 +326,11 @@ export async function renderScene(
             : node.x;
       // Keep the entire measured text in the scene; overflow is a blocking diagnosis, never a successful cropped export.
       if (node.shadow) {
+        const scale = canvas.width / scene.width;
         ctx.shadowColor = scene.palette.accent;
-        ctx.shadowBlur = node.shadow === "glow" ? 9 : 0;
-        ctx.shadowOffsetX = node.shadow === "registration" ? 2 : 0;
-        ctx.shadowOffsetY = node.shadow === "registration" ? 1 : 0;
+        ctx.shadowBlur = node.shadow === "glow" ? 9 * scale : 0;
+        ctx.shadowOffsetX = node.shadow === "registration" ? 2 * scale : 0;
+        ctx.shadowOffsetY = node.shadow === "registration" ? scale : 0;
       }
       const textY =
         node.valign === "center"
@@ -349,7 +379,7 @@ export async function renderScene(
         ctx.lineWidth = 3;
         ctx.strokeRect(node.x, node.y, node.w, node.h);
       }
-    } else if (node.kind === "art") drawArtwork(ctx, node);
+    } else if (node.kind === "art") drawArtwork(ctx, node, plate);
     else if (node.kind === "image") {
       const image = images.get(node.assetId);
       if (image)

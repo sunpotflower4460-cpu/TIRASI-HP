@@ -1,6 +1,11 @@
 import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
+import { createRequire } from "node:module";
+
+const fontfile = createRequire(import.meta.url).resolve(
+  "@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-700-normal.woff2",
+);
 
 // Reproducible visual proof; diagnostic PNGs are retained even when fitting fails.
 // npm run dev must be running. Files stay in the ignored test-results directory.
@@ -83,7 +88,7 @@ try {
         measurements: result.measurements,
       });
       const label = await sharp({
-        text: { text: template.id, font: "sans-serif 15", rgba: true },
+        text: { text: template.label, font: "Noto Sans JP Thin Bold 15", fontfile, rgba: true },
       })
         .png()
         .toBuffer();

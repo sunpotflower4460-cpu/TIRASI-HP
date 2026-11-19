@@ -27,9 +27,6 @@ try {
       .getByLabel("出演時刻を表示", { exact: true })
       .setChecked(!namesOnly);
     const preview = page.locator(".studio-preview-panel");
-    await preview
-      .getByRole("button", { name: "PNGを生成", exact: true })
-      .click();
     const save = preview.getByRole("button", {
       name: "PNGを保存",
       exact: true,
