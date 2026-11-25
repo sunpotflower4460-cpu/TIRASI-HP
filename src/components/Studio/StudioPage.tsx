@@ -1,3 +1,4 @@
+import { isStore, storagePlace } from "../../edition";
 import { ContentPanel } from "./ContentPanel";
 import { LivePanel } from "./LivePanel";
 import { NextLiveDialog } from "./NextLiveDialog";
@@ -39,6 +40,40 @@ import { errorMessage } from "../../domain/validation";
 import { DocumentPreview } from "./DocumentPreview";
 import { BackupPanel } from "./BackupPanel";
 import "../../styles/studio.css";
+import { StoreHome } from "../../store/StoreHome";
+import { LiveChoiceDialog, SharedLiveNotice } from "../../store/LiveChoiceDialog";
+import { readNewLiveMode } from "../../store/settings";
+import {
+  automaticChoice,
+  createLiveFlyer,
+  detachLiveFlyer,
+  liveSources,
+  sharedFlyers,
+} from "../../studio/liveCreate";
+import type { LiveChoice } from "../../studio/liveCreate";
+import { StoreEditorBar } from "../../store/StoreEditorBar";
+import { Icon } from "../../store/Icon";
+import type { IconName } from "../../store/Icon";
+import type { ReactNode } from "react";
+import type { ModernTemplateId } from "../../studio/registry";
+
+const tabIcon: Record<"live" | "content" | "design" | "image", IconName> = {
+  live: "mic",
+  design: "sparkle",
+  image: "image",
+  content: "text",
+};
+/** The store app keeps backups folded away so they do not compete with making a flyer. */
+function BackupSection({ children }: { children: ReactNode }) {
+  return isStore ? (
+    <details className="store-backup print-hidden">
+      <summary>保存・バックアップ</summary>
+      {children}
+    </details>
+  ) : (
+    <>{children}</>
+  );
+}
 
 type Props = {
   workspace: Workspace;
@@ -50,6 +85,9 @@ type Props = {
     assets?: { id: string; blob: Blob }[],
   ) => Promise<void>;
   navigate: (path: string) => void;
+  /** Store app only: show the start screen instead of the editor. */
+  home?: boolean;
+  onHomeChange?: (home: boolean) => void;
 };
 export function StudioPage({
   workspace,
@@ -58,6 +96,8 @@ export function StudioPage({
   restoring,
   restore,
   navigate,
+  home = false,
+  onHomeChange,
 }: Props) {
   const currentWorkspace = useRef(workspace);
   currentWorkspace.current = workspace;
@@ -69,9 +109,22 @@ export function StudioPage({
   const [tab, setTab] = useState<"live" | "content" | "design" | "image">(
     "design",
   );
+  // The store app has a start screen, and on phones shows either the form or
+  // the finished flyer, never both stacked.
+  const showHome = isStore && (home || !doc);
+  const [view, setView] = useState<"edit" | "preview">("edit");
+  // Store app: a second live flyer is only made after choosing how its content relates.
+  const [pendingLive, setPendingLive] = useState<{ templateId?: ModernTemplateId }>();
+  const openEditor = () => {
+    onHomeChange?.(false);
+    setView("edit");
+    if (isStore) window.scrollTo({ top: 0 });
+  };
   const [family, setFamily] = useState("すべて");
   useEffect(() => {
-    setFamily(doc?.kind === "event-flyer" ? "ライブ向け" : "すべて");
+    setFamily(
+      doc?.kind === "event-flyer" && !isStore ? "ライブ向け" : "すべて",
+    );
     setTab(
       doc?.kind === "event-flyer"
         ? "live"
@@ -227,9 +280,11 @@ export function StudioPage({
       return;
     }
     if (currentWorkspace.current.documents.length >= 100) {
-      setNotice(
-        "制作物は100件まで保存できます。バックアップしてから不要な制作物を削除してください。",
-      );
+      const full =
+        "制作物は100件まで保存できます。バックアップしてから不要な制作物を削除してください。";
+      setNotice(full);
+      // The store app's start screen has no notice line.
+      if (isStore) window.alert(full);
       return;
     }
     setWorkspace((s) => ({
@@ -237,8 +292,14 @@ export function StudioPage({
       documents: [...s.documents, next],
       activeDocumentId: next.id,
     }));
-    setNotice("新しい下書きを作りました。公開HPは変更されません。");
-    setFamily(next.kind === "event-flyer" ? "ライブ向け" : "すべて");
+    openEditor();
+    setNotice(
+      // In the store app opening the editor already shows what happened.
+      isStore ? "" : "新しい下書きを作りました。公開HPは変更されません。",
+    );
+    setFamily(
+      next.kind === "event-flyer" && !isStore ? "ライブ向け" : "すべて",
+    );
     setTab(
       next.kind === "event-flyer"
         ? "live"
@@ -247,7 +308,46 @@ export function StudioPage({
           : "design",
     );
   };
+  const createLive = (choice: LiveChoice, templateId?: ModernTemplateId) => {
+    setPendingLive(undefined);
+    try {
+      const next = createLiveFlyer(currentWorkspace.current, choice, {
+        templateId,
+        eventId: newId(),
+        documentId: newId(),
+        now: new Date().toISOString(),
+      });
+      setWorkspace(next);
+      openEditor();
+      setNotice("");
+      setFamily("すべて");
+      setTab("live");
+    } catch (error) {
+      window.alert(errorMessage(error));
+    }
+  };
+  const requestLive = (templateId?: ModernTemplateId) => {
+    const choice = automaticChoice(readNewLiveMode(), currentWorkspace.current);
+    if (choice) createLive(choice, templateId);
+    else setPendingLive({ templateId });
+  };
+  const detachLive = (target: CreativeDocument) => {
+    try {
+      setWorkspace(
+        detachLiveFlyer(currentWorkspace.current, target.id, {
+          eventId: newId(),
+          now: new Date().toISOString(),
+        }),
+      );
+      // Earlier undo steps belong to the shared content and must not rewrite it.
+      history.current.delete(target.id);
+      setHistoryVersion((value) => value + 1);
+    } catch (error) {
+      window.alert(errorMessage(error));
+    }
+  };
   const create = (kind: CreativeDocument["kind"], starterId?: string) => {
+    if (isStore && kind === "event-flyer") return requestLive();
     let next = createDocument(kind, activeEvent);
     const starter = starters.find((s) => s.id === starterId);
     if (next.kind === "free-flyer" && starter)
@@ -270,6 +370,28 @@ export function StudioPage({
       };
     addDocument(next);
   };
+  const createWithTemplate = (id: ModernTemplateId) => requestLive(id);
+  const deleteDocument = (target: CreativeDocument) => {
+    if (
+      !window.confirm(
+        "この制作物を削除しますか？元画像とイベント本文は保持されます。",
+      )
+    )
+      return;
+    setDeletedDoc(structuredClone(target));
+    setWorkspace((s) => {
+      const documents = s.documents.filter((d) => d.id !== target.id);
+      return { ...s, documents, activeDocumentId: documents[0]?.id };
+    });
+    if (isStore) onHomeChange?.(true);
+  };
+  const duplicateDocument = (target: CreativeDocument) =>
+    addDocument({
+      ...structuredClone(target),
+      id: newId(),
+      name: documentNameWithSuffix(target.name, " コピー"),
+      updatedAt: new Date().toISOString(),
+    });
   const setDesign = (patch: Partial<Design>) => {
     if (doc)
       mutate(doc.id, (d) => ({ ...d, design: { ...d.design, ...patch } }));
@@ -314,7 +436,7 @@ export function StudioPage({
           }) as CreativeDocument,
       );
       setNotice(
-        `「${file.name}」をこのブラウザに保存しました（${asset.width}×${asset.height}px）。`,
+        `「${file.name}」を${storagePlace}に保存しました（${asset.width}×${asset.height}px）。`,
       );
     } catch (error) {
       setNotice(errorMessage(error));
@@ -391,9 +513,22 @@ export function StudioPage({
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   return (
     <main
-      className={`studio-page${doc ? " has-document" : ""}`}
+      className={`studio-page${doc && !showHome ? " has-document" : ""}`}
       inert={restoring}
     >
+      {showHome && (
+        <StoreHome
+          workspace={workspace}
+          onCreate={create}
+          onCreateWithTemplate={createWithTemplate}
+          onOpen={(id) => {
+            setWorkspace((current) => ({ ...current, activeDocumentId: id }));
+            openEditor();
+          }}
+        />
+      )}
+      {!isStore && (
+        <>
       <header className="studio-header">
         <div>
           <p className="studio-eyebrow">TIRASI / FLYER STUDIO</p>
@@ -411,7 +546,7 @@ export function StudioPage({
         <div className="studio-save">
           <span className="save-dot" />
           {saveStatus}
-          <small>このブラウザだけの下書き</small>
+          <small>{storagePlace}だけの下書き</small>
         </div>
       </header>
       <section className="studio-create" aria-label="チラシの作り方">
@@ -421,7 +556,11 @@ export function StudioPage({
         >
           <span>01 / EVENT</span>
           <strong>ライブのチラシを作る</strong>
-          <small>いつものA4に、タイトル・日時・出演者を自動配置</small>
+          <small>
+            {isStore
+              ? "タイトル・日時・出演者を入れるだけで自動配置"
+              : "いつものA4に、タイトル・日時・出演者を自動配置"}
+          </small>
         </button>
         <button onClick={() => create("free-flyer")}>
           <span>02 / FREE</span>
@@ -434,7 +573,9 @@ export function StudioPage({
           <small>元の文字・構図を保ったレトロ加工</small>
         </button>
       </section>
-      {recentLive && doc?.kind !== "event-flyer" && (
+        </>
+      )}
+      {!isStore && recentLive && doc?.kind !== "event-flyer" && (
         <div className="live-resume">
           <div>
             <strong>いつものライブから、次回分を。</strong>
@@ -448,7 +589,7 @@ export function StudioPage({
           </button>
         </div>
       )}
-      {!doc && (
+      {!isStore && !doc && (
         <details className="studio-empty live-other-starts">
           <summary>ライブ以外のチラシを、ひな形から作る</summary>
           <p>
@@ -465,7 +606,7 @@ export function StudioPage({
           </div>
         </details>
       )}
-      {doc && (
+      {!isStore && doc && (
         <details className="starter-details print-hidden">
           <summary>用途別のチラシを新しく作る</summary>
           <div className="starter-grid">
@@ -479,8 +620,28 @@ export function StudioPage({
           </div>
         </details>
       )}
-      {doc && (
+      {doc && !showHome && (
         <>
+          {isStore ? (
+            <StoreEditorBar
+              doc={doc}
+              docs={docs}
+              saveStatus={saveStatus}
+              canUndo={!!h?.undo.length}
+              canRedo={!!h?.redo.length}
+              onSelect={(id) =>
+                setWorkspace((s) => ({ ...s, activeDocumentId: id }))
+              }
+              onRename={(name) => mutate(doc.id, (d) => ({ ...d, name }))}
+              onUndo={() => undo(false)}
+              onRedo={() => undo(true)}
+              onRepeat={() => setRepeatSource(doc.id)}
+              onDuplicate={() => duplicateDocument(doc)}
+              onPreview={() => navigate(`/preview/document/${doc.id}`)}
+              onDelete={() => deleteDocument(doc)}
+              onCreate={(kind) => create(kind)}
+            />
+          ) : (
           <div className="studio-document-bar">
             <label>
               制作物を選ぶ
@@ -510,16 +671,7 @@ export function StudioPage({
                   次回分を作る
                 </button>
               )}
-              <button
-                onClick={() =>
-                  addDocument({
-                    ...structuredClone(doc),
-                    id: newId(),
-                    name: documentNameWithSuffix(doc.name, " コピー"),
-                    updatedAt: new Date().toISOString(),
-                  })
-                }
-              >
+              <button onClick={() => duplicateDocument(doc)}>
                 {doc.kind === "event-flyer" ? "デザイン違いを作る" : "複製"}
               </button>
               <button disabled={!h?.undo.length} onClick={() => undo(false)}>
@@ -531,36 +683,19 @@ export function StudioPage({
               <button onClick={() => navigate(`/preview/document/${doc.id}`)}>
                 下書きプレビュー
               </button>
-              <button
-                className="subtle"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "この制作物を削除しますか？元画像とイベント本文は保持されます。",
-                    )
-                  ) {
-                    setDeletedDoc(structuredClone(doc));
-                    setWorkspace((s) => {
-                      const documents = s.documents.filter(
-                        (d) => d.id !== doc.id,
-                      );
-                      return {
-                        ...s,
-                        documents,
-                        activeDocumentId: documents[0]?.id,
-                      };
-                    });
-                  }
-                }}
-              >
+              <button className="subtle" onClick={() => deleteDocument(doc)}>
                 削除
               </button>
             </div>
           </div>
-          <div className="studio-workbench">
+          )}
+          <div
+            className={`studio-workbench${isStore ? ` store-view-${view}` : ""}`}
+          >
             <section className="studio-inspector">
               <details
                 className="live-management"
+                hidden={isStore}
                 open={doc.kind !== "event-flyer"}
               >
                 <summary>管理名を変更</summary>
@@ -611,6 +746,7 @@ export function StudioPage({
                     id={`studio-tab-${id}`}
                     onClick={() => setTab(id)}
                   >
+                    {isStore && <Icon name={tabIcon[id]} size={18} />}
                     {label}
                   </button>
                 ))}
@@ -620,6 +756,14 @@ export function StudioPage({
                 id={`studio-panel-${tab}`}
                 aria-labelledby={`studio-tab-${tab}`}
               >
+                {isStore &&
+                  tab === "live" &&
+                  sharedFlyers(workspace, doc.id).length > 0 && (
+                    <SharedLiveNotice
+                      count={sharedFlyers(workspace, doc.id).length}
+                      onDetach={() => detachLive(doc)}
+                    />
+                  )}
                 {tab === "live" && doc.kind === "event-flyer" && (
                   <LivePanel
                     key={doc.id}
@@ -673,7 +817,9 @@ export function StudioPage({
               id="studio-preview"
             >
               <div className="preview-heading">
-                <p className="studio-eyebrow">LOCAL DRAFT / PREVIEW</p>
+                {!isStore && (
+                  <p className="studio-eyebrow">LOCAL DRAFT / PREVIEW</p>
+                )}
                 <span>
                   {doc.kind === "image-treatment"
                     ? "加工後の画像"
@@ -707,6 +853,13 @@ export function StudioPage({
             </aside>
           </div>
         </>
+      )}
+      {pendingLive && (
+        <LiveChoiceDialog
+          sources={liveSources(workspace)}
+          onChoose={(choice) => createLive(choice, pendingLive.templateId)}
+          onCancel={() => setPendingLive(undefined)}
+        />
       )}
       {deletedDoc && (
         <div className="studio-alert">
@@ -791,7 +944,28 @@ export function StudioPage({
         />
       )}
 
-      {doc && (
+      {isStore && doc && !showHome && (
+        <nav
+          className="studio-mobile-bar store-switch print-hidden"
+          aria-label="編集と確認の切り替え"
+        >
+          {(["edit", "preview"] as const).map((target) => (
+            <button
+              key={target}
+              type="button"
+              aria-pressed={view === target}
+              onClick={() => {
+                setView(target);
+                window.scrollTo({ top: 0 });
+              }}
+            >
+              <Icon name={target === "edit" ? "edit" : "eye"} />
+              {target === "edit" ? "編集" : "仕上がり・保存"}
+            </button>
+          ))}
+        </nav>
+      )}
+      {!isStore && doc && (
         <nav
           className="studio-mobile-bar print-hidden"
           aria-label="編集と確認の切り替え"
@@ -826,6 +1000,7 @@ export function StudioPage({
       >
         {notice}
       </p>
+      <BackupSection>
       <BackupPanel
         workspace={workspace}
         restore={async (value, assets) => {
@@ -837,11 +1012,14 @@ export function StudioPage({
           setHistoryVersion((version) => version + 1);
         }}
       />
+      </BackupSection>
+      {!isStore && (
       <footer className="studio-footer print-hidden">
         <p>TIRASI STUDIO · ライブの一枚を、いつもの手順で。</p>
         <button onClick={() => navigate("/editor")}>イベント情報を編集</button>
         <button onClick={() => navigate("/")}>公開HPを見る</button>
       </footer>
+      )}
     </main>
   );
 }

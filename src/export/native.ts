@@ -77,7 +77,9 @@ export async function shareFileNative(blob: Blob, fileName: string, title?: stri
 /** Thrown when the person has not allowed the app to add pictures to Photos. */
 export class PhotoAccessDeniedError extends Error {
   constructor() {
-    super("写真への保存が許可されていません。設定アプリの「生音」で「写真」を許可してください。");
+    // The name shown in iOS Settings is the home-screen name of each app.
+    const name = import.meta.env?.VITE_EDITION === "store" ? "ライブチラシ" : "生音";
+    super(`写真への保存が許可されていません。設定アプリの「${name}」で「写真」を許可してください。`);
     this.name = "PhotoAccessDeniedError";
   }
 }

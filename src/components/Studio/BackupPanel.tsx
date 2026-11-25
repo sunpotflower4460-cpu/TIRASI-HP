@@ -1,3 +1,4 @@
+import { isStore } from "../../edition";
 import { useRef, useState } from "react";
 import type { Workspace } from "../../domain/workspace";
 import { createBackup, readBackup } from "../../studio/backup";
@@ -47,7 +48,7 @@ export function BackupPanel({
     <section className="studio-backup print-hidden">
       <h2>保存・バックアップ</h2>
       <p>
-        ブラウザ内の保存は、端末のデータ削除や容量制限の影響を受けます。大切な制作物は画像入りバックアップをお持ちください。
+        {isStore ? "アプリ" : "ブラウザ"}内の保存は、端末のデータ削除や容量制限の影響を受けます。大切な制作物は画像入りバックアップをお持ちください。
       </p>
       <div className="action-row">
         <button
@@ -148,7 +149,7 @@ export function BackupPanel({
         >
           直前の保存を確認
         </button>
-        {workspace.legacyBackup && (
+        {!isStore && workspace.legacyBackup && (
           <button
             onClick={() =>
               downloadJsonOrAlert(
@@ -197,7 +198,7 @@ export function BackupPanel({
               const imported = parseWorkspace(value);
               setPending({ workspace: imported, assets: [] });
               setNotice(
-                "画像実体を含まないJSONです。画像を使う場合は同じブラウザ内に素材が必要です。",
+                `画像実体を含まないJSONです。画像を使う場合は${isStore ? "同じ端末" : "同じブラウザ"}内に素材が必要です。`,
               );
             });
         }}
@@ -227,7 +228,9 @@ export function BackupPanel({
                 await restore(pending.workspace, pending.assets);
                 setPending(undefined);
                 setNotice(
-                  "復元し、このブラウザに保存しました。公開HPは変更されません。",
+                  isStore
+                    ? "復元し、この端末に保存しました。"
+                    : "復元し、このブラウザに保存しました。公開HPは変更されません。",
                 );
               })
             }

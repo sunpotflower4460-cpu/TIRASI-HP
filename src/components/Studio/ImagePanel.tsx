@@ -7,6 +7,8 @@ import type {
 import { Field, Range } from "./controls";
 import type { DocumentMutator } from "./controls";
 import { defaultPlacement, effects } from "../../studio/document";
+import { LockBadge, useAccess } from "../../plan/LockBadge";
+import { effectTier } from "../../plan/entitlements";
 export function ImagePanel({
   doc,
   placement,
@@ -30,6 +32,7 @@ export function ImagePanel({
   upload: (file: File) => Promise<void>;
   mutate: DocumentMutator;
 }) {
+  const access = useAccess();
   const tab = "image";
   return (
     <>
@@ -102,7 +105,9 @@ export function ImagePanel({
                 色と印刷の質感を変える加工です。画像を描き直す生成AIではありません。強い網点や粒子は小さな文字を読みにくくするため、元画像と比較してください。
               </p>
               <div className="effect-grid">
-                {effects.map((effect) => (
+                {access
+                  .usableFirst(effects, (effect) => effectTier(effect.id))
+                  .map((effect) => (
                   <button
                     key={effect.id}
                     aria-pressed={doc.content.recipe.preset === effect.id}
@@ -110,6 +115,7 @@ export function ImagePanel({
                   >
                     <strong>{effect.label}</strong>
                     <small>{effect.description}</small>
+                    <LockBadge need={effectTier(effect.id)} />
                   </button>
                 ))}
               </div>

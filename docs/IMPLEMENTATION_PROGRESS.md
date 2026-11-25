@@ -225,3 +225,21 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 - App-only: light interface style, iPhone portrait lock, branded launch image, inputs >= 16px (no focus zoom), safe-area strip under the status bar, share/save actions locked against double taps.
 - Tests: unit 73 (adds native bridge with faked plugins, PDF structure), e2e 29 incl. `native-app.spec.ts`. PDF rendered independently with macOS `sips` (A4, 1 page, full bleed).
 - Final check (branch `feature/ios-native-app`, base `f08fb69`, changes after it are uncommitted): touch-only hover for all buttons, export cache cleaned by age instead of wiping the folder, no automatic share sheet after a Photos timeout, JSON-only save under the busy lock. Next action: review/commit, then open the PR stacked on PR #40 (not merged, not deployed).
+
+## 2026-11-25 Store edition "TIRASI ライブチラシ作成" (branch `feature/ios-store-edition`, base `22fdb57`, uncommitted)
+- Build mode `store` (own App, sample event, no `public/`), `ios-store/` iOS project (`jp.tirasi.livechirashi`).
+- Plans: free / 600 / 1,200 JPY non-consumables with an upgrade product; StoreKit 2 plugin; plan screen with restore.
+- Store-only UI: start screen with rendered design samples and recent work, compact editor toolbar,
+  edit / finished-and-save switch on phones, plan comparison, three-step guide, night-blue theme.
+- Personal edition unchanged in behaviour (its 29 e2e tests still pass).
+- Tests: unit 78, Playwright 34 (5 store), StoreKitTest 6 (iOS 26.2 simulator). Layout checked at 320/375/390 px
+  and on the iPhone 17 Pro simulator; installed on the device. Purchases not yet tried on a device.
+- Remaining before submission: see `ios-store/README.md`. Next action: user review, then commit.
+- Follow-up: what the current plan includes is listed first (start screen, design picker, colours, sizes,
+  effects) with paid choices grouped smaller below; layout fixes (nested gallery scroll, badge and name
+  wrapping, menu icon, remaining shared greens, dead "イベント自体を編集" button hidden in the store app).
+  Unit 78, Playwright 35.
+- Store app: a new live flyer now gets its own event by default (starting from the latest entries). A settings
+  sheet chooses separate / share with the latest live / ask every time; shared flyers say so and can be
+  separated (`src/studio/liveCreate.ts`, `src/store/SettingsSheet.tsx`). Drafts are also saved the moment the
+  app is hidden (both editions). Unit 85, Playwright 36.

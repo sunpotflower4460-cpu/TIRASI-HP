@@ -1,3 +1,4 @@
+import { storagePlace } from '../edition';
 import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { defaultEvent } from '../data/defaultEvent';
@@ -29,7 +30,7 @@ export function useEventData() {
     Promise.resolve().then(() => initializeWorkspace(window.localStorage)).then(value => {
       if (cancelled) return;
       revision.current = value.revision; persisted.current = value;
-      setWorkspace(value); setReady(true); setSaveStatus('このブラウザに保存済み');
+      setWorkspace(value); setReady(true); setSaveStatus(`${storagePlace}に保存済み`);
     }).catch(async error => {
       if (cancelled) return;
       // Keep the source untouched. Editing in memory and backup remain available.
@@ -60,7 +61,7 @@ export function useEventData() {
         const saved = await saveWorkspace(value, revision.current);
         revision.current = saved.revision; persisted.current = value;
         new BroadcastChannelSafe().notify(saved.revision);
-        setStorageError(''); setSaveStatus('このブラウザに保存済み');
+        setStorageError(''); setSaveStatus(`${storagePlace}に保存済み`);
       }
     } catch (error) {
       dirty.current = true;
@@ -68,6 +69,15 @@ export function useEventData() {
       if (error instanceof ConflictError) setConflict(true);
     } finally { saving.current = false; }
   };
+  // Do not wait for the pause in typing when the app is being put away: it may be
+  // suspended or closed before the timer fires.
+  const flushNow = useRef(flush);
+  flushNow.current = flush;
+  useEffect(() => {
+    const onHide = () => { if (document.visibilityState === 'hidden') void flushNow.current(); };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, []);
   useEffect(() => {
     if (!ready || persisted.current === workspace) return;
     dirty.current = true; setSaveStatus('未保存');
@@ -108,7 +118,7 @@ export function useEventData() {
       try {
         const saved = await saveWorkspace(value, revision.current, assets);
         revision.current = saved.revision; persisted.current = saved; dirty.current = false; recoveryBlocked.current = false;
-        setWorkspace(saved); setStorageError(''); setSaveStatus('このブラウザに保存済み');
+        setWorkspace(saved); setStorageError(''); setSaveStatus(`${storagePlace}に保存済み`);
         new BroadcastChannelSafe().notify(saved.revision);
       } finally { saving.current = false; setRestoring(false); }
     },

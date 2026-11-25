@@ -12,6 +12,7 @@ export function ExportActions({
   sizeInfo,
   memoryEstimateMB = 100,
   onPrint = () => window.print(),
+  guard,
 }: {
   generate: (light: boolean) => Promise<Blob>;
   source: unknown;
@@ -21,6 +22,8 @@ export function ExportActions({
   canPrint?: boolean;
   errors?: string[];
   onPrint?: () => void | Promise<void>;
+  /** Returns false (and explains why) when this output may not be exported yet. */
+  guard?: () => boolean;
 }) {
   const [status, setStatusText] = useState("");
   const [statusOk, setStatusOk] = useState(false);
@@ -138,11 +141,14 @@ export function ExportActions({
       );
     }
   };
+  const allowed = () => !guard || guard();
   const save = async () => {
+    if (!allowed()) return;
     const ready = await ensureBlob();
     if (ready) await saveBlob(ready);
   };
   const share = async () => {
+    if (!allowed()) return;
     const prepared = !!blob;
     const ready = await ensureBlob();
     if (!ready || locked.current) return;
@@ -242,6 +248,7 @@ export function ExportActions({
     }
   };
   const print = async () => {
+    if (!allowed()) return;
     if (native) return printNative();
     if (locked.current || errors.length) return;
     locked.current = true;

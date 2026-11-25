@@ -1,0 +1,39 @@
+# Tests StoreCore.swift against Apple's local StoreKit test environment.
+#   xcodegen generate && xcodebuild test -project StoreKitTests.xcodeproj \
+#     -scheme StoreKitTests -destination "platform=iOS Simulator,name=iPhone 17 Pro"
+# No real money and no App Store Connect account is involved.
+name: StoreKitTests
+options:
+  bundleIdPrefix: jp.tirasi.storetests
+targets:
+  Host:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources: [Host]
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_UILaunchScreen_Generation: YES
+  Tests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - Tests
+      - ../ios/App/App/StoreCore.swift
+      - path: ../Products.storekit
+        buildPhase: resources
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Host
+schemes:
+  StoreKitTests:
+    build:
+      targets:
+        Host: all
+        Tests: [test]
+    run:
+      storeKitConfiguration: ../Products.storekit
+    test:
+      targets: [Tests]

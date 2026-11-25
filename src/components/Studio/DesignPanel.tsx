@@ -10,6 +10,9 @@ import {
 } from "../../studio/registry";
 import type { Template, TemplateId, SizeId } from "../../studio/registry";
 import { DocumentPreview } from "./DocumentPreview";
+import { LockBadge, useAccess, useLockSuffix } from "../../plan/LockBadge";
+import { paletteTier, sizeTier, templateTier } from "../../plan/entitlements";
+import { isStore } from "../../edition";
 export function DesignPanel({
   doc,
   workspace,
@@ -26,8 +29,20 @@ export function DesignPanel({
   chooseTemplate: (id: TemplateId, useRecommendedPalette: boolean) => void;
 }) {
   const [useRecommendedPalette, setUseRecommendedPalette] = useState(true);
-  const visibleTemplates =
-    doc.kind === "event-flyer" ? [legacyTemplate, ...templates] : templates;
+  const lockSuffix = useLockSuffix();
+  const access = useAccess();
+  const paletteNeed = (p: (typeof palettes)[number]) =>
+    paletteTier(p.id, doc.design.templateId);
+  const orderedPalettes = access.usableFirst(palettes, paletteNeed);
+  const orderedSizes = access.usableFirst(
+    Object.entries(sizes),
+    ([id]) => sizeTier(id as SizeId),
+  );
+  // The older venue layout belongs to the personal app only.
+  const withLegacy = doc.kind === "event-flyer" && !isStore;
+  const visibleTemplates = withLegacy
+    ? [legacyTemplate, ...templates]
+    : templates;
   const matchesFamily = (template: Template) =>
     family === "すべて" ||
     (family === "ライブ向け"
@@ -64,13 +79,14 @@ export function DesignPanel({
             value={doc.design.sizeId}
             onChange={(e) => setDesign({ sizeId: e.target.value as SizeId })}
           >
-            {Object.entries(sizes).map(([id, size]) => (
+            {orderedSizes.map(([id, size]) => (
               <option
                 key={id}
                 value={id}
                 disabled={doc.design.templateId === "legacy" && id !== "a4"}
               >
                 {size.label} / {size.width}×{size.height}px
+                {lockSuffix(sizeTier(id as SizeId))}
               </option>
             ))}
           </select>
@@ -82,6 +98,28 @@ export function DesignPanel({
       <div className="design-section design-pick">
         <h2 className="design-section-title">1. デザインを選ぶ</h2>
         <div className="design-filter-row">
+          {isStore ? (
+            <div
+              className="family-chips"
+              role="group"
+              aria-label="デザインを絞り込む"
+            >
+              {[
+                "すべて",
+                ...(doc.kind === "event-flyer" ? ["ライブ向け"] : []),
+                ...new Set(visibleTemplates.map((t) => t.family)),
+              ].map((f) => (
+                <button
+                  type="button"
+                  key={f}
+                  aria-pressed={family === f}
+                  onClick={() => setFamily(f)}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          ) : (
           <label className="studio-field">
             <span>デザインを絞り込む</span>
             <select
@@ -98,6 +136,7 @@ export function DesignPanel({
               ))}
             </select>
           </label>
+          )}
           <label className="inline-check gallery-palette-choice">
             <input
               type="checkbox"
@@ -110,13 +149,14 @@ export function DesignPanel({
           </label>
         </div>
         <p className="gallery-count">
-          新デザイン20種
-          {doc.kind === "event-flyer" ? "＋旧版A4" : ""} ·{" "}
+          {isStore ? "デザイン20種" : "新デザイン20種"}
+          {withLegacy ? "＋旧版A4" : ""} ·{" "}
           {visibleTemplates.filter(matchesFamily).length}
           件表示
         </p>
-        <div className="template-gallery">
-          {visibleTemplates.filter(matchesFamily).map((t) => (
+        {(() => {
+          const matching = visibleTemplates.filter(matchesFamily);
+          const card = (t: Template) => (
             <button
               key={t.id}
               className={`template-card ${doc.design.templateId === t.id ? "selected" : ""}`}
@@ -124,17 +164,53 @@ export function DesignPanel({
               aria-label={`デザイン: ${t.label}`}
               onClick={() => chooseTemplate(t.id, useRecommendedPalette)}
             >
-              <DocumentPreview
-                document={previewFor(t)}
-                events={workspace.events}
-                thumbnail
-              />
+              <span className="template-thumb">
+                <DocumentPreview
+                  document={previewFor(t)}
+                  events={workspace.events}
+                  thumbnail
+                />
+                <LockBadge need={templateTier(t.id)} />
+              </span>
               <span className="template-family">{t.family}</span>
               <strong>{t.label}</strong>
               <small>{t.description}</small>
             </button>
-          ))}
-        </div>
+          );
+          // The personal app has nothing to separate.
+          if (!access.plan.gated)
+            return (
+              <div className="template-gallery">{matching.map(card)}</div>
+            );
+          const { usable, paid } = access.split(matching, (t) =>
+            templateTier(t.id),
+          );
+          return (
+            <>
+              <h3 className="gallery-group">
+                {access.plan.tier === "free"
+                  ? "無料で使える"
+                  : "使えるデザイン"}
+                <span>{usable.length}</span>
+              </h3>
+              {usable.length ? (
+                <div className="template-gallery">{usable.map(card)}</div>
+              ) : (
+                <p className="gallery-empty">
+                  このカテゴリには、今のプランで使えるデザインがありません。
+                </p>
+              )}
+              {paid.length > 0 && (
+                <>
+                  <h3 className="gallery-group paid">
+                    有料プラン（お試しできます）<span>{paid.length}</span>
+                  </h3>
+                  <div className="template-gallery paid">{paid.map(card)}</div>
+                </>
+              )}
+            </>
+          );
+        })()}
       </div>
       <div className="design-section">
         <h2 className="design-section-title">2. 色を整える</h2>
@@ -145,7 +221,7 @@ export function DesignPanel({
             value={doc.design.paletteId}
             onChange={(e) => setDesign({ paletteId: e.target.value })}
           >
-            {palettes
+            {orderedPalettes
               .filter(
                 (p) =>
                   doc.design.templateId !== "legacy" ||
@@ -154,12 +230,13 @@ export function DesignPanel({
               .map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.label}
+                  {lockSuffix(paletteTier(p.id, doc.design.templateId))}
                 </option>
               ))}
           </select>
         </label>
         <div className="palette-swatches" aria-label="配色の見本">
-          {palettes
+          {orderedPalettes
             .filter(
               (p) =>
                 doc.design.templateId !== "legacy" ||
@@ -169,7 +246,7 @@ export function DesignPanel({
               <button
                 key={p.id}
                 aria-label={`配色: ${p.label}`}
-                title={p.label}
+                title={`${p.label}${lockSuffix(paletteTier(p.id, doc.design.templateId))}`}
                 aria-pressed={doc.design.paletteId === p.id}
                 onClick={() => setDesign({ paletteId: p.id })}
                 style={{
@@ -179,7 +256,7 @@ export function DesignPanel({
                 }}
               >
                 <span style={{ background: p.accent }} />
-                Aa
+                {lockSuffix(paletteTier(p.id, doc.design.templateId)) ? "🔒" : "Aa"}
               </button>
             ))}
         </div>
@@ -193,13 +270,14 @@ export function DesignPanel({
             value={doc.design.sizeId}
             onChange={(e) => setDesign({ sizeId: e.target.value as SizeId })}
           >
-            {Object.entries(sizes).map(([id, size]) => (
+            {orderedSizes.map(([id, size]) => (
               <option
                 key={id}
                 value={id}
                 disabled={doc.design.templateId === "legacy" && id !== "a4"}
               >
                 {size.label} / {size.width}×{size.height}px
+                {lockSuffix(sizeTier(id as SizeId))}
               </option>
             ))}
           </select>

@@ -1339,3 +1339,9 @@ details.design-section[open] > summary.design-section-title {
   content: "＋ ";
   color: var(--studio-accent);
 }
+
+/* Holds a design thumbnail so a plan badge can sit on top of it. */
+.template-thumb {
+  position: relative;
+  display: block;
+}

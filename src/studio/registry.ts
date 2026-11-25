@@ -390,7 +390,8 @@ export const templates: Template[] = [
 ];
 export const legacyTemplate: Template = {
   id: "legacy",
-  label: "旧版 / 生音 A4",
+  // No venue name in the store app.
+  label: import.meta.env?.VITE_EDITION === "store" ? "旧版 A4" : "旧版 / 生音 A4",
   family: "旧版",
   description:
     "丸いカードと大きな日付。これまで使っていたA4のデザインをそのまま選べます。",

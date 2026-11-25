@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:store": "vite --mode store",
     "build": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json && vite build",
+    "build:store": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json && vite build --mode store",
     "preview": "vite preview",
     "test": "vitest run",
     "test:e2e": "playwright test",

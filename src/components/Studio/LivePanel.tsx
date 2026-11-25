@@ -1,3 +1,4 @@
+import { isStore } from "../../edition";
 import { useId, useState } from "react";
 import type { EventData, ScheduleItem } from "../../types/event";
 import type { Workspace } from "../../domain/workspace";
@@ -513,7 +514,9 @@ export function LivePanel({
         </details>
       )}
       <p className="live-help">
-        このブラウザの下書きを編集中です。公開HPは変わりません。
+        {isStore
+          ? "この端末の下書きを編集中です。"
+          : "このブラウザの下書きを編集中です。公開HPは変わりません。"}
       </p>
     </div>
   );
