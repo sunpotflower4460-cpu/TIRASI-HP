@@ -92,4 +92,10 @@ describe("phrase-aware line breaks", () => {
     expect(lines.length).toBe(2);
     for (const line of lines) expect(line).not.toMatch(/(当日|前売|¥)$/);
   });
+
+  it("still breaks text that ends with one of those words", () => {
+    const lines = balance("チケットの受付開始", 60, ["チケットの受", "付開始"]);
+    expect(lines.join("")).toBe("チケットの受付開始");
+    expect(lines.length).toBe(2);
+  });
 });

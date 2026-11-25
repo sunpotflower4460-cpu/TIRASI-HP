@@ -270,6 +270,8 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
   optional offsets in `Placement`, older backups unchanged). Moves stay inside the printable area.
 - Screens at 320 / 375 / 440 px: truncated design names, wrapped "保存済み" and narrow export buttons fixed. The
   store app hides the profile switch unless restored data has profiles (it has no profile editor).
-- Tests on the final code: unit 93, Playwright 38, both builds. Screenshots in `docs/appstore/screenshots`
+- A diff review then found that a title ending in 開始 / 開演 / 当日 could not wrap; fixed, with a test. The
+  Chromium sweep was rerun (0 findings); the WebKit sweep predates this one-line rule.
+- Tests on the final code: unit 94, Playwright 38, both builds. Screenshots in `docs/appstore/screenshots`
   retaken (replace the ones already given to App Store Connect). Not checked on a physical device.
 - Next action: merge the PR, rebuild the release archive from `main`, then upload.
