@@ -1,0 +1,21 @@
+.nudge-panel { margin: 12px 0 0; border: 1px solid #d5d0c4; border-radius: 14px; background: #fff; color: #1e2140; }
+.nudge-panel > summary { display: flex; align-items: center; min-height: 48px; padding: 0 14px; cursor: pointer; font-weight: 700; }
+.nudge-panel > summary::before { content: "▸"; margin-right: 8px; }
+.nudge-panel[open] > summary::before { content: "▾"; }
+.nudge-panel button { min-height: 44px; margin: 0; border: 1px solid #d5d0c4; border-radius: 10px; background: #fff; color: #232a57; font-weight: 700; }
+.nudge-panel button:disabled { opacity: 0.45; }
+.nudge-parts { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 0 10px; }
+.nudge-panel .nudge-parts button { padding: 4px 1px; font-size: 12px; white-space: nowrap; }
+.nudge-panel .nudge-parts button[aria-pressed="true"] { border-color: #232a57; background: #232a57; color: #fff; }
+.nudge-arrows { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 6px; padding: 8px 10px 0; }
+.nudge-panel .nudge-arrows button { font-size: 20px; touch-action: manipulation; }
+.nudge-panel .nudge-arrows .nudge-reset { padding: 4px 10px; font-size: 12px; white-space: nowrap; }
+.nudge-note { margin: 0; padding: 6px 12px 8px; font-size: 11px; line-height: 1.5; }
+@media (max-width: 760px) {
+  /* Stays above the edit/preview switch so the flyer remains visible while moving. */
+  .nudge-panel[open] { position: sticky; bottom: calc(88px + env(safe-area-inset-bottom)); z-index: 5; box-shadow: 0 -6px 24px rgba(18, 21, 48, 0.18); }
+  .nudge-panel[open] > summary { min-height: 38px; }
+  @media (max-width: 359px) { .nudge-panel .nudge-parts button { font-size: 10.5px; } }
+}
+/* Leaves room for the app header when the panel scrolls the flyer into view. */
+.store-app .studio-paper { scroll-margin-top: 72px; }

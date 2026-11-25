@@ -216,6 +216,28 @@ test('a paid design can be tried but not saved until it is bought', async ({ pag
   await download;
 });
 
+test('a block of the flyer can be nudged and put back', async ({ page }) => {
+  await fakeStore(page);
+  await start(page);
+  await newLive(page);
+  await page.getByRole('button', { name: '仕上がり・保存' }).click();
+  const canvas = page.getByTestId('document-canvas');
+  const dateTop = async () => {
+    await expect(canvas).toHaveAttribute('data-errors', '0');
+    const measured = JSON.parse((await canvas.getAttribute('data-measurements')) ?? '[]') as { id: string; usedBounds: { y: number } }[];
+    return measured.find((m) => m.id === 'facts-date')!.usedBounds.y;
+  };
+  const original = await dateTop();
+  await page.getByText('位置を微調整').click();
+  const up = page.getByRole('button', { name: '日付・料金を上へ' });
+  await up.click();
+  await up.click();
+  await expect(page.locator('.nudge-note')).toHaveText('日付・料金：上へ2。');
+  await expect.poll(dateTop).toBeCloseTo(original - 8, 0);
+  await page.getByRole('button', { name: '元の位置' }).click();
+  await expect.poll(dateTop).toBeCloseTo(original, 0);
+});
+
 test('the privacy policy and licence notices can be read inside the app', async ({ page }) => {
   await start(page);
   await page.getByRole('button', { name: '設定', exact: true }).click();

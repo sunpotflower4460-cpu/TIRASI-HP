@@ -173,7 +173,17 @@ export function ContentPanel({
                 ["performers", "出演者プロフィール"],
                 ["socials", "SNS表示名"],
               ] as const
-            ).map(([id, label]) => (
+            )
+              // The store app has no profile editor, so the switch appears only
+              // when restored data actually contains profiles.
+              .filter(
+                ([id]) =>
+                  id !== "performers" ||
+                  !isStore ||
+                  doc.design.visibility.performers ||
+                  eventForDocument(doc, workspace.events).performers.length > 0,
+              )
+              .map(([id, label]) => (
               <label key={id}>
                 <input
                   type="checkbox"

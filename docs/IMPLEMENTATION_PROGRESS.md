@@ -254,3 +254,22 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 - Next: items in `docs/appstore/README.md` that wait for the owner.
 - Operator name and contact filled in; privacy and support pages published on GitHub Pages (`gh-pages`
   branch); artwork generators recorded (Claude and Codex) with the OpenAI terms checked. `store:check` passes.
+
+## 2026-11-25 Final layout pass before submission (branch `fix/store-layout-final` from `main` 4dba13d)
+- First upload of build 1.0 (1) failed: Xcode found no account with App Store Connect access for team
+  7Z6LC3DH22 ("Failed to Use Accounts"). Nothing was uploaded; the owner is signing in. That archive predates
+  this pass and must be rebuilt.
+- `scripts/layout-audit.mjs` renders every design x size with typical and edge-case content and reports glyph
+  collisions, rules through type, low contrast, stranded characters and blocking diagnostics. Before: 232
+  findings in 2,160 renders; after, on the final code: 0 in Chromium and 0 in WebKit.
+- Fixed: date numeral and year/weekday misaligned (centred text is now placed by glyph bounds); floating start
+  time in the Swiss / Information date panels; unreadable date on a Forest free flyer; names, titles, prices and
+  addresses broken mid-phrase; tiny body text on Swiss / Information free flyers; weak vertical title on Washi;
+  narrow photo sliver on Swiss / Information; profiles overflowing wide lineups.
+- Added: per-size fine adjustment of title, date, lineup and venue blocks under the preview (`NudgePanel`;
+  optional offsets in `Placement`, older backups unchanged). Moves stay inside the printable area.
+- Screens at 320 / 375 / 440 px: truncated design names, wrapped "保存済み" and narrow export buttons fixed. The
+  store app hides the profile switch unless restored data has profiles (it has no profile editor).
+- Tests on the final code: unit 93, Playwright 38, both builds. Screenshots in `docs/appstore/screenshots`
+  retaken (replace the ones already given to App Store Connect). Not checked on a physical device.
+- Next action: merge the PR, rebuild the release archive from `main`, then upload.

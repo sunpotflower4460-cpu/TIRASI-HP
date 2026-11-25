@@ -25,7 +25,22 @@ export type Placement = {
   zoom: number;
   opacity: number;
   fit: "contain" | "cover";
+  /** Fine adjustment of the date, body/lineup and venue blocks. */
+  factsX?: number;
+  factsY?: number;
+  programX?: number;
+  programY?: number;
+  infoX?: number;
+  infoY?: number;
 };
+export const blockOffsets = [
+  "factsX",
+  "factsY",
+  "programX",
+  "programY",
+  "infoX",
+  "infoY",
+] as const;
 export const defaultPlacement: Placement = {
   titleX: 0,
   titleY: 0,
@@ -268,6 +283,8 @@ export function parseDocument(value: unknown): CreativeDocument {
     const p = object(v, "配置");
     bounded(p.titleX, "タイトルX", -100, 100);
     bounded(p.titleY, "タイトルY", -100, 100);
+    for (const key of blockOffsets)
+      if (p[key] !== undefined) bounded(p[key], "位置の調整", -100, 100);
     bounded(p.imageX, "画像X", 0, 100);
     bounded(p.imageY, "画像Y", 0, 100);
     bounded(p.zoom, "拡大率", 1, 3);

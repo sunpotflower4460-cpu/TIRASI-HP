@@ -19,11 +19,62 @@ export type RenderResult = {
   errors: string[];
   measurements: Measurement[];
 };
+// A price keeps its currency mark and thousands separators on one line.
+const tokenPattern =
+  /[¥￥$]\s?[0-9]+(?:,[0-9]{3})*|[A-Za-z0-9_:/?.&=#@%+~'’\-]+(?:,[0-9]{3}[A-Za-z0-9_:/?.&=#@%+~'’\-]*)*|./gu;
+const noLineStart = /^[、。，．？！：；）］｝」』】ぁぃぅぇぉっゃゅょー]/u;
+const noLineEnd = /[（［｛「『【]$/u;
+const length = (value: string) => Array.from(value.trim()).length;
+/** A stranded one or two characters read as a mistake. */
+const stranded = (lines: string[]) =>
+  lines.length > 1 &&
+  (lines.some((line) => length(line) === 1) ||
+    length(lines[lines.length - 1]) <= 2);
+
+/** Moves whole tokens down until the last line no longer looks stranded. */
+function fillLastLine(
+  lines: string[],
+  width: number,
+  measure: (value: string) => number,
+): string[] {
+  const result = [...lines];
+  const last = result.length - 1;
+  const tokens = result[last - 1].match(tokenPattern) ?? [];
+  let tail = result[last];
+  while (length(tail) < 4 && tokens.length > 1) {
+    const next = tokens.pop()! + tail;
+    if (measure(next.trim()) > width || length(tokens.join("")) < 3) break;
+    tail = next;
+    const head = tokens.join("").trimEnd();
+    if (
+      length(tail) >= 3 &&
+      !noLineStart.test(tail.trim()) &&
+      !noLineEnd.test(head)
+    ) {
+      result[last - 1] = head;
+      result[last] = tail.trim();
+      if (length(tail) >= 4) break;
+    }
+  }
+  return result;
+}
+
+/** Same number of lines, broken where a reader would pause. */
+function tidyBreaks(
+  paragraph: string,
+  lines: string[],
+  width: number,
+  measure: (value: string) => number,
+): string[] {
+  const phrased = balanceHeadline(paragraph, width, measure, lines, true);
+  if (phrased.length === lines.length && !stranded(phrased)) return phrased;
+  return stranded(lines) ? fillLastLine(lines, width, measure) : lines;
+}
+
 export function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
   width: number,
-  balanceTail = false,
 ): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split("\n")) {
@@ -32,22 +83,20 @@ export function wrapText(
       continue;
     }
     const start = lines.length;
-    const tokens = paragraph.match(/[A-Za-z0-9_:/?.&=#@%+~'’\-]+|./gu) ?? [];
+    const tokens = paragraph.match(tokenPattern) ?? [];
     let line = "";
     for (const token of tokens) {
       const pieces =
         ctx.measureText(token).width > width ? Array.from(token) : [token];
       for (const piece of pieces) {
         if (line && ctx.measureText(line + piece).width > width) {
-          if (
-            /^[、。，．？！：；）］｝」』】ぁぃぅぇぉっゃゅょー]/u.test(piece)
-          ) {
+          if (noLineStart.test(piece)) {
             const chars = Array.from(line);
             const previous = chars.pop() ?? "";
             lines.push(chars.join(""));
             line = previous + piece;
           } else {
-            const opening = line.match(/[（［｛「『【]$/u)?.[0];
+            const opening = line.match(noLineEnd)?.[0];
             lines.push(
               opening ? line.slice(0, -opening.length) : line.trimEnd(),
             );
@@ -57,23 +106,17 @@ export function wrapText(
       }
     }
     lines.push(line.trimEnd());
-    if (
-      balanceTail &&
-      lines.length - start >= 2 &&
-      Array.from(line.trim()).length <= 3
-    ) {
-      const pair = lines.slice(-2);
-      const tail = pair.join("");
-      if (/[ぁ-ヿ一-龯]/u.test(tail) && !/\s|[A-Za-z]/u.test(tail)) {
-        const balanced = balanceHeadline(
-          tail,
+    if (lines.length - start >= 2)
+      lines.splice(
+        start,
+        lines.length - start,
+        ...tidyBreaks(
+          paragraph,
+          lines.slice(start),
           width,
           (value) => ctx.measureText(value).width,
-          pair,
-        );
-        lines.splice(-2, 2, ...balanced);
-      }
-    }
+        ),
+      );
   }
   return lines;
 }
@@ -83,13 +126,30 @@ export function measureText(
 ): { lines: string[]; size: number; fits: boolean } {
   let size = node.size;
   let lines: string[] = [];
+  // A name that only just overflows is set a little smaller instead of wrapped.
+  if (node.singleLineRatio && !node.vertical && !node.text.includes("\n")) {
+    const floor = Math.max(
+      node.minSize,
+      Math.ceil(node.size * node.singleLineRatio),
+    );
+    for (let single = node.size; single >= floor; single--) {
+      ctx.font = `${node.italic ? "italic " : ""}${node.weight ?? 400} ${single}px ${node.family}`;
+      if (
+        ctx.measureText(node.text).width <= node.w &&
+        single * (node.lineHeight ?? 1.42) <= node.h
+      )
+        return { lines: [node.text.trim()], size: single, fits: true };
+    }
+  }
+  // Names are set smaller, within reason, when that avoids breaking a word.
+  let firstFit: { lines: string[]; size: number; fits: boolean } | undefined;
   for (; size >= node.minSize; size--) {
+    if (firstFit && size < firstFit.size * 0.65) break;
     ctx.font = `${node.italic ? "italic " : ""}${node.weight ?? 400} ${size}px ${node.family}`;
     lines = wrapText(
       ctx,
       node.vertical ? Array.from(node.text).join("\n") : node.text,
       node.w,
-      !node.vertical && node.minSize === node.size,
     );
     if (
       lines.length <= (node.maxLines ?? Infinity) &&
@@ -106,9 +166,24 @@ export function measureText(
               true,
             )
           : lines;
-      if (fittedLines.length) return { lines: fittedLines, size, fits: true };
+      if (!fittedLines.length) continue;
+      const result = { lines: fittedLines, size, fits: true };
+      if (
+        !node.singleLineRatio ||
+        fittedLines.length < 2 ||
+        balanceHeadline(
+          node.text,
+          node.w,
+          (value) => ctx.measureText(value).width,
+          fittedLines,
+          true,
+        ).length
+      )
+        return result;
+      firstFit ??= result;
     }
   }
+  if (firstFit) return firstFit;
   size = node.minSize;
   ctx.font = `${node.italic ? "italic " : ""}${node.weight ?? 400} ${size}px ${node.family}`;
   return {
@@ -120,6 +195,71 @@ export function measureText(
     size,
     fits: false,
   };
+}
+/** Where the first line starts. Centred and aligned text is placed by what is
+ * seen (the glyphs of a capital or a kanji), not by the font's line box, which
+ * sits differently per face and per browser engine.
+ * Call with the node's font set and textBaseline "top".
+ */
+export function textTop(
+  ctx: CanvasRenderingContext2D,
+  node: TextNode,
+  lineCount: number,
+  size: number,
+): number {
+  const lineHeight = size * (node.lineHeight ?? 1.42);
+  const anchored = node.inkTop !== undefined || node.inkBottom !== undefined;
+  if (!anchored && node.valign !== "center") return node.y;
+  const sample = ctx.measureText(
+    !anchored && /[\u3040-\u30ff\u3400-\u9fff]/u.test(node.text) ? "国" : "H",
+  );
+  const top = -sample.actualBoundingBoxAscent;
+  const bottom = sample.actualBoundingBoxDescent;
+  const rest = (lineCount - 1) * lineHeight;
+  if (node.inkTop !== undefined) return node.inkTop - top;
+  if (node.inkBottom !== undefined) return node.inkBottom - bottom - rest;
+  return node.y + node.h / 2 - (rest + top + bottom) / 2;
+}
+const areaName = (id: string) =>
+  id === "title"
+    ? "タイトル"
+    : id === "subtitle"
+      ? "サブタイトル"
+      : id === "kicker"
+        ? "上部テキスト"
+        : id.startsWith("facts")
+          ? "日付・料金"
+          : /^(program|act-|time-|schedule-|body-)/.test(id)
+            ? "本文・出演者"
+            : id.startsWith("details")
+              ? "会場・詳細"
+              : id;
+/** The area the glyphs actually cover, which is what can collide. */
+function inkBounds(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight: number,
+): Rect {
+  let left = Infinity,
+    top = Infinity,
+    right = -Infinity,
+    bottom = -Infinity;
+  lines.forEach((line, index) => {
+    if (!line.trim()) return;
+    const ink = ctx.measureText(line);
+    left = Math.min(left, x - ink.actualBoundingBoxLeft);
+    right = Math.max(right, x + ink.actualBoundingBoxRight);
+    top = Math.min(top, y + index * lineHeight - ink.actualBoundingBoxAscent);
+    bottom = Math.max(
+      bottom,
+      y + index * lineHeight + ink.actualBoundingBoxDescent,
+    );
+  });
+  return left > right
+    ? { x, y, w: 0, h: 0 }
+    : { x: left, y: top, w: right - left, h: bottom - top };
 }
 function shape(
   ctx: CanvasRenderingContext2D,
@@ -151,22 +291,28 @@ export function layoutFlow(
 ): { nodes: TextNode[]; fits: boolean } {
   // Start slightly larger than the base sizes; a roomy column is set bigger
   // instead of leaving an empty band under the details.
-  let reduction = -4;
+  let reduction = -(node.maxGrow ?? 4);
   let items: {
     block: FlowNode["blocks"][number];
     size: number;
     height: number;
   }[] = [];
   let total = 0;
+  // Enlarging must not turn a line that fits at its base size into two.
+  const baseLines = node.blocks.map((block) => {
+    ctx.font = `${block.weight ?? 400} ${block.size}px ${block.family}`;
+    return wrapText(ctx, block.text, node.w).length;
+  });
   for (; reduction <= 40; reduction++) {
     let orphan = false;
-    items = node.blocks.map((block) => {
+    items = node.blocks.map((block, index) => {
       const size = Math.max(block.minSize, block.size - reduction);
       ctx.font = `${block.weight ?? 400} ${size}px ${block.family}`;
       const lines = wrapText(ctx, block.text, node.w);
       // Wrapped lines of one or two characters read as mistakes; only allow
       // them at the base size, never as the result of enlarging.
       const paragraphs = new Set(block.text.split("\n").map((p) => p.trim()));
+      if (reduction < 0 && lines.length > baseLines[index]) orphan = true;
       if (
         reduction < 0 &&
         lines.some(
@@ -314,7 +460,7 @@ export async function renderScene(
       const fits = result.fits && fitsBounds;
       if (!fits)
         errors.push(
-          `「${({ "program-1": "本文・出演者（左）", "program-2": "本文・出演者（右）", "details-1": "会場・詳細（左）", "details-2": "会場・詳細（右）", title: "タイトル", subtitle: "サブタイトル", facts: "日時・料金", program: "本文・出演者", details: "会場・詳細", kicker: "上部テキスト" } as Record<string, string>)[node.id] ?? node.id}」が収まりません。文章を短くするか、詳細を減らす・別の構図やサイズを選ぶなどで調整してください。`,
+          `「${areaName(node.id)}」が収まりません。文章を短くするか、詳細を減らす・別の構図やサイズを選ぶなどで調整してください。`,
         );
       ctx.font = `${node.italic ? "italic " : ""}${node.weight ?? 400} ${result.size}px ${node.family}`;
       ctx.fillStyle = node.color;
@@ -334,16 +480,7 @@ export async function renderScene(
         ctx.shadowOffsetX = node.shadow === "registration" ? 2 * scale : 0;
         ctx.shadowOffsetY = node.shadow === "registration" ? scale : 0;
       }
-      const textY =
-        node.valign === "center"
-          ? node.y +
-            Math.max(
-              0,
-              (node.h -
-                result.lines.length * result.size * (node.lineHeight ?? 1.42)) /
-                2,
-            )
-          : node.y;
+      const textY = textTop(ctx, node, result.lines.length, result.size);
       result.lines.forEach((line, index) =>
         ctx.fillText(
           line,
@@ -351,21 +488,13 @@ export async function renderScene(
           textY + index * result.size * (node.lineHeight ?? 1.42),
         ),
       );
-      const usedWidth = Math.max(
-        ...result.lines.map((line) => ctx.measureText(line).width),
-        0,
+      const usedBounds = inkBounds(
+        ctx,
+        result.lines,
+        x,
+        textY,
+        result.size * (node.lineHeight ?? 1.42),
       );
-      const usedBounds = {
-        x:
-          node.align === "center"
-            ? x - usedWidth / 2
-            : node.align === "right"
-              ? x - usedWidth
-              : x,
-        y: textY,
-        w: usedWidth,
-        h: result.lines.length * result.size * (node.lineHeight ?? 1.42),
-      };
       measurements.push({
         id: node.id,
         lines: result.lines.length,
@@ -411,7 +540,7 @@ export async function renderScene(
         Math.min(r.y + r.h, s.y + s.h) - Math.max(r.y, s.y) > 2
       )
         errors.push(
-          `「${first.id}」と「${second.id}」の文字が重なっています。配置を初期値に戻すか別の構図を選んでください。`,
+          `「${areaName(first.id)}」と「${areaName(second.id)}」の文字が重なっています。位置の微調整を元に戻すか、別の構図を選んでください。`,
         );
     }
   const photographs = resolvedNodes.filter((node) => node.kind === "image");
