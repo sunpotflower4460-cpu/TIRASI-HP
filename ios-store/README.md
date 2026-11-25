@@ -45,12 +45,6 @@ xcrun devicectl device install app --device <device id> /tmp/tirasi-store-dd/Bui
   -scheme StoreKitTests -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2"`.
   (On the iOS 26.3 simulator the StoreKit test session itself fails with `SKInternalErrorDomain 3`.)
 
-## Before submitting to the App Store (not done yet)
-- [ ] App Store Connect: app record with the name, the three in-app purchases with the ids above,
-      paid-apps agreement, tax and banking; apply to the Small Business Program.
-- [ ] Privacy policy: a public page, and a link to it inside the app (guideline 5.1.1).
-- [ ] Acknowledgements screen for the bundled libraries (SDWebImage is MIT; font licences are in `licenses/`).
-- [ ] Confirm the licence of the 16 artwork plates in `src/assets/posters` (recorded as generated for this
-      project in docs/DESIGN_QUALITY_REVIEW.md): the generator's terms must allow commercial distribution.
-- [ ] Screenshots (6.9"), description, keywords, support URL, age rating, privacy answers ("data not collected").
-- [ ] Register the bundle id with In-App Purchase, archive, upload, TestFlight with sandbox purchases, review notes.
+## Submitting to the App Store
+Prepared material and what only the account owner can do: [docs/appstore/README.md](../docs/appstore/README.md).
+Run `npm run store:check` (repo root) before archiving.

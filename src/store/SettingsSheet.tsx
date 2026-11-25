@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { NewLiveMode } from "../studio/liveCreate";
 import { readNewLiveMode, writeNewLiveMode } from "./settings";
 import { Icon } from "./Icon";
+import { LicenseNotices, PrivacyPolicy } from "./LegalViews";
 import "../styles/plan.css";
 
 const modes: [NewLiveMode, string, string][] = [
@@ -14,6 +15,12 @@ export function SettingsSheet({ onClose, onGuide }: { onClose: () => void; onGui
   const dialog = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState(readNewLiveMode);
   const [problem, setProblem] = useState("");
+  const [view, setView] = useState<"main" | "privacy" | "licenses">("main");
+  const title = view === "privacy" ? "プライバシーポリシー" : view === "licenses" ? "ライセンス表記" : "設定";
+  const show = (next: typeof view) => {
+    setView(next);
+    if (dialog.current) dialog.current.scrollTop = 0;
+  };
   useEffect(() => {
     dialog.current?.focus();
     const onKey = (event: KeyboardEvent) => {
@@ -38,11 +45,21 @@ export function SettingsSheet({ onClose, onGuide }: { onClose: () => void; onGui
         onClick={(event) => event.stopPropagation()}
       >
         <header className="plan-header">
-          <h2 id="settings-title">設定</h2>
-          <button type="button" className="plan-close" onClick={onClose}>
-            閉じる
-          </button>
+          <h2 id="settings-title">{title}</h2>
+          {view === "main" ? (
+            <button type="button" className="plan-close" onClick={onClose}>
+              閉じる
+            </button>
+          ) : (
+            <button type="button" className="plan-close" onClick={() => show("main")}>
+              戻る
+            </button>
+          )}
         </header>
+        {view === "privacy" && <PrivacyPolicy />}
+        {view === "licenses" && <LicenseNotices />}
+        {view === "main" && (
+          <>
         <fieldset className="setting-group">
           <legend>新しいライブチラシの内容</legend>
           {modes.map(([value, label, text]) => (
@@ -72,6 +89,18 @@ export function SettingsSheet({ onClose, onGuide }: { onClose: () => void; onGui
           使い方を見る
           <Icon name="chevron" />
         </button>
+        <button type="button" className="setting-link" onClick={() => show("privacy")}>
+          <Icon name="check" />
+          プライバシーポリシー
+          <Icon name="chevron" />
+        </button>
+        <button type="button" className="setting-link" onClick={() => show("licenses")}>
+          <Icon name="text" />
+          ライセンス表記
+          <Icon name="chevron" />
+        </button>
+          </>
+        )}
       </div>
     </div>
   );

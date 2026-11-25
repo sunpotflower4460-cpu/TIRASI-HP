@@ -243,3 +243,14 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
   sheet chooses separate / share with the latest live / ask every time; shared flyers say so and can be
   separated (`src/studio/liveCreate.ts`, `src/store/SettingsSheet.tsx`). Drafts are also saved the moment the
   app is hidden (both editions). Unit 85, Playwright 36.
+
+## 2026-11-25 App Store preparation (branch `feature/appstore-submission` from `main` e69ad09)
+- Added the missing camera usage text (both apps; choosing "take photo" would have crashed) and Japanese
+  localization; store build requires arm64.
+- In-app privacy policy and licence notices; release script (licences, pages, limits, `store:check`);
+  listing texts and purchases (`docs/appstore/metadata.json`); screenshot script and images.
+- Tests: unit 89, Playwright 37 (one personal test failed once in a full run, then passed 6/6 alone and in a
+  full rerun: treated as flaky). Release archive succeeds. Nothing uploaded or published.
+- Next: items in `docs/appstore/README.md` that wait for the owner.
+- Operator name and contact filled in; privacy and support pages published on GitHub Pages (`gh-pages`
+  branch); artwork generators recorded (Claude and Codex) with the OpenAI terms checked. `store:check` passes.

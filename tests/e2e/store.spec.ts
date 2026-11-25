@@ -216,6 +216,23 @@ test('a paid design can be tried but not saved until it is bought', async ({ pag
   await download;
 });
 
+test('the privacy policy and licence notices can be read inside the app', async ({ page }) => {
+  await start(page);
+  await page.getByRole('button', { name: '設定', exact: true }).click();
+  await page.getByRole('button', { name: 'プライバシーポリシー' }).click();
+  const policy = page.getByRole('dialog', { name: 'プライバシーポリシー' });
+  await expect(policy).toContainText('個人情報を収集しません');
+  await expect(policy).toContainText('Apple（App Store）');
+  await policy.getByRole('button', { name: '戻る' }).click();
+  await page.getByRole('button', { name: 'ライセンス表記' }).click();
+  const notices = page.getByRole('dialog', { name: 'ライセンス表記' });
+  await notices.getByText('SDWebImage').click();
+  await expect(notices.locator('details[open] pre')).toContainText('Permission is hereby granted');
+  for (const name of ['react', 'html2canvas', 'NotoSansJP', 'BudouX']) await expect(notices.locator('summary', { hasText: name }).first()).toBeAttached();
+  await notices.getByRole('button', { name: '戻る' }).click();
+  await expect(page.getByRole('dialog', { name: '設定' })).toBeVisible();
+});
+
 test('without a store nothing can be bought and the plan screen says so', async ({ page }) => {
   await start(page);
   await page.getByRole('button', { name: 'プラン（無料）' }).click();

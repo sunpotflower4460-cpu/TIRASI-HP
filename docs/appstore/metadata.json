@@ -1,0 +1,55 @@
+{
+  "app": {
+    "name": "TIRASI ライブチラシ作成",
+    "subtitle": "入力するだけで完成するライブ告知フライヤー",
+    "bundleId": "jp.tirasi.livechirashi",
+    "sku": "tirasi-livechirashi",
+    "primaryLanguage": "日本語",
+    "primaryCategory": "グラフィック＆デザイン",
+    "secondaryCategory": "ミュージック",
+    "price": "無料（アプリ内課金あり）",
+    "availability": "日本",
+    "version": "1.0",
+    "copyright": "2026 植木嘉朗",
+    "supportUrl": "https://sunpotflower4460-cpu.github.io/TIRASI-HP/support.html",
+    "privacyPolicyUrl": "https://sunpotflower4460-cpu.github.io/TIRASI-HP/privacy.html",
+    "build": "1"
+  },
+  "promotionalText": "タイトル・日時・出演者を入れるだけ。ライブの告知チラシがスマホで完成します。写真に保存してそのままSNSへ、A4のPDFで印刷もできます。",
+  "keywords": "フライヤー,ポスター,告知,バンド,ライブハウス,弾き語り,イベント,A4,印刷,SNS,レトロ,昭和,80年代,シティポップ,出演者,タイムテーブル",
+  "description": "ライブの告知チラシを、入力するだけで作れるアプリです。\nデザインを選んで、タイトル・日時・出演者を入れると、自動で紙面に配置されます。\n\n■ 3ステップで完成\n1. デザインを選ぶ\n2. タイトル・日時・出演者を入力する\n3. 写真に保存して、そのまま告知する\n\n■ ライブ向けの機能\n・出演者とタイムテーブルをまとめて入力\n・開始時間と持ち時間から、出演時刻を自動で設定\n・「次回分を作る」で、前回の内容を引き継いで次の1枚\n・同じライブのデザイン違いは内容を共有、別のライブは別々に管理\n\n■ 20種類のデザイン\n1985年のライブハウス、シティポップ、ネオンステージ、リソグラフ、アコースティック、昭和ポップ、和紙と墨など。配色も選べます。\n\n■ 書き出し\n・写真アプリに保存\n・ファイルに保存、ほかのアプリへ共有\n・A4のPDFと印刷\n・A4、SNS縦、正方形、ストーリーの各サイズ\n\n■ ライブ以外にも\n見出しと本文から作る自由なチラシ、手持ちの画像をレトロに仕上げる加工も使えます。\n\n■ 安心して使える設計\n・アカウント登録は不要です\n・作ったデータは端末の中だけに保存します\n・広告はありません\n・通信がない場所でも作成できます\n\n■ 料金（すべて買い切り。毎月の支払いはありません）\n・無料：5デザイン、4配色、A4と正方形、画像加工2種類\n・スタンダード：11デザイン、8配色、全サイズ、画像加工4種類\n・フル：全20デザイン、全12配色、全サイズ、画像加工6種類\n・スタンダードをご購入の方は、アップグレードでフルにできます\n各デザインのおすすめ配色は、どのプランでも使えます。\n\n※画像加工は色や印刷の質感を変えるフィルターで、画像を描き直す生成AIではありません。",
+  "whatsNew": "",
+  "inAppPurchases": [
+    {
+      "referenceName": "Standard",
+      "productId": "jp.tirasi.livechirashi.standard",
+      "type": "非消耗型",
+      "priceJPY": 600,
+      "displayName": "スタンダード",
+      "description": "11デザイン・8配色・全サイズ・画像加工4種類",
+      "reviewNote": "Unlocks 11 designs, 8 colour palettes, all 4 output sizes and 4 image effects. To see it: tap the plan button at the top right, or choose a locked design and tap the save button."
+    },
+    {
+      "referenceName": "Full",
+      "productId": "jp.tirasi.livechirashi.full",
+      "type": "非消耗型",
+      "priceJPY": 1200,
+      "displayName": "フル",
+      "description": "全20デザイン・全配色・全サイズ・全画像加工",
+      "reviewNote": "Unlocks everything. Shown on the plan screen to users who have not bought a plan."
+    },
+    {
+      "referenceName": "Upgrade",
+      "productId": "jp.tirasi.livechirashi.upgrade",
+      "type": "非消耗型",
+      "priceJPY": 600,
+      "displayName": "フルへアップグレード",
+      "description": "スタンダードをご購入の方が全機能を使えます",
+      "reviewNote": "Only offered to owners of the Standard purchase (buy Standard first, then open the plan screen). Upgrades them to Full for the price difference."
+    }
+  ],
+  "ageRating": "質問はすべて「いいえ／なし」で回答（4+ 相当）。ユーザー同士の交流、投稿の公開、ウェブの自由閲覧、広告はありません。",
+  "appPrivacy": "「データを収集しない」を選択",
+  "exportCompliance": "暗号化の質問は不要（Info.plist で ITSAppUsesNonExemptEncryption = false を設定済み）",
+  "reviewNotes": "No account or sign-in is needed. The app works offline and keeps all data on the device.\n\nWhat it does: the user picks a design, types the event title, date and performers, and the app composes a print-ready flyer on the device.\nNative features: save the flyer straight to Photos, share or save files through the iOS share sheet, generate an A4 PDF for printing, import photos or take one with the camera, and StoreKit 2 purchases.\n\nIn-app purchases (all non-consumable): open the plan screen with the button at the top right. Locked designs can be previewed; saving them opens the plan screen. The Upgrade product appears only after buying Standard. Restore Purchases is at the bottom of the plan screen.\nPrivacy policy and licences: the settings button at the top right."
+}
