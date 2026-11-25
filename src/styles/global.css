@@ -49,6 +49,22 @@ a {
   min-height: 100vh;
 }
 
+/* When the site runs as an installed app, iOS draws it edge to edge behind
+   the notch and the home indicator. The published layout was measured with
+   the browser's own insets, so the extra space is only added in that mode.
+   The browser view keeps its original spacing. */
+@media (display-mode: standalone) {
+  .app-shell {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .app-nav {
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+}
+
 .app-nav {
   position: sticky;
   top: 0;

@@ -18,3 +18,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
   </React.StrictMode>,
 );
+
+// The installed app opens without a network connection once the shell is
+// cached. Registration is limited to production builds: in development the
+// dev server and the test suite must always see the current sources.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // A failed registration only costs offline support; the app still runs.
+    });
+  });
+}
