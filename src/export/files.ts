@@ -11,10 +11,26 @@ export async function downloadBlob(blob: Blob, name: string): Promise<SaveOutcom
   window.setTimeout(() => URL.revokeObjectURL(url), 30000);
   return "downloaded";
 }
-/** Fire-and-forget save for JSON backups: a failure is reported instead of being lost silently. */
-export function downloadJson(value: unknown, name: string) {
-  void downloadBlob(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }), safeFileName(name))
-    .catch(() => window.alert('ファイルを保存できませんでした。もう一度お試しください。'));
+export type JsonSaveOutcome = SaveOutcome | "failed";
+/** Saves a JSON file and reports what happened; it never throws. */
+export async function downloadJson(value: unknown, name: string): Promise<JsonSaveOutcome> {
+  try {
+    return await downloadBlob(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }), safeFileName(name));
+  } catch {
+    return "failed";
+  }
+}
+/** For callers with nowhere to show a notice: a failure is reported with an alert instead of being lost. */
+export function downloadJsonOrAlert(value: unknown, name: string): void {
+  void downloadJson(value, name).then(outcome => {
+    if (outcome === "failed") window.alert('ファイルを保存できませんでした。もう一度お試しください。');
+  });
+}
+/** The notice to show after an export, so a cancelled or failed save is never reported as done. */
+export function exportNotice(outcome: JsonSaveOutcome, done: string): string {
+  if (outcome === "cancelled") return '保存をキャンセルしました。もう一度お試しください。';
+  if (outcome === "failed") return 'ファイルを保存できませんでした。もう一度お試しください。';
+  return done;
 }
 export function withTimeout<T>(promise: Promise<T>, ms = 20000, disposeLate?: (value: T) => void): Promise<T> {
   return new Promise((resolve, reject) => {

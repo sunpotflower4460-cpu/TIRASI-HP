@@ -7,6 +7,7 @@
     "sync": "cd .. && npm run build && cd ios-app && npx cap sync ios"
   },
   "dependencies": {
+    "@capacitor-community/media": "^9.1.0",
     "@capacitor/core": "^8.6.2",
     "@capacitor/filesystem": "^8.1.5",
     "@capacitor/ios": "^8.6.2",

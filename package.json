@@ -12,6 +12,7 @@
     "test:all": "npm run test && npm run build && npm run test:e2e"
   },
   "dependencies": {
+    "@capacitor-community/media": "^9.1.0",
     "@capacitor/core": "^8.6.2",
     "@capacitor/filesystem": "^8.1.5",
     "@capacitor/share": "^8.0.3",

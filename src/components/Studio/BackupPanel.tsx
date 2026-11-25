@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { Workspace } from "../../domain/workspace";
 import { createBackup, readBackup } from "../../studio/backup";
-import { downloadJson } from "../../export/files";
+import { downloadJson, downloadJsonOrAlert, exportNotice } from "../../export/files";
 import {
   errorMessage,
   object,
@@ -55,9 +55,12 @@ export function BackupPanel({
           onClick={() =>
             void run(async () => {
               const backup = await createBackup(workspace);
-              downloadJson(backup, "tirasi-complete-backup.json");
+              const outcome = await downloadJson(backup, "tirasi-complete-backup.json");
               setNotice(
-                "原画像入りバックアップのダウンロードを開始しました。端末に保存されたことを確認してください。画像の撮影位置などのEXIF情報も原本に含まれる場合があります。",
+                exportNotice(
+                  outcome,
+                  "原画像入りバックアップを書き出しました。端末に保存されたことを確認してください。画像の撮影位置などのEXIF情報も原本に含まれる場合があります。",
+                ),
               );
             })
           }
@@ -83,12 +86,15 @@ export function BackupPanel({
                   documents: [selected],
                   activeDocumentId: selected.id,
                 });
-                downloadJson(
+                const outcome = await downloadJson(
                   backup,
                   `tirasi-${selected.name}-complete-backup.json`,
                 );
                 setNotice(
-                  "この制作物と参照イベント・元画像の完全バックアップを出力しました。端末に保存されたことを確認してください。",
+                  exportNotice(
+                    outcome,
+                    "この制作物と参照イベント・元画像の完全バックアップを出力しました。端末に保存されたことを確認してください。",
+                  ),
                 );
               })
             }
@@ -101,7 +107,7 @@ export function BackupPanel({
         </button>
         <button
           disabled={busy}
-          onClick={() => {
+          onClick={() => void run(async () => {
             const payload = {
               schemaVersion: 2,
               kind: "workspace-json",
@@ -115,11 +121,14 @@ export function BackupPanel({
               );
               return;
             }
-            downloadJson(payload, "tirasi-workspace-no-images.json");
+            const outcome = await downloadJson(payload, "tirasi-workspace-no-images.json");
             setNotice(
-              "JSONを出力しました。画像の実体は含みません。別の端末への移動は完全バックアップを使ってください。",
+              exportNotice(
+                outcome,
+                "JSONを出力しました。画像の実体は含みません。別の端末への移動は完全バックアップを使ってください。",
+              ),
             );
-          }}
+          })}
         >
           JSONのみ保存（画像なし）
         </button>
@@ -142,7 +151,7 @@ export function BackupPanel({
         {workspace.legacyBackup && (
           <button
             onClick={() =>
-              downloadJson(
+              downloadJsonOrAlert(
                 workspace.legacyBackup,
                 "tirasi-v1-original-keys.json",
               )

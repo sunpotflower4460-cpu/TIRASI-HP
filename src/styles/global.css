@@ -71,6 +71,14 @@ a {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* iOS zooms the whole page when a field smaller than 16px gets focus, and the
+   app cannot pinch back out. Fields keep at least 16px inside the app. */
+html.native-app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]),
+html.native-app select,
+html.native-app textarea {
+  font-size: max(16px, 1em);
+}
+
 /* Content that scrolls under the clock and battery would be hard to read: a
    frosted strip the height of the status bar sits over it. */
 html.native-app body::before {
@@ -119,12 +127,16 @@ html.native-app .app-shell .app-nav {
   transition: 0.2s ease;
 }
 
-.app-nav button:hover,
-.toolbar button:hover,
-.editor-actions button:hover,
-.editor-card button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(209, 122, 134, 0.55);
+/* Pointer devices only: a touch screen keeps :hover after a tap, which left the
+   tapped button lifted and outlined until the next tap elsewhere. */
+@media (hover: hover) {
+  .app-nav button:hover,
+  .toolbar button:hover,
+  .editor-actions button:hover,
+  .editor-card button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(209, 122, 134, 0.55);
+  }
 }
 
 .app-nav button.active {

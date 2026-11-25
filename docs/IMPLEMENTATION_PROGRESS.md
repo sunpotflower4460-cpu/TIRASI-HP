@@ -216,4 +216,12 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 - Fix: `src/export/native.ts` (cache file + iOS share sheet via `@capacitor/filesystem` + `@capacitor/share`, lazy-imported), `src/export/pdf.ts` (one-page A4 PDF from the rendered PNG, shared via the sheet so "Print"/"Save to Files" work). `downloadBlob` and JSON exports use the same path. Browser behaviour is unchanged.
 - Native layout: `html.native-app` class (safe-area padding, frosted status-bar strip), no service worker in the app, editing nav scrolls sideways on phones.
 - Verified: unit 68 passed, build OK, Playwright e2e 27 passed, iPhone 17 simulator (PNG share sheet, PDF share sheet with Print / Save to Files, Studio navigation). Not yet verified on the physical iPhone SE by the user; airplane-mode behaviour not measured.
-- Known: wording still says "このブラウザ" in places; free Apple ID signature expires after 7 days.
+- Known: wording still says "このブラウザ" in places; development signing lasts about a year (profile to 2027-08-26, certificate to 2027-01-08); an earlier note here saying 7 days was wrong.
+
+### 2026-11-25 (later) iOS app hardening
+- "PNGを保存" in the app now saves to Photos (`@capacitor-community/media`); "ファイルに保存 / 共有" opens the share sheet; labels name the destination. Saving shows progress, a green "✓ ... N枚目" confirmation, the button becomes "✓ 保存済み", and a second save of the same design asks first. Browser labels are unchanged.
+- Touch-device hover left the primary export button dark-on-dark: hover styles are now limited to `@media (hover: hover)`.
+- JSON exports (`downloadJson`) return `shared | downloaded | cancelled | failed`; notices no longer claim success after a cancelled or failed save.
+- App-only: light interface style, iPhone portrait lock, branded launch image, inputs >= 16px (no focus zoom), safe-area strip under the status bar, share/save actions locked against double taps.
+- Tests: unit 73 (adds native bridge with faked plugins, PDF structure), e2e 29 incl. `native-app.spec.ts`. PDF rendered independently with macOS `sips` (A4, 1 page, full bleed).
+- Final check (branch `feature/ios-native-app`, base `f08fb69`, changes after it are uncommitted): touch-only hover for all buttons, export cache cleaned by age instead of wiping the folder, no automatic share sheet after a Photos timeout, JSON-only save under the busy lock. Next action: review/commit, then open the PR stacked on PR #40 (not merged, not deployed).

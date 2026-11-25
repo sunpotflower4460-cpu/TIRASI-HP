@@ -91,9 +91,11 @@
     border-color 0.15s,
     background 0.15s;
 }
-.studio-create > button:hover {
-  background: #e9efe1;
-  border-color: var(--studio-accent);
+@media (hover: hover) {
+  .studio-create > button:hover {
+    background: #e9efe1;
+    border-color: var(--studio-accent);
+  }
 }
 .studio-create > button > span {
   font-size: 10px;
@@ -185,8 +187,10 @@
   font-size: 12px;
   font-weight: 700;
 }
-.studio-page button:hover:enabled {
-  border-color: #668169;
+@media (hover: hover) {
+  .studio-page button:hover:enabled {
+    border-color: #668169;
+  }
 }
 .studio-page button:disabled {
   opacity: 0.45;
@@ -1164,9 +1168,14 @@
   padding-inline: 22px;
   box-shadow: 0 6px 16px #24493c2e;
 }
-.export-actions button.export-primary:hover:enabled {
-  background: #1b3a2f;
-  border-color: #1b3a2f;
+/* Hover only where a pointer exists: touch screens keep :hover after a tap, which
+   left this button dark for a while. The text colour is set so it stays readable. */
+@media (hover: hover) {
+  .export-actions button.export-primary:hover:enabled {
+    background: #1b3a2f;
+    border-color: #1b3a2f;
+    color: #fff;
+  }
 }
 .export-actions .export-status:empty {
   display: none;
@@ -1174,6 +1183,17 @@
 .export-actions .export-status {
   margin: 10px 0 0;
   font-size: 12px;
+}
+/* A finished save must be unmistakable: people tapped again, unsure it had worked. */
+.export-actions .export-status.ok {
+  padding: 10px 12px;
+  border: 1px solid #9fcab0;
+  border-radius: 8px;
+  background: #e3f3e9;
+  color: #17432f;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.6;
 }
 .export-settings {
   margin-top: 10px;

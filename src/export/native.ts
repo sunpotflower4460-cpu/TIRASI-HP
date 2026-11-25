@@ -36,16 +36,21 @@ function isCancel(error: unknown): boolean {
   return /cancel/i.test(message);
 }
 
-/** Opens the iOS share sheet for a file. Resolves "cancelled" when the person dismisses it. */
-export async function shareFileNative(blob: Blob, fileName: string, title?: string): Promise<ShareOutcome> {
-  const [{ Filesystem, Directory }, { Share }] = await Promise.all([
-    import("@capacitor/filesystem"),
-    import("@capacitor/share"),
-  ]);
+/** Writes a temporary copy to the app cache and returns its file URI. */
+async function writeCacheFile(blob: Blob, fileName: string): Promise<string> {
+  const { Filesystem, Directory } = await import("@capacitor/filesystem");
   const data = await blobToBase64(blob);
-  // Earlier exports are only temporary copies: clear them so the cache does not grow.
-  await Filesystem.rmdir({ path: "export", directory: Directory.Cache, recursive: true }).catch(() => undefined);
-  // Always write to the cache folder: files here are temporary and are not backed up.
+  // Earlier exports are only temporary copies: remove the old ones so the cache does
+  // not grow. Recent folders stay, because a share sheet or save may still be using them.
+  const listing = await Filesystem.readdir({ path: "export", directory: Directory.Cache }).catch(() => undefined);
+  const oldest = Date.now() - 10 * 60 * 1000;
+  await Promise.all(
+    (listing?.files ?? [])
+      .filter((entry) => Number(entry.name) < oldest)
+      .map((entry) =>
+        Filesystem.rmdir({ path: `export/${entry.name}`, directory: Directory.Cache, recursive: true }).catch(() => undefined),
+      ),
+  );
   const written = await Filesystem.writeFile({
     // A fresh folder per export keeps the shared file name clean (no prefix).
     path: `export/${Date.now()}/${fileName}`,
@@ -53,11 +58,40 @@ export async function shareFileNative(blob: Blob, fileName: string, title?: stri
     directory: Directory.Cache,
     recursive: true,
   });
+  return written.uri;
+}
+
+/** Opens the iOS share sheet for a file. Resolves "cancelled" when the person dismisses it. */
+export async function shareFileNative(blob: Blob, fileName: string, title?: string): Promise<ShareOutcome> {
+  const uri = await writeCacheFile(blob, fileName);
+  const { Share } = await import("@capacitor/share");
   try {
-    await Share.share({ title: title ?? fileName, files: [written.uri] });
+    await Share.share({ title: title ?? fileName, files: [uri] });
     return "shared";
   } catch (error) {
     if (isCancel(error)) return "cancelled";
+    throw error;
+  }
+}
+
+/** Thrown when the person has not allowed the app to add pictures to Photos. */
+export class PhotoAccessDeniedError extends Error {
+  constructor() {
+    super("写真への保存が許可されていません。設定アプリの「生音」で「写真」を許可してください。");
+    this.name = "PhotoAccessDeniedError";
+  }
+}
+
+/** Saves an image straight to the Photos library (camera roll) without a share sheet. */
+export async function savePhotoNative(blob: Blob, fileName: string): Promise<void> {
+  const uri = await writeCacheFile(blob, fileName);
+  const { Media } = await import("@capacitor-community/media");
+  try {
+    await Media.savePhoto({ path: uri });
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code;
+    const message = error instanceof Error ? error.message : String(error ?? "");
+    if (code === "accessDenied" || /not allowed|denied/i.test(message)) throw new PhotoAccessDeniedError();
     throw error;
   }
 }

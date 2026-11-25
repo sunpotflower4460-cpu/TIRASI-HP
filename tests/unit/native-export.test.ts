@@ -37,3 +37,126 @@ describe("native export helpers", () => {
     expect(() => buildImagePdf(new Uint8Array([1]), 0, 10)).toThrow();
   });
 });
+
+// --- native bridge (the plugins are replaced with fakes) -----------------------------
+import { afterEach, beforeEach, vi } from "vitest";
+
+const calls: string[] = [];
+const fakes = vi.hoisted(() => ({
+  shareError: undefined as unknown,
+  mediaError: undefined as unknown,
+  written: [] as string[],
+  shared: [] as unknown[],
+  saved: [] as unknown[],
+}));
+vi.mock("@capacitor/filesystem", () => ({
+  Directory: { Cache: "CACHE" },
+  Filesystem: {
+    readdir: async () => {
+      calls.push("readdir");
+      // One export from long ago and one from just now.
+      return { files: [{ name: "1000" }, { name: String(Date.now()) }] };
+    },
+    rmdir: async (options: { path: string }) => {
+      calls.push(`rmdir:${options.path}`);
+    },
+    writeFile: async (options: { path: string; data: string }) => {
+      calls.push("writeFile");
+      fakes.written.push(options.path);
+      return { uri: `file:///cache/${options.path}` };
+    },
+  },
+}));
+vi.mock("@capacitor/share", () => ({
+  Share: {
+    share: async (options: unknown) => {
+      if (fakes.shareError) throw fakes.shareError;
+      fakes.shared.push(options);
+      return {};
+    },
+  },
+}));
+vi.mock("@capacitor-community/media", () => ({
+  Media: {
+    savePhoto: async (options: unknown) => {
+      if (fakes.mediaError) throw fakes.mediaError;
+      fakes.saved.push(options);
+      return { identifier: "id" };
+    },
+  },
+}));
+
+describe("native bridge", () => {
+  beforeEach(() => {
+    calls.length = 0;
+    fakes.shareError = undefined;
+    fakes.mediaError = undefined;
+    fakes.written.length = 0;
+    fakes.shared.length = 0;
+    fakes.saved.length = 0;
+    // Node has no FileReader; the bridge only needs readAsDataURL.
+    (globalThis as { FileReader?: unknown }).FileReader = class {
+      result: string | null = null;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      error = null;
+      readAsDataURL() {
+        this.result = "data:image/png;base64,QUJD";
+        queueMicrotask(() => this.onload?.());
+      }
+    };
+  });
+  afterEach(() => {
+    delete (globalThis as { FileReader?: unknown }).FileReader;
+    delete (globalThis as { Capacitor?: unknown }).Capacitor;
+  });
+
+  it("detects the app through Capacitor.isNativePlatform", () => {
+    (globalThis as { Capacitor?: unknown }).Capacitor = { isNativePlatform: () => true };
+    expect(isNativeApp()).toBe(true);
+    (globalThis as { Capacitor?: unknown }).Capacitor = { isNativePlatform: () => false };
+    expect(isNativeApp()).toBe(false);
+  });
+
+  it("removes only old exports, then writes the file under its own name and shares it", async () => {
+    const { shareFileNative } = await import("../../src/export/native");
+    const outcome = await shareFileNative(new Blob(["x"]), "生音-vol.6.png", "生音");
+    expect(outcome).toBe("shared");
+    expect(calls).toEqual(["readdir", "rmdir:export/1000", "writeFile"]);
+    expect(fakes.written[0]).toMatch(/^export\/\d+\/生音-vol\.6\.png$/);
+    expect(fakes.shared[0]).toMatchObject({ title: "生音", files: [expect.stringContaining("生音-vol.6.png")] });
+  });
+
+  it("reports a dismissed share sheet as cancelled and rethrows real failures", async () => {
+    const { shareFileNative } = await import("../../src/export/native");
+    fakes.shareError = new Error("Share canceled");
+    expect(await shareFileNative(new Blob(["x"]), "a.png")).toBe("cancelled");
+    fakes.shareError = new Error("disk full");
+    await expect(shareFileNative(new Blob(["x"]), "a.png")).rejects.toThrow("disk full");
+  });
+
+  it("saves to Photos and maps a refused permission to a readable error", async () => {
+    const { savePhotoNative, PhotoAccessDeniedError } = await import("../../src/export/native");
+    await savePhotoNative(new Blob(["x"]), "a.png");
+    expect(fakes.saved[0]).toMatchObject({ path: expect.stringMatching(/^file:\/\/\/cache\/export\/\d+\/a\.png$/) });
+    fakes.mediaError = Object.assign(new Error("Access to photos not allowed by user"), { code: "accessDenied" });
+    await expect(savePhotoNative(new Blob(["x"]), "a.png")).rejects.toBeInstanceOf(PhotoAccessDeniedError);
+    fakes.mediaError = new Error("Unable to save image to album");
+    await expect(savePhotoNative(new Blob(["x"]), "a.png")).rejects.toThrow("Unable to save image to album");
+  });
+
+  it("reports JSON exports as shared, cancelled or failed instead of always done", async () => {
+    (globalThis as { Capacitor?: unknown }).Capacitor = { isNativePlatform: () => true };
+    const { downloadJson, exportNotice } = await import("../../src/export/files");
+    expect(await downloadJson({ a: 1 }, "backup.json")).toBe("shared");
+    expect(fakes.written[0]).toMatch(/\/backup\.json$/);
+    fakes.shareError = new Error("Share canceled");
+    expect(await downloadJson({ a: 1 }, "backup.json")).toBe("cancelled");
+    fakes.shareError = new Error("disk full");
+    expect(await downloadJson({ a: 1 }, "backup.json")).toBe("failed");
+    expect(exportNotice("shared", "done")).toBe("done");
+    expect(exportNotice("downloaded", "done")).toBe("done");
+    expect(exportNotice("cancelled", "done")).toContain("キャンセル");
+    expect(exportNotice("failed", "done")).toContain("できませんでした");
+  });
+});

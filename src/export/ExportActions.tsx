@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { downloadBlob, safeFileName } from "./files";
-import { isNativeApp, shareFileNative } from "./native";
+import { downloadBlob, safeFileName, withTimeout } from "./files";
+import { PhotoAccessDeniedError, isNativeApp, savePhotoNative, shareFileNative } from "./native";
 import { pngBlobToPdf } from "./pdf";
 import { errorMessage } from "../domain/validation";
 export function ExportActions({
@@ -22,12 +22,24 @@ export function ExportActions({
   errors?: string[];
   onPrint?: () => void | Promise<void>;
 }) {
-  const [status, setStatus] = useState("");
+  const [status, setStatusText] = useState("");
+  const [statusOk, setStatusOk] = useState(false);
+  // A finished save is shown in green so it cannot be missed; everything else is plain.
+  const setStatus = (text: string, ok = false) => {
+    setStatusText(text);
+    setStatusOk(ok);
+  };
   const [busy, setBusy] = useState(false);
-  const [busyKind, setBusyKind] = useState<"png" | "print">("png");
+  const [busyKind, setBusyKind] = useState<"png" | "save" | "share" | "print">("png");
   const [blob, setBlob] = useState<Blob>();
   const [light, setLight] = useState(false);
+  // How many copies of the current design were saved to Photos (app only).
+  const [savedCount, setSavedCount] = useState(0);
   const native = isNativeApp();
+  // In the app the buttons name their destination: the first goes to Photos, the
+  // second opens the share sheet (Files, AirDrop, LINE...).
+  const saveLabel = native ? "写真に保存" : "PNGを保存";
+  const shareLabel = native ? "ファイルに保存 / 共有" : "共有";
   const generation = useRef(0);
   const locked = useRef(false);
   useEffect(() => {
@@ -35,6 +47,7 @@ export function ExportActions({
     locked.current = false;
     setBusy(false);
     setBlob(undefined);
+    setSavedCount(0);
     setStatus("");
     return () => {
       generation.current++;
@@ -67,16 +80,62 @@ export function ExportActions({
   const fileName = `${safeFileName(name)}${light ? "-light" : ""}.png`;
   const saveBlob = async (ready: Blob) => {
     try {
+      if (native) {
+        // In the app the PNG goes straight to the camera roll. Show progress at
+        // once: the first save asks for permission, which can take a moment.
+        if (
+          savedCount > 0 &&
+          !window.confirm(
+            `このチラシはすでに写真アプリに${savedCount}枚保存しました。もう1枚保存しますか？`,
+          )
+        ) {
+          setStatus(`✓ すでに写真アプリに${savedCount}枚保存済みです。追加で保存はしませんでした。`, true);
+          return;
+        }
+        locked.current = true;
+        const id = ++generation.current;
+        setBusyKind("save");
+        setBusy(true);
+        setStatus("写真アプリに保存しています…");
+        try {
+          // Long enough for the first-time permission prompt to be answered.
+          await withTimeout(savePhotoNative(ready, fileName), 120000);
+          if (id === generation.current) {
+            const count = savedCount + 1;
+            setSavedCount(count);
+            setStatus(
+              `✓ 写真アプリ（カメラロール）に保存しました（${count}枚目）。写真アプリで確認できます。「ファイルに保存」や他のアプリへ送るときは「ファイルに保存 / 共有」を押してください。`,
+              true,
+            );
+          }
+        } catch (error) {
+          if (id !== generation.current) return;
+          if (error instanceof PhotoAccessDeniedError) throw error;
+          // No answer from Photos. Do not open the share sheet on our own: the save may
+          // still finish, and a second copy would be written.
+          setStatus(
+            `写真アプリへの保存を確認できませんでした。写真アプリを確認し、なければ「${shareLabel}」から保存してください。`,
+          );
+        } finally {
+          if (id === generation.current) {
+            locked.current = false;
+            setBusy(false);
+          }
+        }
+        return;
+      }
       const outcome = await downloadBlob(ready, fileName);
       setStatus(
         outcome === "cancelled"
-          ? "保存をキャンセルしました。もう一度「PNGを保存」を押せます。"
-          : outcome === "shared"
-            ? "共有画面を開きました。「画像を保存」または「ファイルに保存」を選んでください。"
-            : "PNGのダウンロードを開始しました。端末の保存先をご確認ください。",
+          ? `保存をキャンセルしました。もう一度「${saveLabel}」を押せます。`
+          : "PNGのダウンロードを開始しました。端末の保存先をご確認ください。",
       );
-    } catch {
-      setStatus("PNGを保存できませんでした。軽量版をお試しください。");
+    } catch (error) {
+      setStatus(
+        error instanceof PhotoAccessDeniedError
+          ? `${error.message}「${shareLabel}」からファイルに保存することもできます。`
+          : "PNGを保存できませんでした。軽量版をお試しください。",
+      );
     }
   };
   const save = async () => {
@@ -88,7 +147,29 @@ export function ExportActions({
     const ready = await ensureBlob();
     if (!ready || locked.current) return;
     if (native) {
-      await saveBlob(ready);
+      // "Share" keeps the share sheet (Files, AirDrop, other apps). It is locked
+      // like the other actions so a double tap cannot open two sheets.
+      locked.current = true;
+      const id = ++generation.current;
+      setBusyKind("share");
+      setBusy(true);
+      try {
+        const outcome = await shareFileNative(ready, fileName, name);
+        if (id === generation.current)
+          setStatus(
+            outcome === "cancelled"
+              ? "共有をキャンセルしました。PNGは引き続き保存できます。"
+              : "共有画面を開きました。「ファイルに保存」を選ぶとファイルアプリに、他のアプリを選ぶとそこへ送れます。",
+          );
+      } catch {
+        if (id === generation.current)
+          setStatus(`共有できませんでした。「${saveLabel}」をお使いください。`);
+      } finally {
+        if (id === generation.current) {
+          locked.current = false;
+          setBusy(false);
+        }
+      }
       return;
     }
     const file = new File([ready], fileName, { type: "image/png" });
@@ -192,7 +273,13 @@ export function ExportActions({
           onClick={() => void save()}
           disabled={busy || !!errors.length}
         >
-          {busy && busyKind === "png" ? "作成中…" : "PNGを保存"}
+          {busy && busyKind === "save"
+            ? "保存中…"
+            : busy && busyKind === "png"
+              ? "作成中…"
+              : savedCount > 0
+                ? "✓ 保存済み"
+                : saveLabel}
         </button>
         {canPrint && (
           <button
@@ -208,7 +295,7 @@ export function ExportActions({
           disabled={busy || !!errors.length}
           onClick={() => void share()}
         >
-          共有
+          {shareLabel}
         </button>
       </div>
       {errors.length > 0 && (
@@ -224,7 +311,11 @@ export function ExportActions({
           </p>
         </div>
       )}
-      <p role="status" aria-live="polite" className="export-status">
+      <p
+        role="status"
+        aria-live="polite"
+        className={`export-status${statusOk ? " ok" : ""}`}
+      >
         {status}
       </p>
       <details className="export-settings">
@@ -245,7 +336,7 @@ export function ExportActions({
         </p>
         {native && (
           <p className="helper">
-            アプリでは、PNGと「印刷 / PDFとして保存」は共有画面から保存・印刷します。
+            アプリでは「写真に保存」で写真アプリ（カメラロール）に直接保存します。「ファイルに保存 / 共有」と「印刷 / PDFとして保存」は共有画面から、ファイルへの保存・他のアプリへの送信・印刷ができます。
           </p>
         )}
         <p className="helper">
