@@ -149,7 +149,7 @@ body:has(.store-app) { background: #f8f5ef; }
   color: var(--ink);
   text-align: left;
 }
-.store-look strong, .store-work strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.store-look strong, .store-work strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 12px; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
 .store-work small { color: var(--muted); font-size: 11px; }
 .store-thumb {
   position: relative;
@@ -209,7 +209,7 @@ body:has(.store-app) { background: #f8f5ef; }
   font-weight: 700;
 }
 .store-editor-title { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-.store-saved { display: flex; flex: 1; align-items: center; gap: 6px; min-width: 0; margin: 0; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+.store-saved { display: flex; flex: 1; align-items: center; gap: 6px; min-width: max-content; margin: 0; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
 .store-saved::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #2f9e68; }
 .store-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .store-app .store-tools button,
@@ -516,3 +516,14 @@ body:has(.store-app) { background: #f8f5ef; }
 .shared-notice { margin: 0 0 14px; padding: 12px; border: 1px solid #c9cce4; border-radius: 14px; background: var(--night-soft); }
 .store-app .studio-page .shared-notice p { margin: 0 0 8px; font-size: 12.5px; line-height: 1.7; color: var(--ink); }
 .store-app .shared-notice button { width: 100%; min-height: 42px; border: 1px solid var(--night); border-radius: 10px; background: #fff; color: var(--night); font-size: 13px; font-weight: 700; }
+
+/* Final pass for narrow phones. */
+.store-app p, .store-app small { line-break: strict; text-wrap: pretty; }
+.store-app .studio-page .export-settings > summary,
+.store-app .studio-page .scene-text > summary,
+.store-app .studio-page details.design-section > summary.design-section-title { padding-block: 12px; }
+@media (max-width: 359px) {
+  .store-look strong, .store-work strong { font-size: 10px; letter-spacing: -0.03em; }
+  .store-app .export-actions .action-row { grid-template-columns: 1fr; }
+  .store-app .studio-page .effect-grid strong { font-size: 11px; letter-spacing: -0.02em; }
+}

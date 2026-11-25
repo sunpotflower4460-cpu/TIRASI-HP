@@ -146,7 +146,7 @@ export function StoreHome({ workspace, onCreate, onCreateWithTemplate, onOpen }:
         <h2 id="other-title">ライブ以外も作れます</h2>
         <button type="button" className="store-row" onClick={() => onCreate("free-flyer")}>
           <span className="store-row-icon"><Icon name="text" size={22} /></span>
-          <span><strong>自由なチラシを作る</strong><small>見出しと本文だけで、用途を選ばず</small></span>
+          <span><strong>自由なチラシを作る</strong><small>見出しと本文だけ。用途は自由</small></span>
           <Icon name="chevron" />
         </button>
         <button type="button" className="store-row" onClick={() => onCreate("image-treatment")}>

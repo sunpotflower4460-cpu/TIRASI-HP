@@ -31,11 +31,22 @@ export type TextNode = Rect & {
   valign?: "top" | "center";
   maxLines?: number;
   balanced?: boolean;
+  /** Shrink down to this share of `size` to stay on one line before wrapping. */
+  singleLineRatio?: number;
+  /** Page position of the top or bottom of the first/last line's capitals. */
+  inkTop?: number;
+  inkBottom?: number;
 };
 export type FlowBlock = Omit<TextNode, keyof Rect | "kind"> & {
   gapBefore?: number;
 };
-export type FlowNode = Rect & { kind: "flow"; id: string; blocks: FlowBlock[] };
+export type FlowNode = Rect & {
+  kind: "flow";
+  id: string;
+  blocks: FlowBlock[];
+  /** How far above its base size a roomy column may be set. */
+  maxGrow?: number;
+};
 export type ShapeNode = Rect & {
   kind: "rect" | "ellipse";
   color: string;
@@ -218,9 +229,15 @@ export function composeScene(
     lineHeight: 1.4,
     gapBefore,
   });
-  const flow = (id: string, b: Rect, blocks: FlowBlock[]) => {
+  const flow = (
+    id: string,
+    b: Rect,
+    blocks: FlowBlock[],
+    maxGrow?: number,
+  ) => {
     const visible = blocks.filter((block) => block.text.trim());
-    if (visible.length) nodes.push({ ...b, kind: "flow", id, blocks: visible });
+    if (visible.length)
+      nodes.push({ ...b, kind: "flow", id, blocks: visible, maxGrow });
   };
 
   let title = "",
@@ -564,9 +581,23 @@ export function composeScene(
   };
   let vertical = false;
   if (templateId === "washi") {
+    // Vertical only when the column can set it large; it then runs down to
+    // where the lineup begins.
+    const column: Slot = [
+      recipe.hero[0],
+      recipe.hero[1],
+      recipe.hero[2],
+      Math.max(
+        recipe.hero[3],
+        Math.min(recipe.program[1], recipe.info[1]) - recipe.hero[1] - 0.04,
+      ),
+    ];
     vertical =
-      /^[^A-Za-z0-9]{1,8}$/.test(title) &&
-      Array.from(title).length * 28 * 1.08 <= titleHeightIn(box(recipe.hero));
+      /^[^A-Za-z0-9\s]{1,8}$/.test(title) &&
+      Array.from(title).length * 44 * 1.08 <= titleHeightIn(box(column));
+    if (vertical) {
+      recipe.hero = column;
+    }
     if (!vertical && recipe.art) {
       const top = Math.min(recipe.hero[1], recipe.art[1]);
       const height = Math.max(0.16, recipe.facts[1] - top - 0.02);
@@ -592,13 +623,12 @@ export function composeScene(
           : 30;
     const needed = (lines * perLine + 20) / usableH;
     if (!oneLineFits) {
-      const [fx, fy, fw] = recipe.facts;
+      const fy = recipe.facts[1];
       const height = Math.max(recipe.facts[3], needed);
       const oldBottom = fy + recipe.facts[3];
       recipe.facts[3] = height;
       for (const slot of [recipe.program, recipe.info]) {
-        const overlapsX = slot[0] < fx + fw && slot[0] + slot[2] > fx;
-        if (overlapsX && slot[1] >= oldBottom - 0.03) {
+        if (slot[1] >= oldBottom - 0.03) {
           const push = Math.max(0, fy + height + 0.015 - slot[1]);
           slot[1] += push;
           slot[3] -= push;
@@ -618,9 +648,9 @@ export function composeScene(
     recipe.art = [0.6, recipe.art[1], 0.4, recipe.art[3]];
   }
   if (doc.kind === "free-flyer" && facts) {
-    const [x, y, w, h] = recipe.facts;
+    const [, y, , h] = recipe.facts;
     for (const slot of [recipe.program, recipe.info]) {
-      if (slot[1] >= y && slot[0] < x + w && slot[0] + slot[2] > x) {
+      if (slot[1] >= y) {
         const gap = Math.max(0, y + h + 0.016 - slot[1]);
         slot[1] += gap;
         slot[3] -= gap;
@@ -761,6 +791,8 @@ export function composeScene(
       openMicTitle.size = 29;
   }
   const color = titleInks.text;
+  // A vertical title and the lines around it share the column's centre.
+  const titleAlign = vertical ? "center" : recipe.align;
   const inset = hero;
   const kickerHeight = kicker
     ? Math.max(27, Math.ceil(kickerPx / inset.w) * 26)
@@ -775,7 +807,7 @@ export function composeScene(
       color,
       700,
       condensed,
-      recipe.align,
+      titleAlign,
     );
   const titleOffset = kicker ? kickerHeight + 7 : 0;
   const titleBox = {
@@ -792,7 +824,7 @@ export function composeScene(
     color,
     face.weight,
     family,
-    recipe.align,
+    titleAlign,
     {
       lineHeight: 1.08,
       valign: "center",
@@ -817,11 +849,46 @@ export function composeScene(
     titleInks.accent,
     700,
     serifDefault ? elegant : condensed,
-    recipe.align,
+    titleAlign,
     { lineHeight: 1.16, maxLines: 1 },
   );
 
+  // The person's own fine adjustment of one block. Panels that run off the page
+  // stay put, and a block cannot be pushed out of the printable area.
+  const shiftFrom = (start: number, dx = 0, dy = 0) => {
+    if (!dx && !dy) return;
+    const moved = nodes
+      .slice(start)
+      .filter((n) => n.x > 0.5 && n.y > 0.5 && n.x + n.w < 999.5);
+    const type = moved.filter((n) => n.kind === "text" || n.kind === "flow");
+    if (!type.length) return;
+    const within = (value: number, low: number, high: number) =>
+      Math.min(Math.max(value, Math.min(0, low)), Math.max(0, high));
+    const x = within(
+      dx,
+      35 - Math.min(...type.map((n) => n.x)),
+      965 - Math.max(...type.map((n) => n.x + n.w)),
+    );
+    const tall = doc.design.sizeId === "story";
+    const y = within(
+      dy,
+      (tall ? 100 : 35) - Math.min(...type.map((n) => n.y)),
+      size.baseHeight -
+        (tall ? 120 : 35) -
+        Math.max(...type.map((n) => n.y + n.h)),
+    );
+    for (const node of moved) {
+      node.x += x;
+      node.y += y;
+      if (node.kind === "text") {
+        if (node.inkTop !== undefined) node.inkTop += y;
+        if (node.inkBottom !== undefined) node.inkBottom += y;
+      }
+    }
+  };
+
   const factsStyle = recipe.factsStyle;
+  const factsStart = nodes.length;
   if (facts) {
     const filled = ["band", "ticket", "date"].includes(factsStyle);
     const onCover = fb.y + fb.h <= coverBottom + 0.5;
@@ -850,39 +917,55 @@ export function composeScene(
         ? { date: freeDateMatch[1], detail: freeDateMatch[2] ?? "" }
         : undefined;
     if (factsStyle === "date" && dateParts) {
+      // Year, numeral and details are one group, centred in the panel.
       const d = dateParts;
-      const left = fb.x + 14,
-        width = fb.w - 28;
-      const numeralHeight = fb.h * 0.47;
+      const left = fb.x + 22,
+        width = fb.w - 44;
       const day = d.english ? `${d.english} (${d.weekday})` : d.weekday;
-      const labelHeight = Math.min(38, fb.h * 0.2);
+      const labelSize = Math.max(18, Math.min(30, fb.h * 0.13));
+      const big = Math.max(
+        40,
+        Math.min(190, fb.h * 0.46, width / estimate(d.monthDay, 1, true)),
+      );
+      const detail = [d.start, d.price].filter(Boolean).join("  ");
+      const detailSize = 27;
+      const detailLines = !detail
+        ? 0
+        : estimate(detail, detailSize) > width
+          ? 2
+          : 1;
+      const detailHeight = detailLines * detailSize * 1.2;
+      const gap = Math.max(8, Math.min(30, fb.h * 0.075));
+      const cap = 0.7;
+      const group =
+        labelSize * cap +
+        gap +
+        big * cap +
+        (detail ? gap + detailHeight - detailSize * 0.2 : 0);
+      const top = fb.y + Math.max(6, (fb.h - group) / 2);
       text(
         "facts-weekday",
         [d.year, day].filter(Boolean).join("   "),
-        {
-          x: left,
-          y: fb.y + 4,
-          w: width,
-          h: labelHeight,
-        },
-        29,
+        { x: left, y: top - 4, w: width, h: labelSize * 1.2 },
+        labelSize,
         16,
         factsColor,
         700,
         condensed,
         "left",
-        { lineHeight: 1, valign: "center" },
+        { lineHeight: 1, inkTop: top },
       );
+      const numeralTop = top + labelSize * cap + gap;
       text(
         "facts-date",
         d.monthDay,
         {
           x: left,
-          y: fb.y + 5 + labelHeight,
+          y: numeralTop - big * 0.15,
           w: width,
-          h: numeralHeight,
+          h: big,
         },
-        Math.min(190, numeralHeight),
+        Math.floor(big),
         30,
         factsColor,
         700,
@@ -890,24 +973,26 @@ export function composeScene(
         "left",
         { lineHeight: 1, valign: "center", maxLines: 1 },
       );
-      const detailY = fb.y + 8 + labelHeight + numeralHeight;
-      text(
-        "facts-detail",
-        [d.start, d.price].filter(Boolean).join("  "),
-        {
-          x: left,
-          y: detailY,
-          w: width,
-          h: fb.y + fb.h - detailY - 3,
-        },
-        27,
-        18,
-        factsColor,
-        700,
-        sans,
-        "left",
-        { lineHeight: 1.18, valign: "center" },
-      );
+      if (detail) {
+        const detailTop = numeralTop + big * cap + gap;
+        text(
+          "facts-detail",
+          detail,
+          {
+            x: left,
+            y: detailTop - 4,
+            w: width,
+            h: Math.min(detailHeight + 8, fb.y + fb.h - detailTop + 1),
+          },
+          detailSize,
+          18,
+          factsColor,
+          700,
+          sans,
+          "left",
+          { lineHeight: 1.2, inkTop: detailTop },
+        );
+      }
     } else if (freeDate) {
       const { date, detail } = freeDate;
       const datePanel = factsStyle === "date";
@@ -1043,6 +1128,8 @@ export function composeScene(
         x += numberWidth + 16;
         const stackH = small * 1.2 + small * 1.15 * 1.2;
         const stackY = inner.y + (rowH - stackH) / 2;
+        const capHalf = big * 0.35;
+        const middle = inner.y + rowH / 2;
         text(
           "facts-year",
           d.year,
@@ -1053,7 +1140,7 @@ export function composeScene(
           700,
           condensed,
           "left",
-          { lineHeight: 1.1, maxLines: 1 },
+          { lineHeight: 1.1, maxLines: 1, inkTop: middle - capHalf },
         );
         text(
           "facts-weekday",
@@ -1070,7 +1157,7 @@ export function composeScene(
           700,
           condensed,
           "left",
-          { lineHeight: 1.1, maxLines: 1 },
+          { lineHeight: 1.1, maxLines: 1, inkBottom: middle + capHalf },
         );
         if (twoRows)
           text(
@@ -1189,6 +1276,9 @@ export function composeScene(
     }
   }
 
+  shiftFrom(factsStart, p.factsX, p.factsY);
+
+  const programStart = nodes.length;
   if (schedule?.length) {
     const wide = pb.w > 700,
       columns = wide ? 2 : 1,
@@ -1208,7 +1298,11 @@ export function composeScene(
     // Keep even its interlude markers drawable while the author edits it.
     const rowSpace =
       (pb.h - headingHeight - (rows - fullRows) * 33) / Math.max(1, fullRows);
-    const unit = Math.max(24, Math.min(140, rowSpace));
+    // Tall pages give each act more room instead of leaving the foot empty.
+    const unit = Math.max(
+      24,
+      Math.min(doc.design.sizeId === "story" ? 200 : 165, rowSpace),
+    );
     if (solidHeading) shape({ ...pb, h: 33 }, palette.ink);
     text(
       "program-heading",
@@ -1259,10 +1353,20 @@ export function composeScene(
             showTimes && (wide || lineup === "bill") && rowHeight >= 65;
           if (stacked) {
             const timeH = 25;
+            // Time and name sit together in the middle of a tall row.
+            const nameSize = wide ? 36 : 42;
+            const nameLines =
+              estimate(item.name, nameSize * 0.7) > rowWidth ? 2 : 1;
+            const top =
+              y +
+              Math.max(
+                0,
+                (rowHeight - timeH - 12 - nameLines * nameSize * 1.15) / 2,
+              );
             text(
               `time-${index}`,
               item.time,
-              { x: contentX, y: y + 4, w: rowWidth, h: timeH },
+              { x: contentX, y: top + 4, w: rowWidth, h: timeH },
               21,
               18,
               palette.accent,
@@ -1276,17 +1380,17 @@ export function composeScene(
               item.name,
               {
                 x: contentX,
-                y: y + timeH + 6,
+                y: top + timeH + 6,
                 w: rowWidth,
-                h: rowHeight - timeH - 10,
+                h: y + rowHeight - top - timeH - 10,
               },
-              wide ? 36 : 42,
+              nameSize,
               18,
               palette.ink,
               nameFace.weight,
               nameFace.family,
               "left",
-              { lineHeight: 1.15 },
+              { lineHeight: 1.15, singleLineRatio: 0.7 },
             );
           } else {
             const timeWidth = showTimes ? rowWidth * 0.35 : 0;
@@ -1331,7 +1435,7 @@ export function composeScene(
               nameFace.weight,
               nameFace.family,
               "left",
-              { lineHeight: 1.2, valign: "center" },
+              { lineHeight: 1.2, valign: "center", singleLineRatio: 0.7 },
             );
           }
           if (!ruled && !timeline)
@@ -1421,12 +1525,33 @@ export function composeScene(
             lineHeight: heading ? 1.22 : 1.52,
           };
         }),
+      // A few short lines grow to be readable at a glance.
+      12,
     );
   } else if (program) {
-    text("program", program, pb, 28, 18, palette.ink, 700, sans, "left", {
-      lineHeight: 1.65,
-    });
+    // A wide slot sets the running order beside the profiles and notes.
+    const [first, ...others] = program.split("\n\n");
+    const columns =
+      pb.w > 700 && others.length ? [first, others.join("\n\n")] : [program];
+    const gap = 40;
+    const width = (pb.w - gap * (columns.length - 1)) / columns.length;
+    columns.forEach((value, index) =>
+      text(
+        columns.length > 1 ? `program-${index + 1}` : "program",
+        value,
+        { ...pb, x: pb.x + index * (width + gap), w: width },
+        28,
+        18,
+        palette.ink,
+        700,
+        sans,
+        "left",
+        { lineHeight: 1.65 },
+      ),
+    );
   }
+  shiftFrom(programStart, p.programX, p.programY);
+  const detailsStart = nodes.length;
   if (venueBlocks.length || additionalBlocks.length) {
     if (templateId === "information" && ib.w > 700) {
       shape(
@@ -1450,5 +1575,6 @@ export function composeScene(
       );
     } else flow("details", ib, [...venueBlocks, ...additionalBlocks]);
   }
+  shiftFrom(detailsStart, p.infoX, p.infoY);
   return scene;
 }

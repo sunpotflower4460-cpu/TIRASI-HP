@@ -54,6 +54,13 @@ export function balanceHeadline(
       if (remaining > 1 && end === points.length - 1) continue;
       const line = text.slice(points[start], points[end]).trim();
       if (!line || closing.test(line) || opening.test(line)) continue;
+      // A currency mark or a price/time label stays with what follows it. The
+      // last line has nothing after it, so a title may end with these words.
+      if (
+        end !== points.length - 1 &&
+        /(?:[¥￥$]|前売り?|当日|開場|開演|開始)$/u.test(line)
+      )
+        continue;
       const width = measure(line);
       if (width > maxWidth + 0.5) break;
       const tail =

@@ -205,11 +205,13 @@ export function responsiveRecipe(
   // date or subtitle into the program. Artwork and photographs share one slot.
   if (hasImage && !recipe.art) {
     if (id === "swiss") {
-      recipe.hero[2] = 0.34;
-      recipe.art = [0.82, 0.01, 0.18, 0.32];
+      recipe.facts = [0, 0.01, 0.3, 0.32];
+      recipe.hero = [0.34, 0.01, 0.37, 0.32];
+      recipe.art = [0.74, 0.01, 0.26, 0.32];
     } else if (id === "information") {
-      recipe.hero[2] = 0.34;
-      recipe.art = [0.375, 0.02, 0.15, 0.23];
+      recipe.hero = [0, 0.02, 0.39, 0.24];
+      recipe.art = [0.41, 0.02, 0.26, 0.23];
+      recipe.facts = [0.69, 0.02, 0.31, 0.25];
     } else {
       recipe.hero = [0, 0.05, 0.62, 0.29];
       recipe.art = [0.7, 0.01, 0.3, 0.34];
@@ -429,4 +431,7 @@ export function freePosterLayout(
     slot[1] = target + ((slot[1] - start) * (1 - target)) / (1 - start);
     slot[3] *= (1 - target) / (1 - start);
   }
+  // With no details column below it, a full-width body takes the whole foot.
+  if (recipe.program[2] > 0.9 && !details.length)
+    recipe.program[3] = 1 - recipe.program[1];
 }

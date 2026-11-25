@@ -13,6 +13,7 @@ import type { EventData } from "../../types/event";
 import { eventCollectionsFit } from "../../domain/limits";
 import { DesignPanel } from "./DesignPanel";
 import { ImagePanel } from "./ImagePanel";
+import { NudgePanel } from "./NudgePanel";
 import { Field } from "./controls";
 import { LayoutChangeDialog } from "./LayoutChangeDialog";
 import { useEffect, useRef, useState } from "react";
@@ -850,6 +851,14 @@ export function StudioPage({
                 </div>
               )}
               <DocumentPreview document={doc} events={workspace.events} />
+              {doc.kind !== "image-treatment" &&
+                doc.design.templateId !== "legacy" && (
+                  <NudgePanel
+                    doc={doc}
+                    placement={placement}
+                    onChange={setPlacement}
+                  />
+                )}
             </aside>
           </div>
         </>
