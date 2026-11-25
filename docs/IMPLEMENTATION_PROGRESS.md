@@ -208,3 +208,12 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 - 1組・12組・長い出演者名・日付自由入力・長い料金や注意書きなど、16種類のイベント原稿×20構図×4サイズを描画し、1,280通りで診断エラー0件を確認。
 - 出力検証はイベントと自由制作の20構図×4サイズ、写真入り・出演時刻なし、全構図×12配色のA4プレビュー、旧版A4、6加工。ビルド済みアプリを390px幅でも操作し、シティポップのA4 PNG、配色を変えたStory PNG、A4 1ページのブラウザPDFを確認した。[実際のPNG](evidence/template-contact-sheet.png)・[自由制作](evidence/designs-free.png)・[変更前後](evidence/poster-comparison.webp)
 - 単体61件・Chromium E2E 27件、TypeScriptとViteのビルド。`npm audit --audit-level=high` の検出は0件。実機Safariと用紙への出力は未検証。公開はレビュー後のマージ判断を待つ。
+
+## 2026-11-25 iOS native app (branch `feature/ios-native-app`, stacked on `feature/pwa-ios-install`, uncommitted)
+
+- `ios-app/`: Capacitor wrapper bundling `dist` into an offline iOS app (`jp.tirasi.hp`, display name 生音). No Vercel/network at run time. See `ios-app/README.md`.
+- Cause of "PNG保存" and "印刷 / PDF" doing nothing inside the app: WKWebView ignores `<a download>` on blobs and `window.print()`.
+- Fix: `src/export/native.ts` (cache file + iOS share sheet via `@capacitor/filesystem` + `@capacitor/share`, lazy-imported), `src/export/pdf.ts` (one-page A4 PDF from the rendered PNG, shared via the sheet so "Print"/"Save to Files" work). `downloadBlob` and JSON exports use the same path. Browser behaviour is unchanged.
+- Native layout: `html.native-app` class (safe-area padding, frosted status-bar strip), no service worker in the app, editing nav scrolls sideways on phones.
+- Verified: unit 68 passed, build OK, Playwright e2e 27 passed, iPhone 17 simulator (PNG share sheet, PDF share sheet with Print / Save to Files, Studio navigation). Not yet verified on the physical iPhone SE by the user; airplane-mode behaviour not measured.
+- Known: wording still says "このブラウザ" in places; free Apple ID signature expires after 7 days.

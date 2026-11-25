@@ -7,3 +7,6 @@ test-results/
 playwright-report/
 .env*
 !.env.example
+
+# iOS native wrapper (ios-app)
+ios-app/node_modules/

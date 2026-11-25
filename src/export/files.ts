@@ -1,13 +1,20 @@
+import { isNativeApp, shareFileNative } from "./native";
 export function safeFileName(name: string) { return name.replace(/[\\/:*?"<>|\u0000-\u001f\s]+/g, '-').slice(0, 100) || 'tirasi'; }
-export function downloadBlob(blob: Blob, name: string) {
+export type SaveOutcome = "downloaded" | "shared" | "cancelled";
+/** Saves a file: a browser download on the web, the iOS share sheet inside the app. */
+export async function downloadBlob(blob: Blob, name: string): Promise<SaveOutcome> {
+  if (isNativeApp()) return shareFileNative(blob, name);
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url; anchor.download = name;
   document.body.append(anchor); anchor.click(); anchor.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+  return "downloaded";
 }
+/** Fire-and-forget save for JSON backups: a failure is reported instead of being lost silently. */
 export function downloadJson(value: unknown, name: string) {
-  downloadBlob(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }), safeFileName(name));
+  void downloadBlob(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }), safeFileName(name))
+    .catch(() => window.alert('ファイルを保存できませんでした。もう一度お試しください。'));
 }
 export function withTimeout<T>(promise: Promise<T>, ms = 20000, disposeLate?: (value: T) => void): Promise<T> {
   return new Promise((resolve, reject) => {

@@ -4,6 +4,7 @@ import { normalizeEventData } from "../../hooks/useEventData";
 import { errorMessage, parseEventFile, readJsonFile } from '../../domain/validation';
 import { eventWarnings, weekday } from '../../domain/date';
 import { EVENT_LIMITS } from '../../domain/limits';
+import { downloadBlob } from "../../export/files";
 import { PerformerEditor } from './PerformerEditor';
 import { FlyerOptionsEditor } from './FlyerOptionsEditor';
 import type { EventData, ScheduleItem, SocialLink } from "../../types/event";
@@ -63,16 +64,9 @@ function getPublicEventJson(eventData: EventData) {
 }
 
 function downloadJson(json: string, fileName: string) {
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+  void downloadBlob(new Blob([json], { type: "application/json" }), fileName).catch(() =>
+    window.alert("ファイルを保存できませんでした。もう一度お試しください。"),
+  );
 }
 
 function copyTextFallback(text: string) {

@@ -4,6 +4,7 @@ import type { EventRecord } from "../../hooks/useEventData";
 import { parseLibrary, newId } from '../../domain/workspace';
 import { errorMessage, readJsonFile } from '../../domain/validation';
 import { MAX_EVENTS } from '../../domain/limits';
+import { downloadBlob } from '../../export/files';
 
 type EventManagerProps = {
   eventRecords: EventRecord[];
@@ -44,17 +45,9 @@ export function EventManager({
 
   const exportLibrary = () => {
     const json = JSON.stringify({ schemaVersion: 2, kind: "event-library", records: eventRecords }, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-
-    anchor.href = url;
-    anchor.download = makeLibraryFileName();
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 30000);
-    setNotice("イベント一覧を書き出しました。");
+    downloadBlob(new Blob([json], { type: "application/json" }), makeLibraryFileName())
+      .then((outcome) => setNotice(outcome === "cancelled" ? "書き出しをキャンセルしました。" : "イベント一覧を書き出しました。"))
+      .catch(() => setNotice("イベント一覧を書き出せませんでした。もう一度お試しください。"));
   };
 
   const importLibrary = async (event: ChangeEvent<HTMLInputElement>) => {

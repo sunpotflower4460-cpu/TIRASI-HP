@@ -1,0 +1,9 @@
+{
+  "appId": "jp.tirasi.hp",
+  "appName": "生音",
+  "webDir": "../dist",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#f6efe0"
+  }
+}

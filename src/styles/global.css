@@ -65,6 +65,33 @@ a {
   }
 }
 
+.native-app .app-shell {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Content that scrolls under the clock and battery would be hard to read: a
+   frosted strip the height of the status bar sits over it. */
+html.native-app body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: rgba(255, 249, 250, 0.88);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* Higher specificity on purpose: the studio view sets its own nav padding. */
+html.native-app .app-shell .app-nav {
+  padding-top: calc(12px + env(safe-area-inset-top));
+}
+
 .app-nav {
   position: sticky;
   top: 0;

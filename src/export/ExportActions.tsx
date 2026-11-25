@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { downloadBlob, safeFileName } from "./files";
+import { isNativeApp, shareFileNative } from "./native";
+import { pngBlobToPdf } from "./pdf";
 import { errorMessage } from "../domain/validation";
 export function ExportActions({
   generate,
@@ -25,6 +27,7 @@ export function ExportActions({
   const [busyKind, setBusyKind] = useState<"png" | "print">("png");
   const [blob, setBlob] = useState<Blob>();
   const [light, setLight] = useState(false);
+  const native = isNativeApp();
   const generation = useRef(0);
   const locked = useRef(false);
   useEffect(() => {
@@ -62,18 +65,32 @@ export function ExportActions({
     }
   };
   const fileName = `${safeFileName(name)}${light ? "-light" : ""}.png`;
+  const saveBlob = async (ready: Blob) => {
+    try {
+      const outcome = await downloadBlob(ready, fileName);
+      setStatus(
+        outcome === "cancelled"
+          ? "保存をキャンセルしました。もう一度「PNGを保存」を押せます。"
+          : outcome === "shared"
+            ? "共有画面を開きました。「画像を保存」または「ファイルに保存」を選んでください。"
+            : "PNGのダウンロードを開始しました。端末の保存先をご確認ください。",
+      );
+    } catch {
+      setStatus("PNGを保存できませんでした。軽量版をお試しください。");
+    }
+  };
   const save = async () => {
     const ready = await ensureBlob();
-    if (!ready) return;
-    downloadBlob(ready, fileName);
-    setStatus(
-      "PNGのダウンロードを開始しました。端末の保存先をご確認ください。",
-    );
+    if (ready) await saveBlob(ready);
   };
   const share = async () => {
     const prepared = !!blob;
     const ready = await ensureBlob();
     if (!ready || locked.current) return;
+    if (native) {
+      await saveBlob(ready);
+      return;
+    }
     const file = new File([ready], fileName, { type: "image/png" });
     let canShare = false;
     try {
@@ -108,7 +125,43 @@ export function ExportActions({
       if (id === generation.current) locked.current = false;
     }
   };
+  const pdfName = fileName.replace(/\.png$/, ".pdf");
+  // The app cannot open a print dialog: build a PDF from the rendered paper
+  // and hand it to the share sheet, which offers "Print" and "Save to Files".
+  const printNative = async () => {
+    const ready = await ensureBlob();
+    if (!ready || locked.current) return;
+    locked.current = true;
+    const id = ++generation.current;
+    setBusyKind("print");
+    setBusy(true);
+    setStatus("PDFを作成しています…");
+    try {
+      const pdf = await pngBlobToPdf(ready);
+      if (id !== generation.current) return;
+      const outcome = await shareFileNative(pdf, pdfName, name);
+      if (id === generation.current)
+        setStatus(
+          outcome === "cancelled"
+            ? "キャンセルしました。もう一度「印刷 / PDFとして保存」を押せます。"
+            : "共有画面を開きました。「プリント」または「ファイルに保存」を選んでください。",
+        );
+    } catch (error) {
+      if (id === generation.current)
+        setStatus(
+          error instanceof Error && error.message
+            ? error.message
+            : "PDFを作成できませんでした。軽量版をお試しください。",
+        );
+    } finally {
+      if (id === generation.current) {
+        locked.current = false;
+        setBusy(false);
+      }
+    }
+  };
   const print = async () => {
+    if (native) return printNative();
     if (locked.current || errors.length) return;
     locked.current = true;
     const id = ++generation.current;
@@ -190,6 +243,11 @@ export function ExportActions({
           {sizeInfo ??
             "A4 PNG: 2480×3508px（300dpi相当） / 印刷はブラウザ機能です。A4・倍率100%・余白なし・背景の印刷を選んでください。業者向け塗り足しは含みません。"}
         </p>
+        {native && (
+          <p className="helper">
+            アプリでは、PNGと「印刷 / PDFとして保存」は共有画面から保存・印刷します。
+          </p>
+        )}
         <p className="helper">
           高画質PNGの作業メモリ目安: 約{memoryEstimateMB}
           MB（端末や画像により増減）。
