@@ -52,6 +52,7 @@ export function OnePageFlyer({
   extraErrors = [],
   visibility,
   extraBlocks = EMPTY_BLOCKS,
+  guard,
 }: {
   eventData: EventData;
   onPrint: () => void;
@@ -65,6 +66,7 @@ export function OnePageFlyer({
     times?: boolean;
   };
   extraBlocks?: { id: string; text: string; visible: boolean }[];
+  guard?: () => boolean;
 }) {
   const sheetRef = useRef<HTMLElement | null>(null);
   const date = eventData.date.trim();
@@ -141,6 +143,7 @@ export function OnePageFlyer({
           name={`${eventData.title}-${eventData.volume}`}
           errors={[...errors, ...extraErrors]}
           onPrint={onPrint}
+          guard={guard}
         />
       )}
       <SheetViewport width={793.7} height={1122.52}>

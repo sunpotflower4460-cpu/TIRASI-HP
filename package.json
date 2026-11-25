@@ -5,13 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:store": "vite --mode store",
     "build": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json && vite build",
+    "build:store": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json && vite build --mode store",
     "preview": "vite preview",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run build && npm run test:e2e"
   },
   "dependencies": {
+    "@capacitor-community/media": "^9.1.0",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
     "@fontsource/barlow-condensed": "^5.3.0",
     "@fontsource/cormorant-garamond": "^5.3.0",
     "@fontsource/dela-gothic-one": "^5.3.0",

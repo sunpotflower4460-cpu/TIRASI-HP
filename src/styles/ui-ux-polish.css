@@ -261,3 +261,18 @@
     border: 0;
   }
 }
+
+/* Editing views have five nav buttons. On a phone they scroll sideways in one
+   row instead of wrapping into tall, cramped pills. */
+@media (max-width: 760px) {
+  .local-view .app-nav {
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .local-view .app-nav button {
+    flex: 0 0 auto;
+    min-width: 0;
+    white-space: nowrap;
+  }
+}

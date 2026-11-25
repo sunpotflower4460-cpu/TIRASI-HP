@@ -10,7 +10,7 @@
 @media print { .workspace-banner, .public-label { display: none !important; } #page-content { outline: none; } }
 .export-actions button, .workspace-banner button, .empty-state button { border: 1px solid #b3c2b8; border-radius: 9px; background: #f8faf7; color: #234334; font-weight: 700; padding: 10px 14px; min-height: 44px; cursor: pointer; }
 .export-actions .action-row button:first-child { color: white; background: #245f49; border-color: #245f49; }
-.export-actions button:hover:enabled { background: #e5ede6; color: #173a2a; }
+@media (hover: hover) { .export-actions button:hover:enabled { background: #e5ede6; color: #173a2a; } }
 /* Keep editor controls readable while the selected flyer uses a dark palette. */
 .local-view .editor-panel { --primary-color: #245f49; --accent-color: #3f6a43; --text-color: #243f4a; color: #243f4a; }
 .local-view .editor-panel .editor-card, .local-view .editor-panel .editor-header { background: #fbfcf8; color: #243f4a; }

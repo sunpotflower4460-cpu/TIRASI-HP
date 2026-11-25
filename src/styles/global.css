@@ -49,6 +49,57 @@ a {
   min-height: 100vh;
 }
 
+/* When the site runs as an installed app, iOS draws it edge to edge behind
+   the notch and the home indicator. The published layout was measured with
+   the browser's own insets, so the extra space is only added in that mode.
+   The browser view keeps its original spacing. */
+@media (display-mode: standalone) {
+  .app-shell {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .app-nav {
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+}
+
+.native-app .app-shell {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* iOS zooms the whole page when a field smaller than 16px gets focus, and the
+   app cannot pinch back out. Fields keep at least 16px inside the app. */
+html.native-app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]),
+html.native-app select,
+html.native-app textarea {
+  font-size: max(16px, 1em);
+}
+
+/* Content that scrolls under the clock and battery would be hard to read: a
+   frosted strip the height of the status bar sits over it. */
+html.native-app body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: rgba(255, 249, 250, 0.88);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* Higher specificity on purpose: the studio view sets its own nav padding. */
+html.native-app .app-shell .app-nav {
+  padding-top: calc(12px + env(safe-area-inset-top));
+}
+
 .app-nav {
   position: sticky;
   top: 0;
@@ -76,12 +127,16 @@ a {
   transition: 0.2s ease;
 }
 
-.app-nav button:hover,
-.toolbar button:hover,
-.editor-actions button:hover,
-.editor-card button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(209, 122, 134, 0.55);
+/* Pointer devices only: a touch screen keeps :hover after a tap, which left the
+   tapped button lifted and outlined until the next tap elsewhere. */
+@media (hover: hover) {
+  .app-nav button:hover,
+  .toolbar button:hover,
+  .editor-actions button:hover,
+  .editor-card button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(209, 122, 134, 0.55);
+  }
 }
 
 .app-nav button.active {

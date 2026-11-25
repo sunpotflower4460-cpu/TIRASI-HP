@@ -278,7 +278,9 @@ export async function renderScene(
   const ctx = canvas.getContext("2d");
   if (!ctx)
     throw new Error(
-      "画像を描画できません。このブラウザのCanvasを確認してください。",
+      import.meta.env?.VITE_EDITION === "store"
+        ? "画像を描画できません。アプリを再起動して、もう一度お試しください。"
+        : "画像を描画できません。このブラウザのCanvasを確認してください。",
     );
   ctx.scale(canvas.width / scene.width, canvas.height / scene.height);
   ctx.fillStyle = scene.background;

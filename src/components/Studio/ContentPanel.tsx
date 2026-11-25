@@ -1,5 +1,6 @@
 import { mapBlocks, eventForDocument } from "../../studio/document";
 import { newId } from "../../domain/workspace";
+import { isStore } from "../../edition";
 import type { Dispatch, SetStateAction } from "react";
 import type { Workspace } from "../../domain/workspace";
 import type {
@@ -43,7 +44,8 @@ export function ContentPanel({
       )}
       {tab === "content" && doc.kind === "event-flyer" && boundEvent && (
         <>
-          <div className="studio-note">
+          {/* The event editor it opens exists only in the personal app. */}
+          <div className="studio-note" hidden={isStore}>
             <strong>イベントから作るチラシ</strong>
             <p>本文の出典と、このチラシだけの上書きを分けて保持します。</p>
             <button

@@ -1,0 +1,151 @@
+.plan-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  background: rgba(18, 21, 48, 0.62);
+}
+.plan-dialog {
+  width: min(560px, 100%);
+  max-height: calc(100% - env(safe-area-inset-top) - 12px);
+  overflow-y: auto;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  background: #f8f5ef;
+  color: #1e2140;
+  border-radius: 18px 18px 0 0;
+  box-sizing: border-box;
+}
+@media (min-width: 700px) {
+  .plan-backdrop { align-items: center; }
+  .plan-dialog { max-height: 90vh; border-radius: 18px; }
+}
+.plan-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.plan-header h2 { margin: 0; font-size: 20px; }
+.plan-dialog button {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid #d5d0c4;
+  background: #fff;
+  color: #232a57;
+  font-weight: 700;
+  padding: 10px 14px;
+}
+.plan-dialog button:disabled { opacity: 0.5; }
+.plan-note { margin: 10px 0; font-size: 13px; }
+.plan-blocked {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #e3c27a;
+  border-radius: 10px;
+  background: #fff6df;
+  font-size: 13px;
+}
+.plan-blocked p { margin: 0; }
+.plan-blocked ul { margin: 6px 0 0; padding-left: 18px; }
+.plan-dialog button.plan-buy { width: 100%; min-height: 52px; background: #232a57; border-color: #232a57; color: #fff; font-size: 15px; }
+.plan-message { min-height: 1.4em; margin: 8px 0; font-size: 13px; font-weight: 700; }
+.plan-dialog button.plan-restore { width: 100%; }
+
+.lock-badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff0cc;
+  color: #6b4a00;
+  font-size: 11px;
+  font-weight: 700;
+}
+.lock-notice {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #e3c27a;
+  border-radius: 10px;
+  background: #fff6df;
+  color: #4c3700;
+  font-size: 13px;
+}
+.lock-notice p { margin: 0 0 8px; }
+.lock-notice button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #232a57;
+  color: #fff;
+  font-weight: 700;
+}
+/* A locked combination can be tried out, but the preview is marked so it cannot
+   stand in for a saved file. The exported image is never marked. */
+.studio-paper, .legacy-document-preview { position: relative; }
+.trial-mark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  font-size: clamp(22px, 9vw, 54px);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.55);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.55);
+}
+.trial-mark span { transform: rotate(-24deg); white-space: nowrap; }
+
+.guide-steps { display: grid; gap: 10px; margin: 14px 0; padding: 0; list-style: none; }
+.guide-steps li { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: #fff; border: 1px solid #e4dfd4; }
+.guide-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: #232a57; color: #f2b544; }
+.guide-steps strong { font-size: 15px; }
+.guide-steps p { margin: 3px 0 0; font-size: 12.5px; line-height: 1.6; color: #5f637c; }
+
+/* plan screen */
+.plan-table { width: 100%; margin: 8px 0 6px; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 13px; background: #fff; border: 1px solid #e4dfd4; border-radius: 14px; overflow: hidden; }
+.plan-table th, .plan-table td { padding: 9px 4px; text-align: center; border-bottom: 1px solid #eeeae1; }
+.plan-table tbody tr:last-child > * { border-bottom: 0; }
+.plan-table thead th { font-size: 12px; vertical-align: bottom; }
+.plan-table thead th span:not(.visually-hidden) { display: block; margin: 3px auto 0; width: fit-content; padding: 2px 7px; border-radius: 999px; background: #232a57; color: #fff; font-size: 10px; }
+.plan-table tbody th { width: 30%; padding-left: 10px; text-align: left; font-size: 12px; font-weight: 700; }
+.plan-table .current { background: #eceef8; }
+.plan-table td { font-weight: 700; font-size: 15px; color: #232a57; }
+.plan-table td .icon { color: #1f8a57; vertical-align: middle; }
+.plan-fineprint { margin: 6px 0; font-size: 11.5px; line-height: 1.6; color: #5f637c; }
+.plan-offer { position: relative; margin: 12px 0 0; padding: 14px; border: 1px solid #e4dfd4; border-radius: 16px; background: #fff; }
+.plan-offer.best { border: 2px solid #c52d63; background: #fff5f8; }
+.plan-offer h3 { margin: 0; font-size: 17px; }
+.plan-offer p { margin: 4px 0 10px; font-size: 12.5px; color: #5f637c; }
+.plan-ribbon { position: absolute; top: -10px; right: 14px; padding: 3px 12px; border-radius: 999px; background: #c52d63; color: #fff; font-size: 11px; font-weight: 700; }
+.plan-owned { padding: 14px; border-radius: 14px; background: #e8f5ee; font-weight: 700; font-size: 13px; }
+.plan-dialog .plan-offer button.plan-buy { background: #232a57; border-color: #232a57; }
+.plan-dialog .plan-offer.best button.plan-buy { background: #c52d63; border-color: #c52d63; }
+.plan-buy b { font-size: 17px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.plan-dialog:focus { outline: none; }
+
+/* choosing separate or shared content for a new live flyer */
+.plan-dialog button.choice-main { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; width: 100%; margin-top: 14px; padding: 14px; border: 2px solid #c52d63; border-radius: 16px; background: #fff5f8; color: #1e2140; text-align: left; }
+.choice-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: #c52d63; color: #fff; }
+.choice-main strong { display: block; font-size: 16px; }
+.choice-main small { display: block; margin-top: 3px; font-size: 12.5px; font-weight: 400; line-height: 1.6; color: #5f637c; }
+.choice-share { margin-top: 14px; padding: 14px; border: 1px solid #e4dfd4; border-radius: 16px; background: #fff; }
+.choice-share h3 { margin: 0; font-size: 15px; }
+.choice-share p { margin: 4px 0 8px; font-size: 12.5px; line-height: 1.6; color: #5f637c; }
+.choice-share ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.plan-dialog .choice-share li button { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; text-align: left; background: #eceef8; border-color: #eceef8; }
+.choice-share li strong { display: block; overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.choice-share li small { display: block; font-size: 11.5px; font-weight: 400; color: #5f637c; }
+.choice-share li button > span { min-width: 0; }
+
+/* settings */
+.setting-group { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; border: 0; }
+.setting-group legend { margin-bottom: 8px; padding: 0; font-size: 15px; font-weight: 700; }
+.setting-group label { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 10px; padding: 12px; border: 2px solid #e4dfd4; border-radius: 14px; background: #fff; cursor: pointer; }
+.setting-group label.selected { border-color: #232a57; background: #eceef8; }
+.setting-group input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: #232a57; }
+.setting-group strong { display: block; font-size: 14px; }
+.setting-group small { display: block; margin-top: 3px; font-size: 12px; line-height: 1.6; color: #5f637c; }
+.plan-dialog button.setting-link { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; width: 100%; margin-top: 10px; text-align: left; }

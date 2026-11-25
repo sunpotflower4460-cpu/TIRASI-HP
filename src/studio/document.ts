@@ -10,6 +10,7 @@ import {
 } from "../domain/validation";
 import type { EventRecord } from "../domain/workspace";
 import { newId } from "../domain/workspace";
+import { isStore } from "../edition";
 export type ContentBlock = {
   id: string;
   type: "heading" | "text" | "details";
@@ -120,8 +121,9 @@ export type CreativeDocument = BaseDocument &
   );
 export function defaultDesign(): Design {
   return {
-    templateId: "citypop",
-    paletteId: "city",
+    // The store app must start on designs the free plan includes.
+    templateId: isStore ? "livehouse" : "citypop",
+    paletteId: isStore ? "mono" : "city",
     sizeId: "a4",
     fontSet: "auto",
     decorations: true,
@@ -163,12 +165,14 @@ export function createDocument(
       ...base,
       design: {
         ...base.design,
-        templateId: "legacy",
-        paletteId: ["spring", "summer", "autumn", "night"].includes(
-          event.eventData.themeId,
-        )
-          ? event.eventData.themeId
-          : "summer",
+        templateId: isStore ? "livehouse" : "legacy",
+        paletteId: isStore
+          ? "mono"
+          : ["spring", "summer", "autumn", "night"].includes(
+                event.eventData.themeId,
+              )
+            ? event.eventData.themeId
+            : "summer",
         visibility: {
           ...base.design.visibility,
           performers: event.eventData.flyerOptions.showPerformerProfiles,
@@ -188,7 +192,7 @@ export function createDocument(
   if (kind === "free-flyer")
     return {
       ...base,
-      design: { ...base.design, templateId: "gallery", paletteId: "mono" },
+      design: { ...base.design, templateId: isStore ? "information" : "gallery", paletteId: "mono" },
       kind,
       content: {
         title: "新しいチラシ",
@@ -402,7 +406,7 @@ export const starters = [
     label: "作品展・写真展",
     title: "余白を、飾る。",
     subtitle: "ART & PHOTO EXHIBITION",
-    template: "gallery",
+    template: isStore ? "swiss" : "gallery",
     text: "作品や作家の紹介をここに。\n会期・場所・お問い合わせ先を追加してください。",
   },
   {
@@ -418,7 +422,7 @@ export const starters = [
     label: "お店・セール",
     title: "ちいさなお店の\nお知らせ",
     subtitle: "NEW ARRIVALS / SPECIAL DAYS",
-    template: "sticker",
+    template: isStore ? "information" : "sticker",
     text: "商品やサービスの紹介をここに。\n価格・営業時間・所在地を追加してください。",
   },
   {
@@ -426,7 +430,7 @@ export const starters = [
     label: "カフェ・メニュー",
     title: "きょうの、\nおすすめ。",
     subtitle: "CAFE MENU",
-    template: "serif",
+    template: isStore ? "acoustic" : "serif",
     text: "季節のプレート　¥ 000\n本日のコーヒー　¥ 000\n\n商品名と価格を編集してください。",
   },
   {
@@ -442,7 +446,7 @@ export const starters = [
     label: "地域の催し・交流会",
     title: "まちで、会おう。",
     subtitle: "COMMUNITY DAY",
-    template: "showa",
+    template: isStore ? "information" : "showa",
     text: "催しの内容や参加方法をここに。\n日時・会場・参加費・連絡先を追加してください。",
   },
 ] as const;

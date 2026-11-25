@@ -4,6 +4,8 @@ import { normalizeEventData } from "../../hooks/useEventData";
 import { errorMessage, parseEventFile, readJsonFile } from '../../domain/validation';
 import { eventWarnings, weekday } from '../../domain/date';
 import { EVENT_LIMITS } from '../../domain/limits';
+import { downloadBlob, exportNotice } from "../../export/files";
+import type { JsonSaveOutcome } from "../../export/files";
 import { PerformerEditor } from './PerformerEditor';
 import { FlyerOptionsEditor } from './FlyerOptionsEditor';
 import type { EventData, ScheduleItem, SocialLink } from "../../types/event";
@@ -62,17 +64,8 @@ function getPublicEventJson(eventData: EventData) {
   return JSON.stringify(normalizeEventData(eventData), null, 2);
 }
 
-function downloadJson(json: string, fileName: string) {
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+function downloadJson(json: string, fileName: string): Promise<JsonSaveOutcome> {
+  return downloadBlob(new Blob([json], { type: "application/json" }), fileName).catch(() => "failed" as const);
 }
 
 function copyTextFallback(text: string) {
@@ -193,9 +186,9 @@ export function EditorPage({
     setNotice("初期データに戻しました。");
   };
 
-  const downloadEventJson = () => {
-    downloadJson(JSON.stringify({ schemaVersion: 2, kind: "event", eventData }, null, 2), makeExportFileName(eventData));
-    setNotice("JSONを書き出しました。");
+  const downloadEventJson = async () => {
+    const outcome = await downloadJson(JSON.stringify({ schemaVersion: 2, kind: "event", eventData }, null, 2), makeExportFileName(eventData));
+    setNotice(exportNotice(outcome, "JSONを書き出しました。"));
   };
 
   const copyPublicEventJson = async () => {
@@ -219,9 +212,9 @@ export function EditorPage({
     );
   };
 
-  const downloadDefaultEventJson = () => {
-    downloadJson(getPublicEventJson(eventData), makeDefaultEventFileName(eventData));
-    setNotice("defaultEvent用JSONを書き出しました。この内容をGitHubの公開データへ反映できます。");
+  const downloadDefaultEventJson = async () => {
+    const outcome = await downloadJson(getPublicEventJson(eventData), makeDefaultEventFileName(eventData));
+    setNotice(exportNotice(outcome, "defaultEvent用JSONを書き出しました。この内容をGitHubの公開データへ反映できます。"));
   };
 
   const importEventJson = async (event: ChangeEvent<HTMLInputElement>) => {

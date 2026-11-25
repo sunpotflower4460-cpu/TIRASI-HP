@@ -1,0 +1,9 @@
+{
+  "appId": "jp.tirasi.livechirashi",
+  "appName": "ライブチラシ",
+  "webDir": "../dist-store",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#f8f5ef"
+  }
+}

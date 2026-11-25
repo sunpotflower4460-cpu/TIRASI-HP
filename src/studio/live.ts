@@ -24,6 +24,10 @@ export function liveManagementName(
   if (doc.name === base(before).slice(0, 500)) return base(after).slice(0, 500);
   if (doc.name === `${base(before)} / ${before.date}`.slice(0, 500))
     return `${base(after)} / ${after.date}`.slice(0, 500);
+  // A number added to tell two flyers apart stays while the title changes.
+  const numbered = doc.name.match(/ \(\d+\)$/)?.[0];
+  if (numbered && doc.name === `${base(before).slice(0, 500 - numbered.length)}${numbered}`)
+    return `${base(after).slice(0, 500 - numbered.length)}${numbered}`;
   return doc.name;
 }
 

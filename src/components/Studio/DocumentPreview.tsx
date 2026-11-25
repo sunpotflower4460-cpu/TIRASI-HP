@@ -12,6 +12,8 @@ import type { ImageLease } from "../../studio/assets";
 import { sizes } from "../../studio/registry";
 import { errorMessage } from "../../domain/validation";
 import { ExportActions } from "../../export/ExportActions";
+import { useExportLock } from "../../plan/ExportLock";
+import { isStore } from "../../edition";
 import "../../styles/studio.css";
 import { OnePageFlyer } from "../Flyer/OnePageFlyer";
 import { getThemeClassName } from "../../data/themes";
@@ -28,6 +30,7 @@ function CanvasDocumentPreview({
   thumbnail?: boolean;
   showBefore?: boolean;
 }) {
+  const lock = useExportLock(doc);
   const scene = useMemo(() => composeScene(doc, events), [doc, events]);
   const size = sizes[doc.design.sizeId];
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -175,8 +178,10 @@ function CanvasDocumentPreview({
   ].filter(Boolean);
   return (
     <div className={`document-preview ${thumbnail ? "thumbnail" : ""}`}>
+      {!thumbnail && lock.notice}
       {!thumbnail && (
         <ExportActions
+          guard={lock.guard}
           source={doc}
           name={doc.name}
           generate={generate}
@@ -185,7 +190,7 @@ function CanvasDocumentPreview({
           )}
           canPrint={size.print}
           onPrint={print}
-          sizeInfo={`${size.label} / PNG ${size.width}×${size.height}px${size.print ? "（300dpi相当）。印刷はブラウザでA4・倍率100%・余白なし・背景の印刷を選択。塗り足しなし。" : "。このサイズはPNG出力専用です。"}`}
+          sizeInfo={`${size.label} / PNG ${size.width}×${size.height}px${size.print ? (isStore ? "（300dpi相当）。印刷は「印刷 / PDFとして保存」から。塗り足しなし。" : "（300dpi相当）。印刷はブラウザでA4・倍率100%・余白なし・背景の印刷を選択。塗り足しなし。") : "。このサイズはPNG出力専用です。"}`}
           errors={errors}
         />
       )}
@@ -199,6 +204,7 @@ function CanvasDocumentPreview({
         }
         aria-busy={busy}
       >
+        {!thumbnail && lock.mark}
         <canvas
           ref={canvasRef}
           role="img"
@@ -256,6 +262,7 @@ function LegacyDocumentPreview({
   events: EventRecord[];
   thumbnail?: boolean;
 }) {
+  const lock = useExportLock(doc);
   const bound = events.find((event) => event.id === doc.eventId);
   const event = eventForDocument(doc, events);
   const data = useMemo(
@@ -285,7 +292,10 @@ function LegacyDocumentPreview({
     <div
       className={`legacy-document-preview ${getThemeClassName(doc.design.paletteId)} ${thumbnail ? "legacy-thumbnail" : ""}`}
     >
+      {!thumbnail && lock.notice}
+      {!thumbnail && lock.mark}
       <OnePageFlyer
+        guard={lock.guard}
         eventData={data}
         onPrint={() => window.print()}
         thumbnail={thumbnail}

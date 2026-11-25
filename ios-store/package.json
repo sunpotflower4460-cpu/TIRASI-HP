@@ -1,0 +1,19 @@
+{
+  "name": "tirasi-livechirashi-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "App Store build of TIRASI ライブチラシ作成: bundles ../dist-store into an iOS app.",
+  "scripts": {
+    "sync": "cd .. && npm run build:store && cd ios-store && npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor-community/media": "^9.1.0",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/share": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2"
+  }
+}

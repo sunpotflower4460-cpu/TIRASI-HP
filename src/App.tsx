@@ -9,7 +9,7 @@ import { HomeWithFlyerPreview } from "./components/Home/HomeWithFlyerPreview";
 import { defaultEvent as publishedEvent } from "./data/defaultEvent";
 import { getThemeClassName } from "./data/themes";
 import { useEventData } from "./hooks/useEventData";
-import { downloadJson } from "./export/files";
+import { downloadJsonOrAlert } from "./export/files";
 import "./styles/theme.css";
 import "./styles/event-manager.css";
 import "./styles/workspace.css";
@@ -69,7 +69,7 @@ export default function App() {
             <p>{local.storageError}</p>
             <button
               onClick={() =>
-                downloadJson(local.workspace, "tirasi-unsaved-workspace.json")
+                downloadJsonOrAlert(local.workspace, "tirasi-unsaved-workspace.json")
               }
             >
               未保存の内容をJSON保存
@@ -114,7 +114,7 @@ export default function App() {
             <p>{local.storageError}</p>
             <button
               onClick={() =>
-                downloadJson(local.workspace, "tirasi-unsaved-workspace.json")
+                downloadJsonOrAlert(local.workspace, "tirasi-unsaved-workspace.json")
               }
             >
               未保存の内容をJSON保存
