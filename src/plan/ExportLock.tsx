@@ -1,6 +1,7 @@
 import { highestTier, lockedItems, tierName } from "./entitlements";
 import type { CreativeDocument } from "../studio/document";
 import { usePlan } from "./PlanContext";
+import { tr } from "../i18n";
 import "../styles/plan.css";
 
 /**
@@ -17,19 +18,14 @@ export function useExportLock(doc: CreativeDocument) {
   };
   const notice = locks.length ? (
     <div className="lock-notice print-hidden">
-      <p>
-        お試し表示中です。保存・印刷・共有には<strong>{tierName[highestTier(locks)]}プラン</strong>が必要です（
-        {locks.map((item) => item.label).join("、")}）。
-      </p>
-      <button type="button" onClick={() => plan.openPaywall(locks)}>
-        プランを見る
-      </button>
+      <p>{tr("お試し表示中です。保存・印刷・共有には")}<strong>{tr("{0}プラン", tierName[highestTier(locks)])}</strong>{tr("が必要です（")}{locks.map((item) => item.label).join(tr("、"))}{tr("）。")}</p>
+      <button type="button" onClick={() => plan.openPaywall(locks)}>{tr("プランを見る")}</button>
     </div>
   ) : null;
   const mark = locks.length ? (
     <div className="trial-mark print-hidden" aria-hidden="true">
       {[0, 1, 2, 3].map((row) => (
-        <span key={row}>お試し表示</span>
+        <span key={row}>{tr("お試し表示")}</span>
       ))}
     </div>
   ) : null;

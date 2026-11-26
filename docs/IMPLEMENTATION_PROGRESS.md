@@ -297,3 +297,18 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
   signed in); not verified with TestFlight.
 - Uploaded build 1.0 (1) does not contain the preview or speed fix; a new build number is needed to ship them.
 
+
+## 2026-11-26 English support before submission (branch `feature/store-english`, from `main` 78ef50a)
+- Owner decided to ship English with 1.0. The store app follows the device language (Japanese, otherwise
+  English) with a setting; the personal edition stays Japanese. Japanese source text is the key
+  (`src/i18n`, 803 entries); a unit test fails on any missing, unused or untranslated entry.
+- Flyers follow the app language (headings, weekday, sample content, design and colour names).
+- iOS: English and Japanese app name and permission texts; build number 2.
+- English privacy and support pages, en-US listing and purchase texts, English screenshots. **Not published
+  yet** (`gh-pages`) and not entered in App Store Connect.
+- Checks: unit 98; layout sweep with English content over 2,160 renders found 15 minor findings (11 were a
+  natural break after a date comma, 4 a descender touching the subtitle, since given more room); English
+  screens walked at 320 and 375 px.
+- Local browser tests under heavy machine load: 40/41 (one failure was a lost space in "＋ 出演者" labels,
+  fixed), then 22/23 on the rerun (the known timing-sensitive personal live-workflow test). CI decides.
+- Next: merge after CI, publish the pages, rebuild and upload build 2, owner adds en-US and countries.

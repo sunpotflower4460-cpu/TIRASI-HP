@@ -1,6 +1,10 @@
 // The privacy policy and the licence notices, readable inside the app and offline.
-import legal from "./legal.json";
+import japanese from "./legal.json";
+import english from "./legal.en.json";
 import licenses from "./licenses.json";
+import { language, tr } from "../i18n";
+
+const legal = language === "en" ? english : japanese;
 
 export function PrivacyPolicy() {
   return (
@@ -16,19 +20,17 @@ export function PrivacyPolicy() {
       ))}
       {(legal.operator || legal.contact) && (
         <section>
-          <h3>お問い合わせ</h3>
-          {legal.operator && <p>運営者：{legal.operator}</p>}
-          {legal.contact && <p>連絡先：{legal.contact}</p>}
+          <h3>{tr("お問い合わせ")}</h3>
+          {legal.operator && <p>{tr("運営者：{0}", legal.operator)}</p>}
+          {legal.contact && <p>{tr("連絡先：{0}", legal.contact)}</p>}
         </section>
       )}
       {legal.privacyPolicyUrl && (
         <p>
-          <a href={legal.privacyPolicyUrl} target="_blank" rel="noreferrer">
-            ウェブ版を開く
-          </a>
+          <a href={legal.privacyPolicyUrl} target="_blank" rel="noreferrer">{tr("ウェブ版を開く")}</a>
         </p>
       )}
-      <p className="plan-fineprint">最終更新日：{legal.updated}</p>
+      <p className="plan-fineprint">{tr("最終更新日：{0}", legal.updated)}</p>
     </article>
   );
 }
@@ -36,7 +38,7 @@ export function PrivacyPolicy() {
 export function LicenseNotices() {
   return (
     <div className="legal">
-      <p>本アプリは、次のソフトウェアと書体を利用しています。名前を押すと条文を表示します。</p>
+      <p>{tr("本アプリは、次のソフトウェアと書体を利用しています。名前を押すと条文を表示します。")}</p>
       {licenses.map((item) => (
         <details key={item.name}>
           <summary>

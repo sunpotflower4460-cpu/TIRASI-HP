@@ -9,6 +9,7 @@ import { createDocument, eventForDocument } from "./document";
 import type { CreativeDocument } from "./document";
 import { templateById } from "./registry";
 import type { TemplateId } from "./registry";
+import { tr } from "../i18n";
 
 export const MAX_DOCUMENTS = 100;
 
@@ -66,7 +67,7 @@ function withEvent(workspace: Workspace, record: EventRecord): EventRecord[] {
   const used = new Set(workspace.documents.flatMap((doc) => (doc.kind === "event-flyer" ? [doc.eventId] : [])));
   const unused = workspace.events.find((event) => !used.has(event.id));
   if (!unused)
-    throw new ValidationError(`ライブは${MAX_EVENTS}件までです。不要なチラシを削除してから、もう一度お試しください。`);
+    throw new ValidationError(tr("ライブは{0}件までです。不要なチラシを削除してから、もう一度お試しください。", MAX_EVENTS));
   return [...workspace.events.filter((event) => event.id !== unused.id), record];
 }
 
@@ -88,14 +89,14 @@ export function createLiveFlyer(
 ): Workspace {
   if (workspace.documents.length >= MAX_DOCUMENTS)
     throw new ValidationError(
-      `制作物は${MAX_DOCUMENTS}件まで保存できます。バックアップしてから不要な制作物を削除してください。`,
+      tr("制作物は{0}件まで保存できます。バックアップしてから不要な制作物を削除してください。", MAX_DOCUMENTS),
     );
   const active = workspace.events.find((event) => event.id === workspace.activeEventId) ?? workspace.events[0];
   let events = workspace.events;
   let record: EventRecord;
   if (choice.kind === "share") {
     const found = events.find((event) => event.id === choice.eventId);
-    if (!found) throw new ValidationError("選んだライブが見つかりません。");
+    if (!found) throw new ValidationError(tr("選んだライブが見つかりません。"));
     record = found;
   } else if (!workspace.documents.some((doc) => doc.kind === "event-flyer")) {
     // Nothing uses the starting event yet, so there is nothing to separate from.
@@ -134,7 +135,7 @@ export function detachLiveFlyer(
   options: { eventId: string; now: string },
 ): Workspace {
   const doc = linked(workspace).find((item) => item.id === documentId);
-  if (!doc) throw new ValidationError("このチラシは、ほかと内容を共有していません。");
+  if (!doc) throw new ValidationError(tr("このチラシは、ほかと内容を共有していません。"));
   const record = recordFor(eventForDocument(doc, workspace.events), options.eventId);
   return {
     ...workspace,

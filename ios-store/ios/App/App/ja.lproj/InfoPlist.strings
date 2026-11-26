@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "ライブチラシ";
+"NSCameraUsageDescription" = "チラシに載せる画像を、その場で撮影して取り込むときに使います。";
+"NSPhotoLibraryAddUsageDescription" = "作ったチラシを写真アプリ（カメラロール）に保存するために使います。";
+"NSPhotoLibraryUsageDescription" = "作ったチラシを写真アプリに保存するために使います。既存の写真は読み取りません。";

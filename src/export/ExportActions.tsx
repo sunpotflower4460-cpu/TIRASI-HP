@@ -3,6 +3,7 @@ import { downloadBlob, safeFileName, withTimeout } from "./files";
 import { PhotoAccessDeniedError, isNativeApp, savePhotoNative, shareFileNative } from "./native";
 import { pngBlobToPdf } from "./pdf";
 import { errorMessage } from "../domain/validation";
+import { tr } from "../i18n";
 export function ExportActions({
   generate,
   source,
@@ -41,8 +42,8 @@ export function ExportActions({
   const native = isNativeApp();
   // In the app the buttons name their destination: the first goes to Photos, the
   // second opens the share sheet (Files, AirDrop, LINE...).
-  const saveLabel = native ? "写真に保存" : "PNGを保存";
-  const shareLabel = native ? "ファイルに保存 / 共有" : "共有";
+  const saveLabel = native ? tr("写真に保存") : tr("PNGを保存");
+  const shareLabel = native ? tr("ファイルに保存 / 共有") : tr("共有");
   const generation = useRef(0);
   const locked = useRef(false);
   useEffect(() => {
@@ -64,7 +65,7 @@ export function ExportActions({
     const id = ++generation.current;
     setBusyKind("png");
     setBusy(true);
-    setStatus("PNGを作成しています…");
+    setStatus(tr("PNGを作成しています…"));
     try {
       const result = await generate(light);
       if (id !== generation.current) return undefined;
@@ -89,17 +90,17 @@ export function ExportActions({
         if (
           savedCount > 0 &&
           !window.confirm(
-            `このチラシはすでに写真アプリに${savedCount}枚保存しました。もう1枚保存しますか？`,
+            tr("このチラシはすでに写真アプリに{0}枚保存しました。もう1枚保存しますか？", savedCount),
           )
         ) {
-          setStatus(`✓ すでに写真アプリに${savedCount}枚保存済みです。追加で保存はしませんでした。`, true);
+          setStatus(tr("✓ すでに写真アプリに{0}枚保存済みです。追加で保存はしませんでした。", savedCount), true);
           return;
         }
         locked.current = true;
         const id = ++generation.current;
         setBusyKind("save");
         setBusy(true);
-        setStatus("写真アプリに保存しています…");
+        setStatus(tr("写真アプリに保存しています…"));
         try {
           // Long enough for the first-time permission prompt to be answered.
           await withTimeout(savePhotoNative(ready, fileName), 120000);
@@ -107,7 +108,7 @@ export function ExportActions({
             const count = savedCount + 1;
             setSavedCount(count);
             setStatus(
-              `✓ 写真アプリ（カメラロール）に保存しました（${count}枚目）。写真アプリで確認できます。「ファイルに保存」や他のアプリへ送るときは「ファイルに保存 / 共有」を押してください。`,
+              tr("✓ 写真アプリ（カメラロール）に保存しました（{0}枚目）。写真アプリで確認できます。「ファイルに保存」や他のアプリへ送るときは「ファイルに保存 / 共有」を押してください。", count),
               true,
             );
           }
@@ -117,7 +118,7 @@ export function ExportActions({
           // No answer from Photos. Do not open the share sheet on our own: the save may
           // still finish, and a second copy would be written.
           setStatus(
-            `写真アプリへの保存を確認できませんでした。写真アプリを確認し、なければ「${shareLabel}」から保存してください。`,
+            tr("写真アプリへの保存を確認できませんでした。写真アプリを確認し、なければ「{0}」から保存してください。", shareLabel),
           );
         } finally {
           if (id === generation.current) {
@@ -130,14 +131,14 @@ export function ExportActions({
       const outcome = await downloadBlob(ready, fileName);
       setStatus(
         outcome === "cancelled"
-          ? `保存をキャンセルしました。もう一度「${saveLabel}」を押せます。`
-          : "PNGのダウンロードを開始しました。端末の保存先をご確認ください。",
+          ? tr("保存をキャンセルしました。もう一度「{0}」を押せます。", saveLabel)
+          : tr("PNGのダウンロードを開始しました。端末の保存先をご確認ください。"),
       );
     } catch (error) {
       setStatus(
         error instanceof PhotoAccessDeniedError
-          ? `${error.message}「${shareLabel}」からファイルに保存することもできます。`
-          : "PNGを保存できませんでした。軽量版をお試しください。",
+          ? tr("{0}「{1}」からファイルに保存することもできます。", error.message, shareLabel)
+          : tr("PNGを保存できませんでした。軽量版をお試しください。"),
       );
     }
   };
@@ -164,12 +165,12 @@ export function ExportActions({
         if (id === generation.current)
           setStatus(
             outcome === "cancelled"
-              ? "共有をキャンセルしました。PNGは引き続き保存できます。"
-              : "共有画面を開きました。「ファイルに保存」を選ぶとファイルアプリに、他のアプリを選ぶとそこへ送れます。",
+              ? tr("共有をキャンセルしました。PNGは引き続き保存できます。")
+              : tr("共有画面を開きました。「ファイルに保存」を選ぶとファイルアプリに、他のアプリを選ぶとそこへ送れます。"),
           );
       } catch {
         if (id === generation.current)
-          setStatus(`共有できませんでした。「${saveLabel}」をお使いください。`);
+          setStatus(tr("共有できませんでした。「{0}」をお使いください。", saveLabel));
       } finally {
         if (id === generation.current) {
           locked.current = false;
@@ -187,7 +188,7 @@ export function ExportActions({
     }
     if (!canShare) {
       setStatus(
-        "このブラウザでは画像共有を利用できません。「PNGを保存」をお使いください。",
+        tr("このブラウザでは画像共有を利用できません。「PNGを保存」をお使いください。"),
       );
       return;
     }
@@ -196,17 +197,17 @@ export function ExportActions({
     try {
       await navigator.share({ files: [file], title: name });
       if (id === generation.current)
-        setStatus("共有画面を開きました。保存先をご確認ください。");
+        setStatus(tr("共有画面を開きました。保存先をご確認ください。"));
     } catch (e) {
       if (id === generation.current)
         setStatus(
           e instanceof DOMException && e.name === "AbortError"
-            ? "共有をキャンセルしました。PNGは引き続き保存できます。"
+            ? tr("共有をキャンセルしました。PNGは引き続き保存できます。")
             : !prepared &&
                 e instanceof DOMException &&
                 e.name === "NotAllowedError"
-              ? "画像の準備ができました。もう一度「共有」を押してください。"
-              : "共有できませんでした。「PNGを保存」をお使いください。",
+              ? tr("画像の準備ができました。もう一度「共有」を押してください。")
+              : tr("共有できませんでした。「PNGを保存」をお使いください。"),
         );
     } finally {
       if (id === generation.current) locked.current = false;
@@ -222,7 +223,7 @@ export function ExportActions({
     const id = ++generation.current;
     setBusyKind("print");
     setBusy(true);
-    setStatus("PDFを作成しています…");
+    setStatus(tr("PDFを作成しています…"));
     try {
       const pdf = await pngBlobToPdf(ready);
       if (id !== generation.current) return;
@@ -230,15 +231,15 @@ export function ExportActions({
       if (id === generation.current)
         setStatus(
           outcome === "cancelled"
-            ? "キャンセルしました。もう一度「印刷 / PDFとして保存」を押せます。"
-            : "共有画面を開きました。「プリント」または「ファイルに保存」を選んでください。",
+            ? tr("キャンセルしました。もう一度「印刷 / PDFとして保存」を押せます。")
+            : tr("共有画面を開きました。「プリント」または「ファイルに保存」を選んでください。"),
         );
     } catch (error) {
       if (id === generation.current)
         setStatus(
           error instanceof Error && error.message
             ? error.message
-            : "PDFを作成できませんでした。軽量版をお試しください。",
+            : tr("PDFを作成できませんでした。軽量版をお試しください。"),
         );
     } finally {
       if (id === generation.current) {
@@ -255,12 +256,12 @@ export function ExportActions({
     const id = ++generation.current;
     setBusyKind("print");
     setBusy(true);
-    setStatus("印刷用の紙面を準備しています…");
+    setStatus(tr("印刷用の紙面を準備しています…"));
     try {
       await onPrint();
       if (id === generation.current)
         setStatus(
-          "ブラウザの印刷画面でA4・倍率100%・背景の印刷を確認してください。",
+          tr("ブラウザの印刷画面でA4・倍率100%・背景の印刷を確認してください。"),
         );
     } catch (error) {
       if (id === generation.current) setStatus(errorMessage(error));
@@ -281,11 +282,11 @@ export function ExportActions({
           disabled={busy || !!errors.length}
         >
           {busy && busyKind === "save"
-            ? "保存中…"
+            ? tr("保存中…")
             : busy && busyKind === "png"
-              ? "作成中…"
+              ? tr("作成中…")
               : savedCount > 0
-                ? "✓ 保存済み"
+                ? tr("✓ 保存済み")
                 : saveLabel}
         </button>
         {canPrint && (
@@ -293,9 +294,7 @@ export function ExportActions({
             type="button"
             disabled={!!errors.length || busy}
             onClick={() => void print()}
-          >
-            印刷 / PDFとして保存
-          </button>
+          >{tr("印刷 / PDFとして保存")}</button>
         )}
         <button
           type="button"
@@ -307,15 +306,13 @@ export function ExportActions({
       </div>
       {errors.length > 0 && (
         <div role="alert" className="editor-warning">
-          <strong>書き出す前に修正してください</strong>
+          <strong>{tr("書き出す前に修正してください")}</strong>
           <ul>
             {errors.map((e) => (
               <li key={e}>{e}</li>
             ))}
           </ul>
-          <p>
-            本文を短くする、任意の紹介を非表示にする、別のレイアウトを選ぶなどで調整してください。
-          </p>
+          <p>{tr("本文を短くする、任意の紹介を非表示にする、別のレイアウトを選ぶなどで調整してください。")}</p>
         </div>
       )}
       <p
@@ -326,33 +323,25 @@ export function ExportActions({
         {status}
       </p>
       <details className="export-settings">
-        <summary>出力サイズと印刷のこつ</summary>
+        <summary>{tr("出力サイズと印刷のこつ")}</summary>
         {canPrint && (
           <label className="inline-check">
             <input
               type="checkbox"
               checked={light}
               onChange={(e) => setLight(e.target.checked)}
-            />
-            軽量版（A4は1240×1754px）
-          </label>
+            />{tr("軽量版（A4は1240×1754px）")}</label>
         )}
         <p className="helper">
           {sizeInfo ??
-            "A4 PNG: 2480×3508px（300dpi相当） / 印刷はブラウザ機能です。A4・倍率100%・余白なし・背景の印刷を選んでください。業者向け塗り足しは含みません。"}
+            tr("A4 PNG: 2480×3508px（300dpi相当） / 印刷はブラウザ機能です。A4・倍率100%・余白なし・背景の印刷を選んでください。業者向け塗り足しは含みません。")}
         </p>
         {native && (
-          <p className="helper">
-            アプリでは「写真に保存」で写真アプリ（カメラロール）に直接保存します。「ファイルに保存 / 共有」と「印刷 / PDFとして保存」は共有画面から、ファイルへの保存・他のアプリへの送信・印刷ができます。
-          </p>
+          <p className="helper">{tr("アプリでは「写真に保存」で写真アプリ（カメラロール）に直接保存します。「ファイルに保存 / 共有」と「印刷 / PDFとして保存」は共有画面から、ファイルへの保存・他のアプリへの送信・印刷ができます。")}</p>
         )}
-        <p className="helper">
-          高画質PNGの作業メモリ目安: 約{memoryEstimateMB}
-          MB（端末や画像により増減）。
-          {canPrint
-            ? "動作が重い場合は軽量版を選んでください。"
-            : "画像を小さくすると負荷を下げられます。"}
-        </p>
+        <p className="helper">{tr("高画質PNGの作業メモリ目安: 約{0}MB（端末や画像により増減）。{1}", memoryEstimateMB, canPrint
+            ? tr("動作が重い場合は軽量版を選んでください。")
+            : tr("画像を小さくすると負荷を下げられます。"))}</p>
       </details>
     </div>
   );

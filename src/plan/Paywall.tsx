@@ -3,6 +3,7 @@ import { highestTier, planCounts, productIds, tierName, tierRank } from "./entit
 import type { Requirement, Tier } from "./entitlements";
 import type { StoreProduct } from "./store";
 import { Icon } from "../store/Icon";
+import { tr } from "../i18n";
 import "../styles/plan.css";
 
 type Props = {
@@ -37,18 +38,18 @@ export function Paywall({ tier, products, blocked, busy, message, onBuy, onResto
           {label}　<b>{price(id)}</b>
         </>
       ) : (
-        `${label}（価格を取得できません）`
+        tr("{0}（価格を取得できません）", label)
       )}
     </button>
   );
   const needed = highestTier(blocked);
   const counts = columns.map(planCounts);
   const rows: [string, (string | boolean)[]][] = [
-    ["デザイン", counts.map((c) => `${c.designs}`)],
-    ["配色", counts.map((c) => `${c.palettes}`)],
-    ["サイズ", counts.map((c) => `${c.sizes}`)],
-    ["画像加工", counts.map((c) => `${c.effects}`)],
-    ["写真保存・PDF・印刷", [true, true, true]],
+    [tr("デザイン"), counts.map((c) => `${c.designs}`)],
+    [tr("配色"), counts.map((c) => `${c.palettes}`)],
+    [tr("サイズ"), counts.map((c) => `${c.sizes}`)],
+    [tr("画像加工"), counts.map((c) => `${c.effects}`)],
+    [tr("写真保存・PDF・印刷"), [true, true, true]],
   ];
   return (
     <div className="plan-backdrop print-hidden" onClick={onClose}>
@@ -62,38 +63,33 @@ export function Paywall({ tier, products, blocked, busy, message, onBuy, onResto
         onClick={(event) => event.stopPropagation()}
       >
         <header className="plan-header">
-          <h2 id="plan-title">プラン</h2>
-          <button type="button" className="plan-close" onClick={onClose}>
-            閉じる
-          </button>
+          <h2 id="plan-title">{tr("プラン")}</h2>
+          <button type="button" className="plan-close" onClick={onClose}>{tr("閉じる")}</button>
         </header>
         {blocked.length > 0 && (
           <div className="plan-blocked">
             <p>
-              <strong>保存には{tierName[needed]}プランが必要です</strong>
+              <strong>{tr("保存には{0}プランが必要です", tierName[needed])}</strong>
             </p>
             <ul>
               {blocked.map((item) => (
-                <li key={item.label}>
-                  {item.label}（{tierName[item.tier]}）
-                </li>
+                <li key={item.label}>{tr("{0}（{1}）", item.label, tierName[item.tier])}</li>
               ))}
             </ul>
           </div>
         )}
         <p className="plan-note">
-          <b>買い切り</b>で、毎月の支払いはありません。
-        </p>
+          <b>{tr("買い切り")}</b>{tr("で、毎月の支払いはありません。")}</p>
         <table className="plan-table">
           <thead>
             <tr>
               <th scope="col">
-                <span className="visually-hidden">内容</span>
+                <span className="visually-hidden">{tr("内容")}</span>
               </th>
               {columns.map((column) => (
                 <th scope="col" key={column} className={column === tier ? "current" : ""}>
-                  {column === "standard" ? "スタン­ダード" : tierName[column]}
-                  {column === tier && <span>利用中</span>}
+                  {column === "standard" ? tr("スタン­ダード") : tierName[column]}
+                  {column === tier && <span>{tr("利用中")}</span>}
                 </th>
               ))}
             </tr>
@@ -107,7 +103,7 @@ export function Paywall({ tier, products, blocked, busy, message, onBuy, onResto
                     {value === true ? (
                       <>
                         <Icon name="check" size={18} />
-                        <span className="visually-hidden">あり</span>
+                        <span className="visually-hidden">{tr("あり")}</span>
                       </>
                     ) : (
                       value
@@ -118,36 +114,34 @@ export function Paywall({ tier, products, blocked, busy, message, onBuy, onResto
             ))}
           </tbody>
         </table>
-        <p className="plan-fineprint">各デザインのおすすめ色は、どのプランでも使えます。</p>
-        {tier === "full" && <p className="plan-owned">すべての機能が使えます。ありがとうございます。</p>}
+        <p className="plan-fineprint">{tr("各デザインのおすすめ色は、どのプランでも使えます。")}</p>
+        {tier === "full" && <p className="plan-owned">{tr("すべての機能が使えます。ありがとうございます。")}</p>}
         {tier === "free" && (
           <section className="plan-offer best">
-            <span className="plan-ribbon">おすすめ</span>
-            <h3>フル</h3>
-            <p>20デザインすべて・全配色・全加工</p>
-            {buyButton(productIds.full, "購入する")}
+            <span className="plan-ribbon">{tr("おすすめ")}</span>
+            <h3>{tr("フル")}</h3>
+            <p>{tr("20デザインすべて・全配色・全加工")}</p>
+            {buyButton(productIds.full, tr("購入する"))}
           </section>
         )}
         {tier === "standard" && (
           <section className="plan-offer best">
-            <h3>フルへアップグレード</h3>
-            <p>差額だけで、すべて使えるようになります。</p>
-            {buyButton(productIds.upgrade, "アップグレード")}
+            <h3>{tr("フルへアップグレード")}</h3>
+            <p>{tr("差額だけで、すべて使えるようになります。")}</p>
+            {buyButton(productIds.upgrade, tr("アップグレード"))}
           </section>
         )}
         {tierRank[tier] < tierRank.standard && (
           <section className="plan-offer">
-            <h3>スタンダード</h3>
-            <p>11デザインと、SNS向けを含む全サイズ</p>
-            {buyButton(productIds.standard, "購入する")}
+            <h3>{tr("スタンダード")}</h3>
+            <p>{tr("11デザインと、SNS向けを含む全サイズ")}</p>
+            {buyButton(productIds.standard, tr("購入する"))}
           </section>
         )}
         <p role="status" aria-live="polite" className="plan-message">
           {message}
         </p>
-        <button type="button" className="plan-restore" disabled={busy} onClick={onRestore}>
-          購入を復元
-        </button>
+        <button type="button" className="plan-restore" disabled={busy} onClick={onRestore}>{tr("購入を復元")}</button>
       </div>
     </div>
   );

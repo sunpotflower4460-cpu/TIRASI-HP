@@ -9,6 +9,7 @@ import type { DocumentMutator } from "./controls";
 import { defaultPlacement, effects } from "../../studio/document";
 import { LockBadge, useAccess } from "../../plan/LockBadge";
 import { effectTier } from "../../plan/entitlements";
+import { tr } from "../../i18n";
 export function ImagePanel({
   doc,
   placement,
@@ -42,29 +43,27 @@ export function ImagePanel({
           <div className="image-upload">
             <p className="studio-eyebrow">YOUR IMAGE, YOUR STORY</p>
             <h2>
-              {doc.kind === "image-treatment" ? "加工する画像" : "メイン画像"}
+              {doc.kind === "image-treatment" ? tr("加工する画像") : tr("メイン画像")}
             </h2>
             <p>
               PNG / JPEG / WebP
-              <br />
-              8MB・1600万画素・長辺8192px以内
-            </p>
+              <br />{tr("8MB・1600万画素・長辺8192px以内")}</p>
             <button
               disabled={uploading || doc.design.templateId === "legacy"}
               onClick={() => imageInput.current?.click()}
             >
               {uploading
-                ? "読み込み中…"
+                ? tr("読み込み中…")
                 : doc.assetRefs.length
-                  ? "画像を選び直す"
-                  : "画像を選ぶ"}
+                  ? tr("画像を選び直す")
+                  : tr("画像を選ぶ")}
             </button>
             <input
               type="file"
               hidden
               ref={imageInput}
               accept="image/png,image/jpeg,image/webp"
-              aria-label="チラシの画像ファイル"
+              aria-label={tr("チラシの画像ファイル")}
               onChange={(e) => {
                 const file = e.currentTarget.files?.[0];
                 e.currentTarget.value = "";
@@ -92,18 +91,14 @@ export function ImagePanel({
                       }) as CreativeDocument,
                   )
                 }
-              >
-                この制作物から画像を外す
-              </button>
+              >{tr("この制作物から画像を外す")}</button>
             )}
-            <small>画像は端末内に保存します。原本は上書きしません。</small>
+            <small>{tr("画像は端末内に保存します。原本は上書きしません。")}</small>
           </div>
           {doc.kind === "image-treatment" && (
             <>
-              <h2>レトロな仕上げ</h2>
-              <p className="studio-note">
-                色と印刷の質感を変える加工です。画像を描き直す生成AIではありません。強い網点や粒子は小さな文字を読みにくくするため、元画像と比較してください。
-              </p>
+              <h2>{tr("レトロな仕上げ")}</h2>
+              <p className="studio-note">{tr("色と印刷の質感を変える加工です。画像を描き直す生成AIではありません。強い網点や粒子は小さな文字を読みにくくするため、元画像と比較してください。")}</p>
               <div className="effect-grid">
                 {access
                   .usableFirst(effects, (effect) => effectTier(effect.id))
@@ -120,7 +115,7 @@ export function ImagePanel({
                 ))}
               </div>
               <Range
-                label="加工の強さ"
+                label={tr("加工の強さ")}
                 value={doc.content.recipe.intensity}
                 onChange={(intensity) => setRecipe({ intensity })}
               />
@@ -129,23 +124,19 @@ export function ImagePanel({
                   type="checkbox"
                   checked={compare}
                   onChange={(e) => setCompare(e.target.checked)}
-                />
-                元画像と比較する
-              </label>
-              <button onClick={() => setRecipe({ intensity: 0, stamp: "" })}>
-                元画像の見た目に戻す
-              </button>
+                />{tr("元画像と比較する")}</label>
+              <button onClick={() => setRecipe({ intensity: 0, stamp: "" })}>{tr("元画像の見た目に戻す")}</button>
               <details className="advanced-options">
-                <summary>印刷・フィルムの細かな調整</summary>
+                <summary>{tr("印刷・フィルムの細かな調整")}</summary>
                 {(
                   [
-                    ["grain", "粒子"],
-                    ["halftone", "網点"],
-                    ["registration", "版ずれ"],
-                    ["fade", "退色"],
-                    ["warmth", "紙の温かさ"],
-                    ["scratches", "擦れ"],
-                    ["vignette", "周辺の陰影"],
+                    ["grain", tr("粒子")],
+                    ["halftone", tr("網点")],
+                    ["registration", tr("版ずれ")],
+                    ["fade", tr("退色")],
+                    ["warmth", tr("紙の温かさ")],
+                    ["scratches", tr("擦れ")],
+                    ["vignette", tr("周辺の陰影")],
                   ] as const
                 ).map(([id, label]) => (
                   <Range
@@ -156,7 +147,7 @@ export function ImagePanel({
                   />
                 ))}
                 <Field
-                  label="日付スタンプ（任意の演出・空欄は非表示）"
+                  label={tr("日付スタンプ（任意の演出・空欄は非表示）")}
                   value={doc.content.recipe.stamp}
                   max={40}
                   onChange={(stamp) => setRecipe({ stamp })}
@@ -166,12 +157,12 @@ export function ImagePanel({
           )}
           {doc.design.templateId !== "legacy" && (
             <details className="advanced-options">
-              <summary>画像・タイトルの配置を調整</summary>
-              <p>このサイズだけの設定です。他のサイズの調整値も保持します。</p>
+              <summary>{tr("画像・タイトルの配置を調整")}</summary>
+              <p>{tr("このサイズだけの設定です。他のサイズの調整値も保持します。")}</p>
               <label className="studio-field">
-                <span>画像の収め方</span>
+                <span>{tr("画像の収め方")}</span>
                 <select
-                  aria-label="画像の収め方"
+                  aria-label={tr("画像の収め方")}
                   value={placement.fit}
                   onChange={(e) =>
                     setPlacement({
@@ -179,12 +170,12 @@ export function ImagePanel({
                     })
                   }
                 >
-                  <option value="contain">画像全体を表示（余白あり）</option>
-                  <option value="cover">枠いっぱい（端を切り抜く）</option>
+                  <option value="contain">{tr("画像全体を表示（余白あり）")}</option>
+                  <option value="cover">{tr("枠いっぱい（端を切り抜く）")}</option>
                 </select>
               </label>
               <Range
-                label="画像の左右位置"
+                label={tr("画像の左右位置")}
                 value={placement.imageX}
                 min={0}
                 max={100}
@@ -192,7 +183,7 @@ export function ImagePanel({
                 onChange={(imageX) => setPlacement({ imageX })}
               />
               <Range
-                label="画像の上下位置"
+                label={tr("画像の上下位置")}
                 value={placement.imageY}
                 min={0}
                 max={100}
@@ -200,14 +191,14 @@ export function ImagePanel({
                 onChange={(imageY) => setPlacement({ imageY })}
               />
               <Range
-                label="画像の拡大率"
+                label={tr("画像の拡大率")}
                 value={placement.zoom}
                 min={1}
                 max={3}
                 onChange={(zoom) => setPlacement({ zoom })}
               />
               <Range
-                label="画像の不透明度"
+                label={tr("画像の不透明度")}
                 value={placement.opacity}
                 min={0.1}
                 onChange={(opacity) => setPlacement({ opacity })}
@@ -215,7 +206,7 @@ export function ImagePanel({
               {doc.kind !== "image-treatment" && (
                 <>
                   <Range
-                    label="タイトルの左右調整"
+                    label={tr("タイトルの左右調整")}
                     value={placement.titleX}
                     min={-100}
                     max={100}
@@ -223,7 +214,7 @@ export function ImagePanel({
                     onChange={(titleX) => setPlacement({ titleX })}
                   />
                   <Range
-                    label="タイトルの上下調整"
+                    label={tr("タイトルの上下調整")}
                     value={placement.titleY}
                     min={-100}
                     max={100}
@@ -241,9 +232,7 @@ export function ImagePanel({
                       : {}),
                   })
                 }
-              >
-                このサイズの配置を初期値に戻す
-              </button>
+              >{tr("このサイズの配置を初期値に戻す")}</button>
             </details>
           )}
         </>

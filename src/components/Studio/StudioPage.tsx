@@ -58,6 +58,7 @@ import { Icon } from "../../store/Icon";
 import type { IconName } from "../../store/Icon";
 import type { ReactNode } from "react";
 import type { ModernTemplateId } from "../../studio/registry";
+import { tr } from "../../i18n";
 
 const tabIcon: Record<"live" | "content" | "design" | "image", IconName> = {
   live: "mic",
@@ -69,7 +70,7 @@ const tabIcon: Record<"live" | "content" | "design" | "image", IconName> = {
 function BackupSection({ children }: { children: ReactNode }) {
   return isStore ? (
     <details className="store-backup print-hidden">
-      <summary>保存・バックアップ</summary>
+      <summary>{tr("保存・バックアップ")}</summary>
       {children}
     </details>
   ) : (
@@ -122,10 +123,10 @@ export function StudioPage({
     setView("edit");
     if (isStore) window.scrollTo({ top: 0 });
   };
-  const [family, setFamily] = useState("すべて");
+  const [family, setFamily] = useState(tr("すべて"));
   useEffect(() => {
     setFamily(
-      doc?.kind === "event-flyer" && !isStore ? "ライブ向け" : "すべて",
+      doc?.kind === "event-flyer" && !isStore ? tr("ライブ向け") : tr("すべて"),
     );
     setTab(
       doc?.kind === "event-flyer"
@@ -225,7 +226,7 @@ export function StudioPage({
     const record = current.events.find((value) => value.id === target.eventId);
     if (!record) {
       setNotice(
-        "参照元が見つかりません。固定コピーに切り替えて編集してください。",
+        tr("参照元が見つかりません。固定コピーに切り替えて編集してください。"),
       );
       return;
     }
@@ -278,12 +279,12 @@ export function StudioPage({
     ) {
       setWorkspace((state) => ({ ...state, activeDocumentId: next.id }));
       setDeletedDoc(undefined);
-      setNotice("この制作物はすでに復元されています。");
+      setNotice(tr("この制作物はすでに復元されています。"));
       return;
     }
     if (currentWorkspace.current.documents.length >= 100) {
       const full =
-        "制作物は100件まで保存できます。バックアップしてから不要な制作物を削除してください。";
+        tr("制作物は100件まで保存できます。バックアップしてから不要な制作物を削除してください。");
       setNotice(full);
       // The store app's start screen has no notice line.
       if (isStore) window.alert(full);
@@ -297,10 +298,10 @@ export function StudioPage({
     openEditor();
     setNotice(
       // In the store app opening the editor already shows what happened.
-      isStore ? "" : "新しい下書きを作りました。公開HPは変更されません。",
+      isStore ? "" : tr("新しい下書きを作りました。公開HPは変更されません。"),
     );
     setFamily(
-      next.kind === "event-flyer" && !isStore ? "ライブ向け" : "すべて",
+      next.kind === "event-flyer" && !isStore ? tr("ライブ向け") : tr("すべて"),
     );
     setTab(
       next.kind === "event-flyer"
@@ -322,7 +323,7 @@ export function StudioPage({
       setWorkspace(next);
       openEditor();
       setNotice("");
-      setFamily("すべて");
+      setFamily(tr("すべて"));
       setTab("live");
     } catch (error) {
       window.alert(errorMessage(error));
@@ -376,7 +377,7 @@ export function StudioPage({
   const deleteDocument = (target: CreativeDocument) => {
     if (
       !window.confirm(
-        "この制作物を削除しますか？元画像とイベント本文は保持されます。",
+        tr("この制作物を削除しますか？元画像とイベント本文は保持されます。"),
       )
     )
       return;
@@ -391,7 +392,7 @@ export function StudioPage({
     addDocument({
       ...structuredClone(target),
       id: newId(),
-      name: documentNameWithSuffix(target.name, " コピー"),
+      name: documentNameWithSuffix(target.name, tr(" コピー")),
       updatedAt: new Date().toISOString(),
     });
   const setDesign = (patch: Partial<Design>) => {
@@ -438,7 +439,7 @@ export function StudioPage({
           }) as CreativeDocument,
       );
       setNotice(
-        `「${file.name}」を${storagePlace}に保存しました（${asset.width}×${asset.height}px）。`,
+        tr("「{0}」を{1}に保存しました（{2}×{3}px）。", file.name, storagePlace, asset.width, asset.height),
       );
     } catch (error) {
       setNotice(errorMessage(error));
@@ -496,17 +497,17 @@ export function StudioPage({
   const tabs: [typeof tab, string][] =
     doc?.kind === "event-flyer"
       ? [
-          ["live", "ライブ情報"],
-          ["design", "デザイン"],
-          ["image", "画像・配置"],
-          ["content", "本文"],
+          ["live", tr("ライブ情報")],
+          ["design", tr("デザイン")],
+          ["image", tr("画像・配置")],
+          ["content", tr("本文")],
         ]
       : [
-          ["content", "本文"],
-          ["design", "デザイン"],
+          ["content", tr("本文")],
+          ["design", tr("デザイン")],
           [
             "image",
-            doc?.kind === "image-treatment" ? "画像・加工" : "画像・配置",
+            doc?.kind === "image-treatment" ? tr("画像・加工") : tr("画像・配置"),
           ],
         ];
   const repeatDoc = docs.find((value) => value.id === repeatSource);
@@ -536,43 +537,43 @@ export function StudioPage({
           <p className="studio-eyebrow">TIRASI / FLYER STUDIO</p>
           <h1>
             {!doc
-              ? "ライブの告知を、いつもの手順で。"
+              ? tr("ライブの告知を、いつもの手順で。")
               : doc.kind === "event-flyer"
-                ? "ライブのチラシを編集"
+                ? tr("ライブのチラシを編集")
                 : doc.kind === "free-flyer"
-                  ? "自由なチラシを編集"
-                  : "手持ちの画像を加工"}
+                  ? tr("自由なチラシを編集")
+                  : tr("手持ちの画像を加工")}
           </h1>
-          <p>前回を引き継いで、日付と出演者を変えれば、次の一枚へ。</p>
+          <p>{tr("前回を引き継いで、日付と出演者を変えれば、次の一枚へ。")}</p>
         </div>
         <div className="studio-save">
           <span className="save-dot" />
           {saveStatus}
-          <small>{storagePlace}だけの下書き</small>
+          <small>{tr("{0}だけの下書き", storagePlace)}</small>
         </div>
       </header>
-      <section className="studio-create" aria-label="チラシの作り方">
+      <section className="studio-create" aria-label={tr("チラシの作り方")}>
         <button
           className="live-create-primary"
           onClick={() => create("event-flyer")}
         >
           <span>01 / EVENT</span>
-          <strong>ライブのチラシを作る</strong>
+          <strong>{tr("ライブのチラシを作る")}</strong>
           <small>
             {isStore
-              ? "タイトル・日時・出演者を入れるだけで自動配置"
-              : "いつものA4に、タイトル・日時・出演者を自動配置"}
+              ? tr("タイトル・日時・出演者を入れるだけで自動配置")
+              : tr("いつものA4に、タイトル・日時・出演者を自動配置")}
           </small>
         </button>
         <button onClick={() => create("free-flyer")}>
           <span>02 / FREE</span>
-          <strong>自由なチラシを作る</strong>
-          <small>見出しと本文から、用途を選ばずに</small>
+          <strong>{tr("自由なチラシを作る")}</strong>
+          <small>{tr("見出しと本文から、用途を選ばずに")}</small>
         </button>
         <button onClick={() => create("image-treatment")}>
           <span>03 / RETOUCH</span>
-          <strong>手持ちの画像を加工する</strong>
-          <small>元の文字・構図を保ったレトロ加工</small>
+          <strong>{tr("手持ちの画像を加工する")}</strong>
+          <small>{tr("元の文字・構図を保ったレトロ加工")}</small>
         </button>
       </section>
         </>
@@ -580,29 +581,25 @@ export function StudioPage({
       {!isStore && recentLive && doc?.kind !== "event-flyer" && (
         <div className="live-resume">
           <div>
-            <strong>いつものライブから、次回分を。</strong>
+            <strong>{tr("いつものライブから、次回分を。")}</strong>
             <p>{recentLive.name}</p>
           </div>
           <button
             className="primary"
             onClick={() => setRepeatSource(recentLive.id)}
-          >
-            前回から作る
-          </button>
+          >{tr("前回から作る")}</button>
         </div>
       )}
       {!isStore && !doc && (
         <details className="studio-empty live-other-starts">
-          <summary>ライブ以外のチラシを、ひな形から作る</summary>
-          <p>
-            用途別の見本です。文章・価格・日時はご自身の内容に編集してください。
-          </p>
+          <summary>{tr("ライブ以外のチラシを、ひな形から作る")}</summary>
+          <p>{tr("用途別の見本です。文章・価格・日時はご自身の内容に編集してください。")}</p>
           <div className="starter-grid">
             {starters.map((s) => (
               <button key={s.id} onClick={() => create("free-flyer", s.id)}>
                 <span>{s.subtitle}</span>
                 <strong>{s.label}</strong>
-                <span>＋ チラシを作成</span>
+                <span>{tr("＋ チラシを作成")}</span>
               </button>
             ))}
           </div>
@@ -610,13 +607,13 @@ export function StudioPage({
       )}
       {!isStore && doc && (
         <details className="starter-details print-hidden">
-          <summary>用途別のチラシを新しく作る</summary>
+          <summary>{tr("用途別のチラシを新しく作る")}</summary>
           <div className="starter-grid">
             {starters.map((s) => (
               <button key={s.id} onClick={() => create("free-flyer", s.id)}>
                 <span>{s.subtitle}</span>
                 <strong>{s.label}</strong>
-                <span>＋ チラシを作成</span>
+                <span>{tr("＋ チラシを作成")}</span>
               </button>
             ))}
           </div>
@@ -645,10 +642,8 @@ export function StudioPage({
             />
           ) : (
           <div className="studio-document-bar">
-            <label>
-              制作物を選ぶ
-              <select
-                aria-label="制作物を選ぶ"
+            <label>{tr("制作物を選ぶ")}<select
+                aria-label={tr("制作物を選ぶ")}
                 value={doc.id}
                 onChange={(e) =>
                   setWorkspace((s) => ({
@@ -669,25 +664,15 @@ export function StudioPage({
                 <button
                   className="primary live-repeat-button"
                   onClick={() => setRepeatSource(doc.id)}
-                >
-                  次回分を作る
-                </button>
+                >{tr("次回分を作る")}</button>
               )}
               <button onClick={() => duplicateDocument(doc)}>
-                {doc.kind === "event-flyer" ? "デザイン違いを作る" : "複製"}
+                {doc.kind === "event-flyer" ? tr("デザイン違いを作る") : tr("複製")}
               </button>
-              <button disabled={!h?.undo.length} onClick={() => undo(false)}>
-                取り消す
-              </button>
-              <button disabled={!h?.redo.length} onClick={() => undo(true)}>
-                やり直す
-              </button>
-              <button onClick={() => navigate(`/preview/document/${doc.id}`)}>
-                下書きプレビュー
-              </button>
-              <button className="subtle" onClick={() => deleteDocument(doc)}>
-                削除
-              </button>
+              <button disabled={!h?.undo.length} onClick={() => undo(false)}>{tr("取り消す")}</button>
+              <button disabled={!h?.redo.length} onClick={() => undo(true)}>{tr("やり直す")}</button>
+              <button onClick={() => navigate(`/preview/document/${doc.id}`)}>{tr("下書きプレビュー")}</button>
+              <button className="subtle" onClick={() => deleteDocument(doc)}>{tr("削除")}</button>
             </div>
           </div>
           )}
@@ -700,9 +685,9 @@ export function StudioPage({
                 hidden={isStore}
                 open={doc.kind !== "event-flyer"}
               >
-                <summary>管理名を変更</summary>
+                <summary>{tr("管理名を変更")}</summary>
                 <Field
-                  label="制作物の管理名"
+                  label={tr("制作物の管理名")}
                   value={doc.name}
                   onChange={(name) => mutate(doc.id, (d) => ({ ...d, name }))}
                   max={500}
@@ -711,7 +696,7 @@ export function StudioPage({
               <div
                 className="studio-tabs"
                 role="tablist"
-                aria-label="編集する項目"
+                aria-label={tr("編集する項目")}
               >
                 {tabs.map(([id, label]) => (
                   <button
@@ -834,7 +819,7 @@ export function StudioPage({
                 )}
                 <span>
                   {doc.kind === "image-treatment"
-                    ? "加工後の画像"
+                    ? tr("加工後の画像")
                     : templateById(doc.design.templateId).label}{" "}
                   · {paletteById(doc.design.paletteId).label}
                 </span>
@@ -844,21 +829,19 @@ export function StudioPage({
                   aria-pressed={zoomed}
                   onClick={() => setZoomed((value) => !value)}
                 >
-                  {zoomed ? "全体を表示" : "大きく表示"}
+                  {zoomed ? tr("全体を表示") : tr("大きく表示")}
                 </button>
               </div>
               {doc.kind === "image-treatment" && compare && (
                 <div className="comparison-original">
-                  <h3>元画像 / Before</h3>
+                  <h3>{tr("元画像 / Before")}</h3>
                   <DocumentPreview
                     document={doc}
                     events={workspace.events}
                     thumbnail
                     showBefore
                   />
-                  <p>
-                    下のプレビューは加工後です。書き出しには加工後が使われます。
-                  </p>
+                  <p>{tr("下のプレビューは加工後です。書き出しには加工後が使われます。")}</p>
                 </div>
               )}
               <DocumentPreview document={doc} events={workspace.events} />
@@ -883,15 +866,13 @@ export function StudioPage({
       )}
       {deletedDoc && (
         <div className="studio-alert">
-          <p>「{deletedDoc.name}」を削除しました。</p>
+          <p>{tr("「{0}」を削除しました。", deletedDoc.name)}</p>
           <button
             onClick={() => {
               addDocument(deletedDoc);
               setDeletedDoc(undefined);
             }}
-          >
-            削除を取り消す
-          </button>
+          >{tr("削除を取り消す")}</button>
         </div>
       )}
       {pendingTemplate && doc && (
@@ -954,7 +935,7 @@ export function StudioPage({
               setRepeatSource(undefined);
               setTab("live");
               setNotice(
-                "前回を残して次回分を作りました。出演者や時刻を必要なところだけ変更してください。",
+                tr("前回を残して次回分を作りました。出演者や時刻を必要なところだけ変更してください。"),
               );
               return undefined;
             } catch (error) {
@@ -967,7 +948,7 @@ export function StudioPage({
       {isStore && doc && !showHome && (
         <nav
           className="studio-mobile-bar store-switch print-hidden"
-          aria-label="編集と確認の切り替え"
+          aria-label={tr("編集と確認の切り替え")}
         >
           {(["edit", "preview"] as const).map((target) => (
             <button
@@ -980,7 +961,7 @@ export function StudioPage({
               }}
             >
               <Icon name={target === "edit" ? "edit" : "eye"} />
-              {target === "edit" ? "編集" : "仕上がり・保存"}
+              {target === "edit" ? tr("編集") : tr("仕上がり・保存")}
             </button>
           ))}
         </nav>
@@ -988,7 +969,7 @@ export function StudioPage({
       {!isStore && doc && (
         <nav
           className="studio-mobile-bar print-hidden"
-          aria-label="編集と確認の切り替え"
+          aria-label={tr("編集と確認の切り替え")}
         >
           <button
             type="button"
@@ -997,9 +978,7 @@ export function StudioPage({
                 .querySelector(".studio-inspector")
                 ?.scrollIntoView({ behavior: "smooth", block: "start" })
             }
-          >
-            入力する
-          </button>
+          >{tr("入力する")}</button>
           <button
             type="button"
             className="primary"
@@ -1008,9 +987,7 @@ export function StudioPage({
                 .getElementById("studio-preview")
                 ?.scrollIntoView({ behavior: "smooth", block: "start" })
             }
-          >
-            仕上がりを見る
-          </button>
+          >{tr("仕上がりを見る")}</button>
         </nav>
       )}
       <p
@@ -1035,9 +1012,9 @@ export function StudioPage({
       </BackupSection>
       {!isStore && (
       <footer className="studio-footer print-hidden">
-        <p>TIRASI STUDIO · ライブの一枚を、いつもの手順で。</p>
-        <button onClick={() => navigate("/editor")}>イベント情報を編集</button>
-        <button onClick={() => navigate("/")}>公開HPを見る</button>
+        <p>{tr("TIRASI STUDIO · ライブの一枚を、いつもの手順で。")}</p>
+        <button onClick={() => navigate("/editor")}>{tr("イベント情報を編集")}</button>
+        <button onClick={() => navigate("/")}>{tr("公開HPを見る")}</button>
       </footer>
       )}
     </main>

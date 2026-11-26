@@ -12,6 +12,7 @@ import {
 } from "../../domain/validation";
 import { parseWorkspace } from "../../domain/workspace";
 import { readRecovery } from "../../storage/database";
+import { tr } from "../../i18n";
 export function BackupPanel({
   workspace,
   restore,
@@ -46,10 +47,8 @@ export function BackupPanel({
   };
   return (
     <section className="studio-backup print-hidden">
-      <h2>保存・バックアップ</h2>
-      <p>
-        {isStore ? "アプリ" : "ブラウザ"}内の保存は、端末のデータ削除や容量制限の影響を受けます。大切な制作物は画像入りバックアップをお持ちください。
-      </p>
+      <h2>{tr("保存・バックアップ")}</h2>
+      <p>{tr("{0}内の保存は、端末のデータ削除や容量制限の影響を受けます。大切な制作物は画像入りバックアップをお持ちください。", isStore ? tr("アプリ") : tr("ブラウザ"))}</p>
       <div className="action-row">
         <button
           disabled={busy}
@@ -60,14 +59,12 @@ export function BackupPanel({
               setNotice(
                 exportNotice(
                   outcome,
-                  "原画像入りバックアップを書き出しました。端末に保存されたことを確認してください。画像の撮影位置などのEXIF情報も原本に含まれる場合があります。",
+                  tr("原画像入りバックアップを書き出しました。端末に保存されたことを確認してください。画像の撮影位置などのEXIF情報も原本に含まれる場合があります。"),
                 ),
               );
             })
           }
-        >
-          画像入り完全バックアップ
-        </button>
+        >{tr("画像入り完全バックアップ")}</button>
         {selected && (
           <button
             disabled={busy}
@@ -94,18 +91,14 @@ export function BackupPanel({
                 setNotice(
                   exportNotice(
                     outcome,
-                    "この制作物と参照イベント・元画像の完全バックアップを出力しました。端末に保存されたことを確認してください。",
+                    tr("この制作物と参照イベント・元画像の完全バックアップを出力しました。端末に保存されたことを確認してください。"),
                   ),
                 );
               })
             }
-          >
-            この制作物だけ完全バックアップ
-          </button>
+          >{tr("この制作物だけ完全バックアップ")}</button>
         )}
-        <button disabled={busy} onClick={() => input.current?.click()}>
-          完全バックアップを復元
-        </button>
+        <button disabled={busy} onClick={() => input.current?.click()}>{tr("完全バックアップを復元")}</button>
         <button
           disabled={busy}
           onClick={() => void run(async () => {
@@ -118,7 +111,7 @@ export function BackupPanel({
               new Blob([JSON.stringify(payload, null, 2)]).size > MAX_JSON_BYTES
             ) {
               setNotice(
-                "JSONのみ保存は4MB以内です。完全バックアップ、または制作物ごとの完全バックアップを使ってください。",
+                tr("JSONのみ保存は4MB以内です。完全バックアップ、または制作物ごとの完全バックアップを使ってください。"),
               );
               return;
             }
@@ -126,29 +119,23 @@ export function BackupPanel({
             setNotice(
               exportNotice(
                 outcome,
-                "JSONを出力しました。画像の実体は含みません。別の端末への移動は完全バックアップを使ってください。",
+                tr("JSONを出力しました。画像の実体は含みません。別の端末への移動は完全バックアップを使ってください。"),
               ),
             );
           })}
-        >
-          JSONのみ保存（画像なし）
-        </button>
-        <button disabled={busy} onClick={() => jsonInput.current?.click()}>
-          JSONのみ復元
-        </button>
+        >{tr("JSONのみ保存（画像なし）")}</button>
+        <button disabled={busy} onClick={() => jsonInput.current?.click()}>{tr("JSONのみ復元")}</button>
         <button
           disabled={busy}
           onClick={() =>
             void run(async () => {
               const recovery = await readRecovery();
-              if (!recovery) throw new Error("直前の保存はまだありません。");
+              if (!recovery) throw new Error(tr("直前の保存はまだありません。"));
               setPending({ workspace: recovery, assets: [] });
-              setNotice("直前の保存内容を確認してください。");
+              setNotice(tr("直前の保存内容を確認してください。"));
             })
           }
-        >
-          直前の保存を確認
-        </button>
+        >{tr("直前の保存を確認")}</button>
         {!isStore && workspace.legacyBackup && (
           <button
             onClick={() =>
@@ -157,9 +144,7 @@ export function BackupPanel({
                 "tirasi-v1-original-keys.json",
               )
             }
-          >
-            移行前の原JSONを退避
-          </button>
+          >{tr("移行前の原JSONを退避")}</button>
         )}
       </div>
       <input
@@ -167,7 +152,7 @@ export function BackupPanel({
         type="file"
         ref={input}
         accept="application/json,.json"
-        aria-label="完全バックアップファイル"
+        aria-label={tr("完全バックアップファイル")}
         onChange={(e) => {
           const file = e.currentTarget.files?.[0];
           e.currentTarget.value = "";
@@ -176,7 +161,7 @@ export function BackupPanel({
               const imported = await readBackup(file);
               setPending(imported);
               setNotice(
-                "本文と画像の整合性を検査しました。内容を確認してから復元してください。",
+                tr("本文と画像の整合性を検査しました。内容を確認してから復元してください。"),
               );
             });
         }}
@@ -186,7 +171,7 @@ export function BackupPanel({
         type="file"
         ref={jsonInput}
         accept="application/json,.json"
-        aria-label="ワークスペースJSONファイル"
+        aria-label={tr("ワークスペースJSONファイル")}
         onChange={(e) => {
           const file = e.currentTarget.files?.[0];
           e.currentTarget.value = "";
@@ -198,29 +183,21 @@ export function BackupPanel({
               const imported = parseWorkspace(value);
               setPending({ workspace: imported, assets: [] });
               setNotice(
-                `画像実体を含まないJSONです。画像を使う場合は${isStore ? "同じ端末" : "同じブラウザ"}内に素材が必要です。`,
+                tr("画像実体を含まないJSONです。画像を使う場合は{0}内に素材が必要です。", isStore ? tr("同じ端末") : tr("同じブラウザ")),
               );
             });
         }}
       />
       {pending && (
         <div className="studio-alert">
-          <h3>復元内容の確認</h3>
-          <p>
-            現在: イベント{workspace.events.length}件・制作物
-            {workspace.documents.length}件 → 復元: イベント
-            {pending.workspace.events.length}件・制作物
-            {pending.workspace.documents.length}件 / 同梱画像
-            {pending.assets.length}件
-          </p>
+          <h3>{tr("復元内容の確認")}</h3>
+          <p>{tr("現在: イベント{0}件・制作物{1}件 → 復元: イベント{2}件・制作物{3}件 / 同梱画像{4}件", workspace.events.length, workspace.documents.length, pending.workspace.events.length, pending.workspace.documents.length, pending.assets.length)}</p>
           <ul>
             {pending.workspace.documents.map((doc) => (
               <li key={doc.id}>{doc.name}</li>
             ))}
           </ul>
-          <p>
-            現在の一覧を置き換えます。先に現在の完全バックアップを保存できます。
-          </p>
+          <p>{tr("現在の一覧を置き換えます。先に現在の完全バックアップを保存できます。")}</p>
           <button
             disabled={busy}
             onClick={() =>
@@ -229,22 +206,18 @@ export function BackupPanel({
                 setPending(undefined);
                 setNotice(
                   isStore
-                    ? "復元し、この端末に保存しました。"
-                    : "復元し、このブラウザに保存しました。公開HPは変更されません。",
+                    ? tr("復元し、この端末に保存しました。")
+                    : tr("復元し、このブラウザに保存しました。公開HPは変更されません。"),
                 );
               })
             }
-          >
-            確認した内容で復元する
-          </button>
-          <button disabled={busy} onClick={() => setPending(undefined)}>
-            キャンセル
-          </button>
+          >{tr("確認した内容で復元する")}</button>
+          <button disabled={busy} onClick={() => setPending(undefined)}>{tr("キャンセル")}</button>
         </div>
       )}
       <p role="status" aria-live="polite">
-        {busy ? "処理中… " : ""}
-        {notice || "端末へのバックアップはまだ確認していません。"}
+        {busy ? tr("処理中… ") : ""}
+        {notice || tr("端末へのバックアップはまだ確認していません。")}
       </p>
     </section>
   );

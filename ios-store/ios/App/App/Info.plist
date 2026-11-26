@@ -5,9 +5,9 @@
 	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>ja</string>
+	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>ライブチラシ</string>
+	<string>Live Flyer</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -17,6 +17,7 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>ja</string>
+		<string>en</string>
 	</array>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
@@ -31,11 +32,11 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>チラシに載せる画像を、その場で撮影して取り込むときに使います。</string>
+	<string>Used when you take a photo to put on your flyer.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>作ったチラシを写真アプリ（カメラロール）に保存するために使います。</string>
+	<string>Used to save the flyers you make to the Photos app.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>作ったチラシを写真アプリに保存するために使います。既存の写真は読み取りません。</string>
+	<string>Used to save the flyers you make to the Photos app. Your existing photos are not read.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

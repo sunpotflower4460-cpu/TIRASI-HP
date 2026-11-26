@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 // Support for the iOS app build (Capacitor wrapper in /ios-app).
 //
 // Inside the app's WebView, `<a download>` on a blob and `window.print()` do
@@ -21,7 +22,7 @@ export type ShareOutcome = "shared" | "cancelled";
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(reader.error ?? new Error("ファイルを読み込めませんでした。"));
+    reader.onerror = () => reject(reader.error ?? new Error(tr("ファイルを読み込めませんでした。")));
     reader.onload = () => {
       const result = String(reader.result ?? "");
       const comma = result.indexOf(",");
@@ -78,8 +79,8 @@ export async function shareFileNative(blob: Blob, fileName: string, title?: stri
 export class PhotoAccessDeniedError extends Error {
   constructor() {
     // The name shown in iOS Settings is the home-screen name of each app.
-    const name = import.meta.env?.VITE_EDITION === "store" ? "ライブチラシ" : "生音";
-    super(`写真への保存が許可されていません。設定アプリの「${name}」で「写真」を許可してください。`);
+    const name = import.meta.env?.VITE_EDITION === "store" ? tr("ライブチラシ") : tr("生音");
+    super(tr("写真への保存が許可されていません。設定アプリの「{0}」で「写真」を許可してください。", name));
     this.name = "PhotoAccessDeniedError";
   }
 }

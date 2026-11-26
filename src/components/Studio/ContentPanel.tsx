@@ -10,6 +10,7 @@ import type {
 } from "../../studio/document";
 import { Field } from "./controls";
 import type { DocumentMutator } from "./controls";
+import { tr } from "../../i18n";
 export function ContentPanel({
   doc,
   workspace,
@@ -38,16 +39,14 @@ export function ContentPanel({
     <>
       {" "}
       {tab === "content" && doc.kind === "image-treatment" && (
-        <p>
-          「画像・加工」から元画像と仕上げを選んでください。元の画像にある文字の内容は変更しません。
-        </p>
+        <p>{tr("「画像・加工」から元画像と仕上げを選んでください。元の画像にある文字の内容は変更しません。")}</p>
       )}
       {tab === "content" && doc.kind === "event-flyer" && boundEvent && (
         <>
           {/* The event editor it opens exists only in the personal app. */}
           <div className="studio-note" hidden={isStore}>
-            <strong>イベントから作るチラシ</strong>
-            <p>本文の出典と、このチラシだけの上書きを分けて保持します。</p>
+            <strong>{tr("イベントから作るチラシ")}</strong>
+            <p>{tr("本文の出典と、このチラシだけの上書きを分けて保持します。")}</p>
             <button
               disabled={
                 !workspace.events.some(
@@ -62,14 +61,12 @@ export function ContentPanel({
                 }));
                 navigate("/editor");
               }}
-            >
-              イベント自体を編集
-            </button>
+            >{tr("イベント自体を編集")}</button>
           </div>
           <label className="studio-field">
-            <span>参照イベント</span>
+            <span>{tr("参照イベント")}</span>
             <select
-              aria-label="参照イベント"
+              aria-label={tr("参照イベント")}
               value={doc.eventId}
               onChange={(e) => {
                 const event = workspace.events.find(
@@ -94,9 +91,9 @@ export function ContentPanel({
             </select>
           </label>
           <label className="studio-field">
-            <span>イベントとの反映方法</span>
+            <span>{tr("イベントとの反映方法")}</span>
             <select
-              aria-label="イベントとの反映方法"
+              aria-label={tr("イベントとの反映方法")}
               value={doc.contentBinding}
               onChange={(e) => {
                 const binding = e.target.value as "linked" | "snapshot";
@@ -114,12 +111,12 @@ export function ContentPanel({
                 );
               }}
             >
-              <option value="linked">イベントの変更を反映する</option>
-              <option value="snapshot">現在の内容を固定コピーにする</option>
+              <option value="linked">{tr("イベントの変更を反映する")}</option>
+              <option value="snapshot">{tr("現在の内容を固定コピーにする")}</option>
             </select>
           </label>
           <Field
-            label="このチラシだけのタイトル"
+            label={tr("このチラシだけのタイトル")}
             value={doc.content.titleOverride ?? boundEvent.title}
             onChange={(titleOverride) =>
               mutate(doc.id, (d) =>
@@ -133,7 +130,7 @@ export function ContentPanel({
             }
           />
           <Field
-            label="このチラシだけのサブタイトル"
+            label={tr("このチラシだけのサブタイトル")}
             value={
               doc.content.subtitleOverride ??
               `${boundEvent.subtitle} ${boundEvent.volume}`
@@ -159,19 +156,17 @@ export function ContentPanel({
                 return { ...d, content };
               })
             }
-          >
-            イベントのタイトルに戻す
-          </button>
+          >{tr("イベントのタイトルに戻す")}</button>
           <fieldset className="visibility-options">
-            <legend>載せる情報（非表示でも本文は保持）</legend>
+            <legend>{tr("載せる情報（非表示でも本文は保持）")}</legend>
             {(
               [
-                ["schedule", "スケジュール"],
-                ["times", "出演時刻"],
+                ["schedule", tr("スケジュール")],
+                ["times", tr("出演時刻")],
                 ["openMic", "Open Mic"],
-                ["notes", "注意書き"],
-                ["performers", "出演者プロフィール"],
-                ["socials", "SNS表示名"],
+                ["notes", tr("注意書き")],
+                ["performers", tr("出演者プロフィール")],
+                ["socials", tr("SNS表示名")],
               ] as const
             )
               // The store app has no profile editor, so the switch appears only
@@ -206,7 +201,7 @@ export function ContentPanel({
       {tab === "content" && doc.kind === "free-flyer" && (
         <>
           <Field
-            label="チラシのタイトル"
+            label={tr("チラシのタイトル")}
             value={doc.content.title}
             multiline
             onChange={(title) =>
@@ -218,7 +213,7 @@ export function ContentPanel({
             }
           />
           <Field
-            label="サブタイトル"
+            label={tr("サブタイトル")}
             value={doc.content.subtitle}
             onChange={(subtitle) =>
               mutate(doc.id, (d) =>
@@ -230,7 +225,7 @@ export function ContentPanel({
             max={2000}
           />
           <Field
-            label="日時・料金など（任意）"
+            label={tr("日時・料金など（任意）")}
             value={doc.content.facts}
             multiline
             onChange={(facts) =>
@@ -246,8 +241,8 @@ export function ContentPanel({
       )}
       {tab === "content" && doc.kind !== "image-treatment" && (
         <section className="studio-blocks">
-          <h2>自由な本文ブロック</h2>
-          <p>本文欄・詳細欄を選び、順番と表示を調整できます。</p>
+          <h2>{tr("自由な本文ブロック")}</h2>
+          <p>{tr("本文欄・詳細欄を選び、順番と表示を調整できます。")}</p>
           {doc.content.blocks.map((block, i) => (
             <article className="block-editor" key={block.id}>
               <div className="action-row">
@@ -260,18 +255,16 @@ export function ContentPanel({
                         visible: e.target.checked,
                       })
                     }
-                  />
-                  ブロック{i + 1}を表示
-                </label>
+                  />{tr("ブロック{0}を表示", i + 1)}</label>
                 <button
-                  aria-label={`ブロック${i + 1}を上へ`}
+                  aria-label={tr("ブロック{0}を上へ", i + 1)}
                   disabled={i === 0}
                   onClick={() => moveBlock(i, -1)}
                 >
                   ↑
                 </button>
                 <button
-                  aria-label={`ブロック${i + 1}を下へ`}
+                  aria-label={tr("ブロック{0}を下へ", i + 1)}
                   disabled={i === doc.content.blocks.length - 1}
                   onClick={() => moveBlock(i, 1)}
                 >
@@ -279,9 +272,9 @@ export function ContentPanel({
                 </button>
               </div>
               <label className="studio-field">
-                <span>ブロック{i + 1}の配置先</span>
+                <span>{tr("ブロック{0}の配置先", i + 1)}</span>
                 <select
-                  aria-label={`ブロック${i + 1}の配置先`}
+                  aria-label={tr("ブロック{0}の配置先", i + 1)}
                   value={block.type}
                   onChange={(e) =>
                     updateBlock(block.id, {
@@ -289,13 +282,13 @@ export function ContentPanel({
                     })
                   }
                 >
-                  <option value="text">本文欄</option>
-                  <option value="heading">本文欄の見出し</option>
-                  <option value="details">詳細欄</option>
+                  <option value="text">{tr("本文欄")}</option>
+                  <option value="heading">{tr("本文欄の見出し")}</option>
+                  <option value="details">{tr("詳細欄")}</option>
                 </select>
               </label>
               <Field
-                label={`ブロック${i + 1}の本文`}
+                label={tr("ブロック{0}の本文", i + 1)}
                 value={block.text}
                 multiline
                 max={10000}
@@ -306,7 +299,7 @@ export function ContentPanel({
                 onClick={() => {
                   if (
                     window.confirm(
-                      "このブロックを削除しますか？「取り消す」で戻せます。",
+                      tr("このブロックを削除しますか？「取り消す」で戻せます。"),
                     )
                   )
                     mutate(doc.id, (d) =>
@@ -315,9 +308,7 @@ export function ContentPanel({
                       ),
                     );
                 }}
-              >
-                ブロックを削除
-              </button>
+              >{tr("ブロックを削除")}</button>
             </article>
           ))}
           <button
@@ -326,16 +317,14 @@ export function ContentPanel({
               const block: ContentBlock = {
                 id: newId(),
                 type: "text",
-                text: "新しい本文",
+                text: tr("新しい本文"),
                 visible: true,
               };
               mutate(doc.id, (d) =>
                 mapBlocks(d, (blocks) => [...blocks, block]),
               );
             }}
-          >
-            ＋ 本文ブロックを追加
-          </button>
+          >{tr("＋ 本文ブロックを追加")}</button>
         </section>
       )}
     </>

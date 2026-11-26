@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 // A minimal single-page PDF writer: one full-bleed JPEG on a page.
 //
 // The app cannot open the system print dialog, so "print / save as PDF" builds
@@ -27,7 +28,7 @@ const fixed = (value: number) => value.toFixed(2).replace(/\.?0+$/, "");
 
 /** Builds a one-page PDF whose page is `A4 width` wide and keeps the image's aspect ratio. */
 export function buildImagePdf(jpeg: Uint8Array, pixelWidth: number, pixelHeight: number): Uint8Array {
-  if (!(pixelWidth > 0 && pixelHeight > 0)) throw new Error("PDFの寸法が正しくありません。");
+  if (!(pixelWidth > 0 && pixelHeight > 0)) throw new Error(tr("PDFの寸法が正しくありません。"));
   const pageWidth = A4_WIDTH_PT;
   const pageHeight = (pageWidth * pixelHeight) / pixelWidth;
   const content = `q\n${fixed(pageWidth)} 0 0 ${fixed(pageHeight)} 0 0 cm\n/Im0 Do\nQ\n`;
@@ -74,13 +75,13 @@ export async function pngToJpeg(png: Blob, quality = 0.92): Promise<{ jpeg: Uint
     canvas.width = bitmap.width;
     canvas.height = bitmap.height;
     const context = canvas.getContext("2d");
-    if (!context) throw new Error("PDFを作成できませんでした。軽量版をお試しください。");
+    if (!context) throw new Error(tr("PDFを作成できませんでした。軽量版をお試しください。"));
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(bitmap, 0, 0);
     const blob = await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(
-        (result) => (result ? resolve(result) : reject(new Error("PDFを作成できませんでした。軽量版をお試しください。"))),
+        (result) => (result ? resolve(result) : reject(new Error(tr("PDFを作成できませんでした。軽量版をお試しください。")))),
         "image/jpeg",
         quality,
       ),

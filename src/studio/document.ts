@@ -11,6 +11,7 @@ import {
 import type { EventRecord } from "../domain/workspace";
 import { newId } from "../domain/workspace";
 import { isStore } from "../edition";
+import { tr } from "../i18n";
 export type ContentBlock = {
   id: string;
   type: "heading" | "text" | "details";
@@ -166,16 +167,16 @@ export function createDocument(
     id: newId(),
     name:
       kind === "event-flyer"
-        ? "イベントのチラシ"
+        ? tr("イベントのチラシ")
         : kind === "free-flyer"
-          ? "自由制作のチラシ"
-          : "画像のレトロ加工",
+          ? tr("自由制作のチラシ")
+          : tr("画像のレトロ加工"),
     design: defaultDesign(),
     assetRefs: [],
     updatedAt: new Date().toISOString(),
   };
   if (kind === "event-flyer") {
-    if (!event) throw new ValidationError("イベントを選択してください。");
+    if (!event) throw new ValidationError(tr("イベントを選択してください。"));
     return {
       ...base,
       design: {
@@ -197,7 +198,7 @@ export function createDocument(
       name:
         `${event.eventData.title} ${event.eventData.volume}`
           .trim()
-          .slice(0, 500) || "ライブのチラシ",
+          .slice(0, 500) || tr("ライブのチラシ"),
       eventId: event.id,
       contentBinding: "linked",
       snapshot: parseEvent(event.eventData),
@@ -210,14 +211,14 @@ export function createDocument(
       design: { ...base.design, templateId: isStore ? "information" : "gallery", paletteId: "mono" },
       kind,
       content: {
-        title: "新しいチラシ",
-        subtitle: "ここから、伝えたいことを。",
+        title: tr("新しいチラシ"),
+        subtitle: tr("ここから、伝えたいことを。"),
         facts: "",
         blocks: [
           {
             id: newId(),
             type: "text",
-            text: "本文を入力してください。画像がなくてもチラシを作れます。",
+            text: tr("本文を入力してください。画像がなくてもチラシを作れます。"),
             visible: true,
           },
         ],
@@ -237,19 +238,19 @@ export function bounded(
     value < min ||
     value > max
   )
-    throw new ValidationError(`${path}: ${min}〜${max}の数値が必要です。`);
+    throw new ValidationError(tr("{0}: {1}〜{2}の数値が必要です。", path, min, max));
   return value;
 }
 function boolean(value: unknown, path: string): boolean {
   if (typeof value !== "boolean")
-    throw new ValidationError(`${path}: 真偽値が必要です。`);
+    throw new ValidationError(tr("{0}: 真偽値が必要です。", path));
   return value;
 }
 export function parseDocument(value: unknown): CreativeDocument {
-  const d = { ...object(value, "制作物") };
+  const d = { ...object(value, tr("制作物")) };
   if (d.schemaVersion !== 2)
-    throw new ValidationError("制作物のバージョンが未対応です。");
-  const design = object(d.design, "デザイン");
+    throw new ValidationError(tr("制作物のバージョンが未対応です。"));
+  const design = object(d.design, tr("デザイン"));
   const templateId = string(design.templateId, "templateId", 50);
   const paletteId = string(design.paletteId, "paletteId", 50);
   const sizeId = string(design.sizeId, "sizeId", 50);
@@ -258,7 +259,7 @@ export function parseDocument(value: unknown): CreativeDocument {
     !palettes.some((p) => p.id === paletteId) ||
     !Object.prototype.hasOwnProperty.call(sizes, sizeId)
   )
-    throw new ValidationError("未対応のテンプレート・配色・サイズです。");
+    throw new ValidationError(tr("未対応のテンプレート・配色・サイズです。"));
   if (
     templateId === "legacy" &&
     (sizeId !== "a4" ||
@@ -266,45 +267,45 @@ export function parseDocument(value: unknown): CreativeDocument {
       !["spring", "summer", "autumn", "night"].includes(paletteId))
   )
     throw new ValidationError(
-      "旧版デザインはイベントチラシのA4に対応しています。",
+      tr("旧版デザインはイベントチラシのA4に対応しています。"),
     );
   if (!["auto", "sans", "serif", "rounded"].includes(String(design.fontSet)))
-    throw new ValidationError("未対応の文字設定です。");
-  const visibility = object(design.visibility, "表示設定");
+    throw new ValidationError(tr("未対応の文字設定です。"));
+  const visibility = object(design.visibility, tr("表示設定"));
   for (const key of ["schedule", "openMic", "notes", "performers", "socials"])
     boolean(visibility[key], key);
   if (visibility.times !== undefined)
-    boolean(visibility.times, "出演時刻の表示");
-  boolean(design.decorations, "装飾");
-  const placements = object(design.placements, "配置");
+    boolean(visibility.times, tr("出演時刻の表示"));
+  boolean(design.decorations, tr("装飾"));
+  const placements = object(design.placements, tr("配置"));
   for (const [size, v] of Object.entries(placements)) {
     if (!Object.prototype.hasOwnProperty.call(sizes, size))
-      throw new ValidationError("未対応のサイズ別配置です。");
-    const p = object(v, "配置");
-    bounded(p.titleX, "タイトルX", -100, 100);
-    bounded(p.titleY, "タイトルY", -100, 100);
+      throw new ValidationError(tr("未対応のサイズ別配置です。"));
+    const p = object(v, tr("配置"));
+    bounded(p.titleX, tr("タイトルX"), -100, 100);
+    bounded(p.titleY, tr("タイトルY"), -100, 100);
     for (const key of blockOffsets)
-      if (p[key] !== undefined) bounded(p[key], "位置の調整", -100, 100);
-    bounded(p.imageX, "画像X", 0, 100);
-    bounded(p.imageY, "画像Y", 0, 100);
-    bounded(p.zoom, "拡大率", 1, 3);
-    bounded(p.opacity, "透明度", 0.1, 1);
+      if (p[key] !== undefined) bounded(p[key], tr("位置の調整"), -100, 100);
+    bounded(p.imageX, tr("画像X"), 0, 100);
+    bounded(p.imageY, tr("画像Y"), 0, 100);
+    bounded(p.zoom, tr("拡大率"), 1, 3);
+    bounded(p.opacity, tr("透明度"), 0.1, 1);
     if (!["contain", "cover"].includes(String(p.fit)))
-      throw new ValidationError("画像の配置形式が不正です。");
+      throw new ValidationError(tr("画像の配置形式が不正です。"));
   }
-  if (!/^[a-zA-Z0-9_-]{1,200}$/.test(string(d.id, "制作物id", 200)))
-    throw new ValidationError("制作物IDが不正です。");
-  string(d.name, "制作物名", 500);
-  string(d.updatedAt, "更新日", 100);
-  array(d.assetRefs, "画像参照", 20).forEach((id) => string(id, "画像ID", 200));
-  const content = object(d.content, "本文");
+  if (!/^[a-zA-Z0-9_-]{1,200}$/.test(string(d.id, tr("制作物id"), 200)))
+    throw new ValidationError(tr("制作物IDが不正です。"));
+  string(d.name, tr("制作物名"), 500);
+  string(d.updatedAt, tr("更新日"), 100);
+  array(d.assetRefs, tr("画像参照"), 20).forEach((id) => string(id, tr("画像ID"), 200));
+  const content = object(d.content, tr("本文"));
   if (d.kind === "image-treatment") {
     if (content.sourceAssetId !== undefined) {
-      const id = string(content.sourceAssetId, "元画像", 200);
+      const id = string(content.sourceAssetId, tr("元画像"), 200);
       if (!(d.assetRefs as string[]).includes(id))
-        throw new ValidationError("元画像の参照が一致しません。");
+        throw new ValidationError(tr("元画像の参照が一致しません。"));
     }
-    const recipe = object(content.recipe, "加工設定");
+    const recipe = object(content.recipe, tr("加工設定"));
     if (
       ![
         "fresh1985",
@@ -315,7 +316,7 @@ export function parseDocument(value: unknown): CreativeDocument {
         "film",
       ].includes(String(recipe.preset))
     )
-      throw new ValidationError("未対応の加工です。");
+      throw new ValidationError(tr("未対応の加工です。"));
     for (const k of [
       "intensity",
       "grain",
@@ -329,34 +330,34 @@ export function parseDocument(value: unknown): CreativeDocument {
       bounded(recipe[k], k, 0, 1);
     bounded(recipe.seed, "seed", 0, 4294967295);
     if (!Number.isInteger(recipe.seed))
-      throw new ValidationError("seedは整数が必要です。");
-    string(recipe.stamp, "日付スタンプ", 40);
+      throw new ValidationError(tr("seedは整数が必要です。"));
+    string(recipe.stamp, tr("日付スタンプ"), 40);
   } else {
     if (d.kind === "event-flyer") {
       string(d.eventId, "eventId", 200);
       d.snapshot = parseEvent(d.snapshot);
       if (!["linked", "snapshot"].includes(String(d.contentBinding)))
-        throw new ValidationError("イベント反映方法が不正です。");
+        throw new ValidationError(tr("イベント反映方法が不正です。"));
       if (content.titleOverride !== undefined)
-        string(content.titleOverride, "タイトル上書き", 1000);
+        string(content.titleOverride, tr("タイトル上書き"), 1000);
       if (content.subtitleOverride !== undefined)
-        string(content.subtitleOverride, "サブタイトル上書き", 1000);
+        string(content.subtitleOverride, tr("サブタイトル上書き"), 1000);
     } else if (d.kind === "free-flyer") {
-      string(content.title, "タイトル", 1000);
-      string(content.subtitle, "サブタイトル", 2000);
-      string(content.facts, "日時・料金等", 3000);
-    } else throw new ValidationError("制作物の種類が不正です。");
+      string(content.title, tr("タイトル"), 1000);
+      string(content.subtitle, tr("サブタイトル"), 2000);
+      string(content.facts, tr("日時・料金等"), 3000);
+    } else throw new ValidationError(tr("制作物の種類が不正です。"));
     const ids = new Set<string>();
-    array(content.blocks, "ブロック", 30).forEach((v) => {
+    array(content.blocks, tr("ブロック"), 30).forEach((v) => {
       const b = object(v);
-      const id = string(b.id, "ブロックid", 200);
+      const id = string(b.id, tr("ブロックid"), 200);
       if (ids.has(id))
-        throw new ValidationError("ブロックIDが重複しています。");
+        throw new ValidationError(tr("ブロックIDが重複しています。"));
       ids.add(id);
       if (!["text", "heading", "details"].includes(String(b.type)))
-        throw new ValidationError("ブロックの種類が不正です。");
-      string(b.text, "ブロック本文", 10000);
-      boolean(b.visible, "ブロック表示");
+        throw new ValidationError(tr("ブロックの種類が不正です。"));
+      string(b.text, tr("ブロック本文"), 10000);
+      boolean(b.visible, tr("ブロック表示"));
     });
   }
   return structuredClone(d) as CreativeDocument;
@@ -388,83 +389,83 @@ export function changeTemplate(
 export const effects: { id: EffectId; label: string; description: string }[] = [
   {
     id: "fresh1985",
-    label: "1985 新品印刷",
-    description: "鮮明な色と、わずかな印刷粒子。",
+    label: tr("1985 新品印刷"),
+    description: tr("鮮明な色と、わずかな印刷粒子。"),
   },
   {
     id: "aged1985",
-    label: "1985 経年ポスター",
-    description: "退色、温かな紙、細かい擦れ。",
+    label: tr("1985 経年ポスター"),
+    description: tr("退色、温かな紙、細かい擦れ。"),
   },
   {
     id: "photocopy",
-    label: "昭和コピー機",
-    description: "高コントラストのモノクロと網点。",
+    label: tr("昭和コピー機"),
+    description: tr("高コントラストのモノクロと網点。"),
   },
   {
     id: "risograph",
-    label: "リソグラフ2色刷り",
-    description: "朱と藍の二色と微かな版ずれ。",
+    label: tr("リソグラフ2色刷り"),
+    description: tr("朱と藍の二色と微かな版ずれ。"),
   },
   {
     id: "neon",
-    label: "ネオンライブ",
-    description: "ピンクと青の明暗に置き換える色調。",
+    label: tr("ネオンライブ"),
+    description: tr("ピンクと青の明暗に置き換える色調。"),
   },
   {
     id: "film",
-    label: "古いフィルム写真",
-    description: "柔らかな色、粒子、周辺の陰影。",
+    label: tr("古いフィルム写真"),
+    description: tr("柔らかな色、粒子、周辺の陰影。"),
   },
 ];
 export const starters = [
   {
     id: "exhibition",
-    label: "作品展・写真展",
-    title: "余白を、飾る。",
+    label: tr("作品展・写真展"),
+    title: tr("余白を、飾る。"),
     subtitle: "ART & PHOTO EXHIBITION",
     template: isStore ? "swiss" : "gallery",
-    text: "作品や作家の紹介をここに。\n会期・場所・お問い合わせ先を追加してください。",
+    text: tr("作品や作家の紹介をここに。\n会期・場所・お問い合わせ先を追加してください。"),
   },
   {
     id: "workshop",
-    label: "ワークショップ",
-    title: "手を動かす、\n週末の時間。",
+    label: tr("ワークショップ"),
+    title: tr("手を動かす、\n週末の時間。"),
     subtitle: "WEEKEND WORKSHOP",
     template: "botanical",
-    text: "体験できること・対象・持ち物をここに。\n定員・参加費・申込方法を追加してください。",
+    text: tr("体験できること・対象・持ち物をここに。\n定員・参加費・申込方法を追加してください。"),
   },
   {
     id: "shop",
-    label: "お店・セール",
-    title: "ちいさなお店の\nお知らせ",
+    label: tr("お店・セール"),
+    title: tr("ちいさなお店の\nお知らせ"),
     subtitle: "NEW ARRIVALS / SPECIAL DAYS",
     template: isStore ? "information" : "sticker",
-    text: "商品やサービスの紹介をここに。\n価格・営業時間・所在地を追加してください。",
+    text: tr("商品やサービスの紹介をここに。\n価格・営業時間・所在地を追加してください。"),
   },
   {
     id: "menu",
-    label: "カフェ・メニュー",
-    title: "きょうの、\nおすすめ。",
+    label: tr("カフェ・メニュー"),
+    title: tr("きょうの、\nおすすめ。"),
     subtitle: "CAFE MENU",
     template: isStore ? "acoustic" : "serif",
-    text: "季節のプレート　¥ 000\n本日のコーヒー　¥ 000\n\n商品名と価格を編集してください。",
+    text: tr("季節のプレート　¥ 000\n本日のコーヒー　¥ 000\n\n商品名と価格を編集してください。"),
   },
   {
     id: "lesson",
-    label: "教室・講座",
-    title: "はじめてを、\n楽しもう。",
+    label: tr("教室・講座"),
+    title: tr("はじめてを、\n楽しもう。"),
     subtitle: "LESSON & SEMINAR",
     template: "information",
-    text: "学べること・対象・講師の紹介をここに。\n日時・会場・受講料・申込先を追加してください。",
+    text: tr("学べること・対象・講師の紹介をここに。\n日時・会場・受講料・申込先を追加してください。"),
   },
   {
     id: "community",
-    label: "地域の催し・交流会",
-    title: "まちで、会おう。",
+    label: tr("地域の催し・交流会"),
+    title: tr("まちで、会おう。"),
     subtitle: "COMMUNITY DAY",
     template: isStore ? "information" : "showa",
-    text: "催しの内容や参加方法をここに。\n日時・会場・参加費・連絡先を追加してください。",
+    text: tr("催しの内容や参加方法をここに。\n日時・会場・参加費・連絡先を追加してください。"),
   },
 ] as const;
 export function mapBlocks(

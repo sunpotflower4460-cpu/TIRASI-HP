@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "Live Flyer";
+"NSCameraUsageDescription" = "Used when you take a photo to put on your flyer.";
+"NSPhotoLibraryAddUsageDescription" = "Used to save the flyers you make to the Photos app.";
+"NSPhotoLibraryUsageDescription" = "Used to save the flyers you make to the Photos app. Your existing photos are not read.";

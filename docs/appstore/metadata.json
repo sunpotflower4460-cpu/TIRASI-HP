@@ -8,12 +8,12 @@
     "primaryCategory": "グラフィック＆デザイン",
     "secondaryCategory": "ミュージック",
     "price": "無料（アプリ内課金あり）",
-    "availability": "日本",
+    "availability": "日本（英語対応に合わせて追加する国は未決定）",
     "version": "1.0",
     "copyright": "2026 植木嘉朗",
     "supportUrl": "https://sunpotflower4460-cpu.github.io/TIRASI-HP/support.html",
     "privacyPolicyUrl": "https://sunpotflower4460-cpu.github.io/TIRASI-HP/privacy.html",
-    "build": "1"
+    "build": "2"
   },
   "promotionalText": "タイトル・日時・出演者を入れるだけ。ライブの告知チラシがスマホで完成します。写真に保存してそのままSNSへ、A4のPDFで印刷もできます。",
   "keywords": "フライヤー,ポスター,告知,バンド,ライブハウス,弾き語り,イベント,A4,印刷,SNS,レトロ,昭和,80年代,シティポップ,出演者,タイムテーブル",
@@ -51,5 +51,30 @@
   "ageRating": "質問はすべて「いいえ／なし」で回答（4+ 相当）。ユーザー同士の交流、投稿の公開、ウェブの自由閲覧、広告はありません。",
   "appPrivacy": "「データを収集しない」を選択",
   "exportCompliance": "暗号化の質問は不要（Info.plist で ITSAppUsesNonExemptEncryption = false を設定済み）",
-  "reviewNotes": "No account or sign-in is needed. The app works offline and keeps all data on the device.\n\nWhat it does: the user picks a design, types the event title, date and performers, and the app composes a print-ready flyer on the device.\nNative features: save the flyer straight to Photos, share or save files through the iOS share sheet, generate an A4 PDF for printing, import photos or take one with the camera, and StoreKit 2 purchases.\n\nIn-app purchases (all non-consumable): open the plan screen with the button at the top right. Locked designs can be previewed; saving them opens the plan screen. The Upgrade product appears only after buying Standard. Restore Purchases is at the bottom of the plan screen.\nPrivacy policy and licences: the settings button at the top right."
+  "reviewNotes": "No account or sign-in is needed. The app works offline and keeps all data on the device.\n\nWhat it does: the user picks a design, types the event title, date and performers, and the app composes a print-ready flyer on the device.\nNative features: save the flyer straight to Photos, share or save files through the iOS share sheet, generate an A4 PDF for printing, import photos or take one with the camera, and StoreKit 2 purchases.\n\nIn-app purchases (all non-consumable): open the plan screen with the button at the top right. Locked designs can be previewed; saving them opens the plan screen. The Upgrade product appears only after buying Standard. Restore Purchases is at the bottom of the plan screen.\nPrivacy policy and licences: the settings button at the top right.",
+  "localizations": {
+    "en-US": {
+      "name": "TIRASI Live Flyer Maker",
+      "subtitle": "Gig flyers as you type",
+      "supportUrl": "https://sunpotflower4460-cpu.github.io/TIRASI-HP/support-en.html",
+      "privacyPolicyUrl": "https://sunpotflower4460-cpu.github.io/TIRASI-HP/privacy-en.html",
+      "promotionalText": "Type the title, date and artists. Your gig flyer is ready on your phone: save it to Photos for social media, or print it as an A4 PDF.",
+      "keywords": "flyer,poster,gig,band,music,event,concert,lineup,setlist,A4,print,social,retro,vintage,80s",
+      "description": "Make flyers for your live shows just by typing.\nPick a design, enter the title, date and artists, and everything is laid out for you.\n\nDONE IN 3 STEPS\n1. Pick a design\n2. Type the title, date and artists\n3. Save to Photos and share it\n\nMADE FOR GIGS\n- Enter the artists and set times together\n- Fill in set times from the start time and set length\n- \"Next show\" carries the last flyer over to the next one\n- Designs of the same show share their content; other shows stay separate\n\n20 DESIGNS\n1985 live house, city pop, neon stage, risograph, acoustic, Showa pop, washi and ink and more, with a choice of colors. Fine-tune where the title, date and lineup sit.\n\nEXPORT\n- Save to the Photos app\n- Save to Files or share to other apps\n- A4 PDF and printing\n- A4, social 4:5, square and story sizes\n\nNOT JUST FOR GIGS\nMake free-form flyers from a headline and text, or give your own picture a retro finish.\n\nPRIVATE BY DESIGN\n- No account needed\n- Your work stays on your device\n- No ads\n- Works without a connection\n\nPRICING (one-time purchases, no monthly fees)\n- Free: 5 designs, 4 colors, A4 and square, 2 image effects\n- Standard: 11 designs, 8 colors, all sizes, 4 image effects\n- Full: all 20 designs, all 12 colors, all sizes, 6 image effects\n- Standard owners can upgrade to Full\nEvery design can use its suggested colors on any plan.\n\nImage effects are filters that change color and print texture. They are not generative AI and do not redraw your picture.",
+      "inAppPurchases": {
+        "Standard": {
+          "displayName": "Standard",
+          "description": "11 designs, 8 colors, all sizes, 4 effects"
+        },
+        "Full": {
+          "displayName": "Full",
+          "description": "All 20 designs, colors, sizes and effects"
+        },
+        "Upgrade": {
+          "displayName": "Upgrade to Full",
+          "description": "For Standard owners: unlock everything"
+        }
+      }
+    }
+  }
 }

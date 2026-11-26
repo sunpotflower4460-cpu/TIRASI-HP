@@ -1,6 +1,7 @@
 import { notifyAssetsStored } from "../storage/assetEvents";
 import { completed, openDatabase, request } from "../storage/database";
 import { withTimeout } from "../export/files";
+import { tr } from "../i18n";
 export const MAX_ASSET_BYTES = 8 * 1024 * 1024;
 export const MAX_ASSET_PIXELS = 16_000_000;
 export type AssetMetadata = {
@@ -18,7 +19,7 @@ export function imageHeader(bytes: Uint8Array): {
   height: number;
 } {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  if (bytes.length < 24) throw new Error("画像ファイルが壊れています。");
+  if (bytes.length < 24) throw new Error(tr("画像ファイルが壊れています。"));
   if (view.getUint32(0) === 0x89504e47 && view.getUint32(4) === 0x0d0a1a0a)
     return {
       mime: "image/png",
@@ -84,13 +85,13 @@ export function imageHeader(bytes: Uint8Array): {
     }
   }
   throw new Error(
-    "PNG・JPEG・WebPに対応しています。SVG・HEICや形式を偽装したファイルは読み込めません。",
+    tr("PNG・JPEG・WebPに対応しています。SVG・HEICや形式を偽装したファイルは読み込めません。"),
   );
 }
 export async function sha256(blob: Blob): Promise<string> {
   if (!crypto.subtle)
     throw new Error(
-      "画像の検証と完全バックアップにはHTTPSまたはlocalhostで開いてください。",
+      tr("画像の検証と完全バックアップにはHTTPSまたはlocalhostで開いてください。"),
     );
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -102,14 +103,14 @@ export async function sha256(blob: Blob): Promise<string> {
 }
 export async function validateAsset(
   blob: Blob,
-  name = "画像",
+  name = tr("画像"),
 ): Promise<AssetMetadata> {
   if (!blob.size || blob.size > MAX_ASSET_BYTES)
-    throw new Error("画像は8MB以内にしてください。");
+    throw new Error(tr("画像は8MB以内にしてください。"));
   const header = imageHeader(new Uint8Array(await blob.arrayBuffer()));
   if (blob.type && blob.type !== header.mime)
     throw new Error(
-      "ファイルの種類と中身が一致しません。PNG・JPEG・WebPで保存し直してください。",
+      tr("ファイルの種類と中身が一致しません。PNG・JPEG・WebPで保存し直してください。"),
     );
   if (
     header.width <= 0 ||
@@ -118,10 +119,10 @@ export async function validateAsset(
     header.height > 8192 ||
     header.width * header.height > MAX_ASSET_PIXELS
   )
-    throw new Error("画像は1600万画素以内、長辺8192px以内にしてください。");
+    throw new Error(tr("画像は1600万画素以内、長辺8192px以内にしてください。"));
   if (Math.max(header.width / header.height, header.height / header.width) > 30)
     throw new Error(
-      "縦横比が極端な画像です。30:1以内にトリミングして読み込んでください。",
+      tr("縦横比が極端な画像です。30:1以内にトリミングして読み込んでください。"),
     );
   const bitmap = await withTimeout(
     createImageBitmap(blob, { imageOrientation: "from-image" }),
@@ -130,7 +131,7 @@ export async function validateAsset(
   );
   if (!bitmap.width || !bitmap.height) {
     bitmap.close();
-    throw new Error("画像を読み込めませんでした。");
+    throw new Error(tr("画像を読み込めませんでした。"));
   }
   try {
     const hash = await sha256(blob);
@@ -176,7 +177,7 @@ async function decodeAsset(
   const blob = await getAssetBlob(id);
   if (!blob)
     throw new Error(
-      `元画像が見つかりません（${id.slice(0, 18)}）。画像入りバックアップを復元してください。`,
+      tr("元画像が見つかりません（{0}）。画像入りバックアップを復元してください。", id.slice(0, 18)),
     );
   const header = imageHeader(new Uint8Array(await blob.arrayBuffer()));
   if (
@@ -186,7 +187,7 @@ async function decodeAsset(
     header.height > 8192 ||
     header.width * header.height > MAX_ASSET_PIXELS
   )
-    throw new Error("画像は1600万画素以内、長辺8192px以内にしてください。");
+    throw new Error(tr("画像は1600万画素以内、長辺8192px以内にしてください。"));
   const metadata = await getAssetMetadata(id);
   const sourcePixels = header.width * header.height;
   const decode = (source: Blob | ImageBitmap, options: ImageBitmapOptions) =>

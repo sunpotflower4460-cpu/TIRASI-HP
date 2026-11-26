@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { LiveChoice, LiveSource } from "../studio/liveCreate";
 import { Icon } from "./Icon";
+import { tr } from "../i18n";
 import "../styles/plan.css";
 
 type Props = {
@@ -33,32 +34,28 @@ export function LiveChoiceDialog({ sources, onChoose, onCancel }: Props) {
         onClick={(event) => event.stopPropagation()}
       >
         <header className="plan-header">
-          <h2 id="live-choice-title">内容はどうしますか？</h2>
-          <button type="button" className="plan-close" onClick={onCancel}>
-            やめる
-          </button>
+          <h2 id="live-choice-title">{tr("内容はどうしますか？")}</h2>
+          <button type="button" className="plan-close" onClick={onCancel}>{tr("やめる")}</button>
         </header>
         <button type="button" className="choice-main" onClick={() => onChoose({ kind: "new" })}>
           <span className="choice-icon">
             <Icon name="plus" size={26} />
           </span>
           <span>
-            <strong>別のライブとして作る</strong>
-            <small>内容は別々です。直前の入力を引き継いで始めます。</small>
+            <strong>{tr("別のライブとして作る")}</strong>
+            <small>{tr("内容は別々です。直前の入力を引き継いで始めます。")}</small>
           </span>
         </button>
         <section className="choice-share" aria-labelledby="live-share-title">
-          <h3 id="live-share-title">同じライブの別デザインを作る</h3>
-          <p>内容を共有します。タイトルや出演者を直すと、まとめて変わります。</p>
+          <h3 id="live-share-title">{tr("同じライブの別デザインを作る")}</h3>
+          <p>{tr("内容を共有します。タイトルや出演者を直すと、まとめて変わります。")}</p>
           <ul>
             {sources.map((source) => (
               <li key={source.eventId}>
                 <button type="button" onClick={() => onChoose({ kind: "share", eventId: source.eventId })}>
                   <span>
-                    <strong>{source.title || "名前のないライブ"}</strong>
-                    <small>
-                      {source.date ? `${source.date}・` : ""}チラシ{source.count}枚
-                    </small>
+                    <strong>{source.title || tr("名前のないライブ")}</strong>
+                    <small>{tr("{0}チラシ{1}枚", source.date ? tr("{0}・", source.date) : "", source.count)}</small>
                   </span>
                   <Icon name="chevron" />
                 </button>
@@ -75,12 +72,8 @@ export function LiveChoiceDialog({ sources, onChoose, onCancel }: Props) {
 export function SharedLiveNotice({ count, onDetach }: { count: number; onDetach: () => void }) {
   return (
     <div className="shared-notice">
-      <p>
-        この内容は、<strong>ほかの{count}枚と共有中</strong>です。直すと、まとめて変わります。
-      </p>
-      <button type="button" onClick={onDetach}>
-        このチラシだけ別にする
-      </button>
+      <p>{tr("この内容は、")}<strong>{tr("ほかの{0}枚と共有中", count)}</strong>{tr("です。直すと、まとめて変わります。")}</p>
+      <button type="button" onClick={onDetach}>{tr("このチラシだけ別にする")}</button>
     </div>
   );
 }

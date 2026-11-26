@@ -3,12 +3,14 @@ import type { NewLiveMode } from "../studio/liveCreate";
 import { readNewLiveMode, writeNewLiveMode } from "./settings";
 import { Icon } from "./Icon";
 import { LicenseNotices, PrivacyPolicy } from "./LegalViews";
+import { language, readLanguageChoice, resolveLanguage, tr, writeLanguageChoice } from "../i18n";
+import type { LanguageChoice } from "../i18n";
 import "../styles/plan.css";
 
 const modes: [NewLiveMode, string, string][] = [
-  ["separate", "別々にする（標準）", "直前の入力を引き継いで始めます。直しても、ほかのチラシは変わりません。"],
-  ["share", "直前のライブと共有する", "同じライブの別デザインとして作ります。直すと、まとめて変わります。"],
-  ["ask", "毎回えらぶ", "作るたびに、別々か共有かを選びます。"],
+  ["separate", tr("別々にする（標準）"), tr("直前の入力を引き継いで始めます。直しても、ほかのチラシは変わりません。")],
+  ["share", tr("直前のライブと共有する"), tr("同じライブの別デザインとして作ります。直すと、まとめて変わります。")],
+  ["ask", tr("毎回えらぶ"), tr("作るたびに、別々か共有かを選びます。")],
 ];
 
 export function SettingsSheet({ onClose, onGuide }: { onClose: () => void; onGuide: () => void }) {
@@ -16,7 +18,23 @@ export function SettingsSheet({ onClose, onGuide }: { onClose: () => void; onGui
   const [mode, setMode] = useState(readNewLiveMode);
   const [problem, setProblem] = useState("");
   const [view, setView] = useState<"main" | "privacy" | "licenses">("main");
-  const title = view === "privacy" ? "プライバシーポリシー" : view === "licenses" ? "ライセンス表記" : "設定";
+  const title = view === "privacy" ? tr("プライバシーポリシー") : view === "licenses" ? tr("ライセンス表記") : tr("設定");
+  const [languageChoice, setLanguageChoice] = useState(readLanguageChoice);
+  // Names of languages are written in their own language so they can always be found.
+  const languages: [LanguageChoice, string][] = [
+    ["auto", tr("自動（端末の言語）")],
+    ["ja", "日本語"],
+    ["en", "English"],
+  ];
+  const chooseLanguage = (next: LanguageChoice) => {
+    if (!writeLanguageChoice(next)) {
+      setProblem(tr("設定を保存できませんでした。端末の空き容量を確認してください。"));
+      return;
+    }
+    setLanguageChoice(next);
+    // Every label is fixed when the app starts, so a different language needs a restart.
+    if (resolveLanguage(next, window.navigator.languages) !== language) window.location.reload();
+  };
   const show = (next: typeof view) => {
     setView(next);
     if (dialog.current) dialog.current.scrollTop = 0;
@@ -31,7 +49,7 @@ export function SettingsSheet({ onClose, onGuide }: { onClose: () => void; onGui
   }, [onClose]);
   const choose = (next: NewLiveMode) => {
     setMode(next);
-    setProblem(writeNewLiveMode(next) ? "" : "設定を保存できませんでした。端末の空き容量を確認してください。");
+    setProblem(writeNewLiveMode(next) ? "" : tr("設定を保存できませんでした。端末の空き容量を確認してください。"));
   };
   return (
     <div className="plan-backdrop print-hidden" onClick={onClose}>
@@ -47,13 +65,9 @@ export function SettingsSheet({ onClose, onGuide }: { onClose: () => void; onGui
         <header className="plan-header">
           <h2 id="settings-title">{title}</h2>
           {view === "main" ? (
-            <button type="button" className="plan-close" onClick={onClose}>
-              閉じる
-            </button>
+            <button type="button" className="plan-close" onClick={onClose}>{tr("閉じる")}</button>
           ) : (
-            <button type="button" className="plan-close" onClick={() => show("main")}>
-              戻る
-            </button>
+            <button type="button" className="plan-close" onClick={() => show("main")}>{tr("戻る")}</button>
           )}
         </header>
         {view === "privacy" && <PrivacyPolicy />}
@@ -61,7 +75,7 @@ export function SettingsSheet({ onClose, onGuide }: { onClose: () => void; onGui
         {view === "main" && (
           <>
         <fieldset className="setting-group">
-          <legend>新しいライブチラシの内容</legend>
+          <legend>{tr("新しいライブチラシの内容")}</legend>
           {modes.map(([value, label, text]) => (
             <label key={value} className={mode === value ? "selected" : ""}>
               <input
@@ -81,23 +95,23 @@ export function SettingsSheet({ onClose, onGuide }: { onClose: () => void; onGui
         <p role="status" className="plan-message">
           {problem}
         </p>
-        <p className="plan-fineprint">
-          「…」メニューの「デザイン違いを作る」は、この設定にかかわらず内容を共有します。共有中のチラシは、あとから別々にできます。
-        </p>
+        <p className="plan-fineprint">{tr("「…」メニューの「デザイン違いを作る」は、この設定にかかわらず内容を共有します。共有中のチラシは、あとから別々にできます。")}</p>
+        <label className="setting-language">
+          <span>言語 / Language</span>
+          <select value={languageChoice} onChange={(event) => chooseLanguage(event.target.value as LanguageChoice)}>
+            {languages.map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </label>
         <button type="button" className="setting-link" onClick={onGuide}>
-          <Icon name="help" />
-          使い方を見る
-          <Icon name="chevron" />
+          <Icon name="help" />{tr("使い方を見る")}<Icon name="chevron" />
         </button>
         <button type="button" className="setting-link" onClick={() => show("privacy")}>
-          <Icon name="check" />
-          プライバシーポリシー
-          <Icon name="chevron" />
+          <Icon name="check" />{tr("プライバシーポリシー")}<Icon name="chevron" />
         </button>
         <button type="button" className="setting-link" onClick={() => show("licenses")}>
-          <Icon name="text" />
-          ライセンス表記
-          <Icon name="chevron" />
+          <Icon name="text" />{tr("ライセンス表記")}<Icon name="chevron" />
         </button>
           </>
         )}

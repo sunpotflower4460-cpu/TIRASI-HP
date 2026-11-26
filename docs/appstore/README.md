@@ -8,6 +8,14 @@
 - In the app: privacy policy and licence notices under Settings (`npm run store:licenses`)
 - `npm run store:check` fails while anything needed for submission is missing.
 
+## English
+The app follows the device language (Japanese, otherwise English) and has a language setting.
+- Listing texts and purchase names for en-US: `metadata.json` → `localizations`
+- Screenshots: `screenshots-en/` (`node scripts/store-screenshots.mjs <origin> en`)
+- Pages: `site/privacy-en.html`, `site/support-en.html`
+- In App Store Connect the owner adds the English localization (listing and the three purchases), chooses the
+  countries, and uploads a build with the English text (build 2 or later).
+
 ## Published
 `site/` is served by GitHub Pages from the `gh-pages` branch (only these pages; Vercel deployments are
 turned off in that branch). After editing the policy: `npm run store:site`, then update that branch.

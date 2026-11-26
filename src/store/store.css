@@ -527,3 +527,7 @@ body:has(.store-app) { background: #f8f5ef; }
   .store-app .export-actions .action-row { grid-template-columns: 1fr; }
   .store-app .studio-page .effect-grid strong { font-size: 11px; letter-spacing: -0.02em; }
 }
+
+.setting-language { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 12px; font-weight: 700; font-size: 14px; }
+.setting-language select { min-height: 44px; max-width: 60%; padding: 0 10px; border: 1px solid #d5d0c4; border-radius: 10px; background: #fff; color: #232a57; font-size: 16px; }
+.store-more-text { white-space: pre-line; }

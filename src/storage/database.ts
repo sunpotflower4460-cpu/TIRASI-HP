@@ -1,8 +1,9 @@
 import { notifyAssetsStored } from "./assetEvents";
 import { initialWorkspace, LEGACY_KEYS, parseWorkspace } from '../domain/workspace';
 import type { Workspace } from '../domain/workspace';
+import { tr } from "../i18n";
 export const DB_NAME = 'tirasi-studio-v2';
-export class ConflictError extends Error { constructor() { super('別のタブで保存されました。現在の編集をバックアップしてから、保存済みの内容を読み直してください。'); } }
+export class ConflictError extends Error { constructor() { super(tr("別のタブで保存されました。現在の編集をバックアップしてから、保存済みの内容を読み直してください。")); } }
 let opening: Promise<IDBDatabase> | undefined;
 export function openDatabase(): Promise<IDBDatabase> {
   if (opening) return opening;
@@ -13,12 +14,12 @@ export function openDatabase(): Promise<IDBDatabase> {
     };
     req.onsuccess = () => { req.result.onversionchange = () => { req.result.close(); opening = undefined; }; resolve(req.result); };
     req.onerror = () => { opening = undefined; reject(req.error); };
-    req.onblocked = () => { opening = undefined; reject(new Error('保存領域がロックされています。他のタブを閉じて再読み込みしてください。')); };
+    req.onblocked = () => { opening = undefined; reject(new Error(tr("保存領域がロックされています。他のタブを閉じて再読み込みしてください。"))); };
   });
   return opening;
 }
 export const request = <T>(req: IDBRequest<T>) => new Promise<T>((resolve, reject) => { req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); });
-export const completed = (tx: IDBTransaction) => new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('保存を完了できませんでした。')); });
+export const completed = (tx: IDBTransaction) => new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onabort = tx.onerror = () => reject(tx.error ?? new Error(tr("保存を完了できませんでした。"))); });
 export async function readRawWorkspace(): Promise<unknown> {
   const db = await openDatabase();
   const raw = await request(db.transaction('workspaces').objectStore('workspaces').get('active'));
@@ -71,7 +72,7 @@ export async function saveWorkspace(workspace: Workspace, expectedRevision: numb
       check.onsuccess = () => { if (!(check.result instanceof Blob)) { missingAsset = true; tx.abort(); } };
     }
   };
-  try { await done; } catch (e) { if (conflict) throw new ConflictError(); if (missingAsset) throw new Error('元画像が欠損しています。完全バックアップか元画像を読み込んでください。現在の保存内容は変更していません。'); throw e; }
+  try { await done; } catch (e) { if (conflict) throw new ConflictError(); if (missingAsset) throw new Error(tr("元画像が欠損しています。完全バックアップか元画像を読み込んでください。現在の保存内容は変更していません。")); throw e; }
   notifyAssetsStored(assets.map(asset => asset.id));
   return next;
 }

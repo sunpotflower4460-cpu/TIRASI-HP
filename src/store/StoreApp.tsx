@@ -10,6 +10,7 @@ import { tierName } from "../plan/entitlements";
 import { Guide } from "./Guide";
 import { SettingsSheet } from "./SettingsSheet";
 import { Icon } from "./Icon";
+import { language, tr } from "../i18n";
 import "../styles/theme.css";
 import "../styles/workspace.css";
 import "../styles/plan.css";
@@ -43,6 +44,10 @@ export default function StoreApp() {
   const local = useEventData();
 
   useEffect(() => {
+    document.documentElement.lang = language;
+  }, []);
+
+  useEffect(() => {
     const pop = () => setRoute(getRoute());
     window.addEventListener("popstate", pop);
     return () => window.removeEventListener("popstate", pop);
@@ -67,13 +72,13 @@ export default function StoreApp() {
   const preview = local.workspace.documents.find((d) => d.id === previewId);
 
   let content;
-  if (!local.ready) content = <p role="status">制作物を読み込んでいます…</p>;
+  if (!local.ready) content = <p role="status">{tr("制作物を読み込んでいます…")}</p>;
   else if (preview)
     content = (
       <>
         <div className="workspace-banner print-hidden">
-          <strong>下書きプレビュー</strong>
-          <button onClick={() => navigate("/studio")}>スタジオに戻る</button>
+          <strong>{tr("下書きプレビュー")}</strong>
+          <button onClick={() => navigate("/studio")}>{tr("スタジオに戻る")}</button>
         </div>
         <main className="draft-studio-preview">
           <DocumentPreview document={preview} events={local.eventRecords} />
@@ -86,13 +91,9 @@ export default function StoreApp() {
         {local.storageError && (
           <div role="alert" className="workspace-banner error">
             <p>{local.storageError}</p>
-            <button onClick={() => downloadJsonOrAlert(local.workspace, "tirasi-unsaved-workspace.json")}>
-              未保存の内容をJSON保存
-            </button>
-            <button onClick={local.retrySave} disabled={local.conflict}>
-              保存を再試行
-            </button>
-            <button onClick={() => window.location.reload()}>保存済みを再読み込み</button>
+            <button onClick={() => downloadJsonOrAlert(local.workspace, "tirasi-unsaved-workspace.json")}>{tr("未保存の内容をJSON保存")}</button>
+            <button onClick={local.retrySave} disabled={local.conflict}>{tr("保存を再試行")}</button>
+            <button onClick={() => window.location.reload()}>{tr("保存済みを再読み込み")}</button>
           </div>
         )}
         <StudioPage
@@ -112,28 +113,24 @@ export default function StoreApp() {
     <PlanProvider>
       {(openPlans, tier) => (
         <div className="app-shell local-view studio-view store-app theme-spring">
-          <a className="skip-link print-hidden" href="#page-content">
-            本文へ移動
-          </a>
-          <nav className="app-nav store-nav print-hidden" aria-label="ページ切り替え">
+          <a className="skip-link print-hidden" href="#page-content">{tr("本文へ移動")}</a>
+          <nav className="app-nav store-nav print-hidden" aria-label={tr("ページ切り替え")}>
             <button
               type="button"
               className="store-brand"
-              aria-label="ホーム"
+              aria-label={tr("ホーム")}
               onClick={() => {
                 setHome(true);
                 navigate("/studio");
                 window.scrollTo({ top: 0 });
               }}
             >
-              <span className="store-logo" aria-hidden="true">♪</span>
-              ライブチラシ
-            </button>
-            <button type="button" className="store-plan-pill" aria-label={`プラン（${tierName[tier]}）`} onClick={openPlans}>
+              <span className="store-logo" aria-hidden="true">♪</span>{tr("ライブチラシ")}</button>
+            <button type="button" className="store-plan-pill" aria-label={tr("プラン（{0}）", tierName[tier])} onClick={openPlans}>
               <Icon name="crown" size={18} />
-              {tier === "free" ? "無料プラン" : `${tierName[tier]}プラン`}
+              {tier === "free" ? tr("無料プラン") : tr("{0}プラン", tierName[tier])}
             </button>
-            <button type="button" className="store-settings" aria-label="設定" onClick={() => setSettings(true)}>
+            <button type="button" className="store-settings" aria-label={tr("設定")} onClick={() => setSettings(true)}>
               <Icon name="sliders" size={22} />
             </button>
           </nav>

@@ -1,6 +1,6 @@
 // Release material for the App Store edition.
 //   node scripts/store-release.mjs licenses   rebuild src/store/licenses.json
-//   node scripts/store-release.mjs site       write the privacy and support pages to docs/appstore/site/
+//   node scripts/store-release.mjs site       write the Japanese and English privacy and support pages
 //   node scripts/store-release.mjs check      fail while anything required for submission is missing
 // `licenses` reads the Swift packages from SPM_CHECKOUTS (Xcode's SourcePackages/checkouts) when set.
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -9,7 +9,7 @@ import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(root, path), "utf8");
-const legal = () => JSON.parse(read("src/store/legal.json"));
+const legal = (suffix = "") => JSON.parse(read(`src/store/legal${suffix}.json`));
 const licensesPath = "src/store/licenses.json";
 
 /** npm packages whose code ends up in the app, with everything they depend on. */
@@ -72,8 +72,8 @@ function buildLicenses() {
 }
 
 const escape = (text) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-const page = (title, body) => `<!doctype html>
-<html lang="ja">
+const page = (title, body, lang = "ja") => `<!doctype html>
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -103,6 +103,7 @@ function buildSite() {
     `<h2>お問い合わせ</h2>`,
     footer,
     `<p>最終更新日：${escape(data.updated)}</p>`,
+    `<p><a href="privacy-en.html" lang="en">English</a></p>`,
   ].join("\n");
   const support = [
     `<h1>${escape(data.appName)}<br>サポート</h1>`,
@@ -113,11 +114,39 @@ function buildSite() {
     `<p><b>返金について</b><br>購入はAppleが処理しています。返金はAppleの案内に従って申請してください。</p>`,
     `<h2>お問い合わせ</h2>`,
     footer,
-    `<p><a href="privacy.html">プライバシーポリシー</a></p>`,
+    `<p><a href="privacy.html">プライバシーポリシー</a><br><a href="support-en.html" lang="en">English</a></p>`,
   ].join("\n");
   writeFileSync(join(out, "privacy.html"), page(`プライバシーポリシー｜${data.appName}`, privacy));
   writeFileSync(join(out, "support.html"), page(`サポート｜${data.appName}`, support));
+  buildEnglishPages(out);
   console.log(`pages written to docs/appstore/site/`);
+}
+
+function buildEnglishPages(out) {
+  const data = legal(".en");
+  const footer = `<p>Operator: ${escape(data.operator)}<br>Contact: <a href="mailto:${escape(data.contact)}">${escape(data.contact)}</a></p>`;
+  const privacy = [
+    `<h1>${escape(data.appName)}<br>Privacy Policy</h1>`,
+    `<p>${escape(data.intro)}</p>`,
+    ...data.sections.map((s) => `<h2>${escape(s.heading)}</h2>\n${s.paragraphs.map((p) => `<p>${escape(p)}</p>`).join("\n")}`),
+    `<h2>Contact</h2>`,
+    footer,
+    `<p>Last updated: ${escape(data.updated)}</p>`,
+    `<p><a href="privacy.html" lang="ja">日本語</a></p>`,
+  ].join("\n");
+  const support = [
+    `<h1>${escape(data.appName)}<br>Support</h1>`,
+    `<h2>Frequently asked questions</h2>`,
+    `<p><b>I bought a plan but designs are still locked</b><br>Tap the plan button at the top right, then "Restore purchases". You need to be signed in with the Apple Account you bought it with.</p>`,
+    `<p><b>I cannot save to Photos</b><br>In the iPhone Settings app, open "Live Flyer" and allow adding to Photos. You can also save with "Save to Files / Share".</p>`,
+    `<p><b>I want to move my work to a new phone</b><br>Under "Save &amp; backup" at the bottom of the screen, export a full backup and restore it on the new phone.</p>`,
+    `<p><b>Refunds</b><br>Apple handles purchases. Request a refund by following Apple's instructions.</p>`,
+    `<h2>Contact</h2>`,
+    footer,
+    `<p><a href="privacy-en.html">Privacy Policy</a><br><a href="support.html" lang="ja">日本語</a></p>`,
+  ].join("\n");
+  writeFileSync(join(out, "privacy-en.html"), page(`Privacy Policy | ${data.appName}`, privacy, "en"));
+  writeFileSync(join(out, "support-en.html"), page(`Support | ${data.appName}`, support, "en"));
 }
 
 /** App Store Connect length limits, and agreement with the app's own rules. */
@@ -143,6 +172,23 @@ export function listingProblems() {
   if (meta.app.name !== legal().appName) problems.push("The app name differs between metadata.json and legal.json");
   if (meta.app.privacyPolicyUrl !== legal().privacyPolicyUrl) problems.push("The privacy policy URL differs between metadata.json and legal.json");
   if (!/^https:\/\//.test(meta.app.supportUrl ?? "")) problems.push("metadata.json: supportUrl is not a public https URL");
+  const english = meta.localizations?.["en-US"];
+  if (!english) return [...problems, "metadata.json: the en-US listing is missing"];
+  limit("en name", english.name, 30, 2);
+  limit("en subtitle", english.subtitle, 30);
+  limit("en promotionalText", english.promotionalText, 170);
+  limit("en keywords", english.keywords, 100);
+  limit("en description", english.description, 4000);
+  for (const item of meta.inAppPurchases) {
+    const text = english.inAppPurchases?.[item.referenceName];
+    if (!text) problems.push(`en-US: ${item.referenceName} is missing`);
+    else {
+      limit(`en ${item.referenceName} display name`, text.displayName, 30, 2);
+      limit(`en ${item.referenceName} description`, text.description, 45);
+    }
+  }
+  if (english.name !== legal(".en").appName) problems.push("The English app name differs between metadata.json and legal.en.json");
+  if (english.privacyPolicyUrl !== legal(".en").privacyPolicyUrl) problems.push("The English privacy policy URL differs between metadata.json and legal.en.json");
   return problems;
 }
 

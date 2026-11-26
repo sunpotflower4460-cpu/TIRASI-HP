@@ -1,0 +1,45 @@
+{
+  "appName": "TIRASI Live Flyer Maker",
+  "operator": "Yoshirou Ueki (植木嘉朗)",
+  "contact": "forestinfarm@outlook.jp",
+  "privacyPolicyUrl": "https://sunpotflower4460-cpu.github.io/TIRASI-HP/privacy-en.html",
+  "updated": "November 26, 2026",
+  "intro": "This app does not collect personal information. The developer runs no server that receives your data.",
+  "sections": [
+    {
+      "heading": "Information kept on your device",
+      "paragraphs": [
+        "The flyers you make, the images you import and the app settings are stored only on your device. The developer cannot see them.",
+        "Deleting the app also deletes this data. If you back up your device (for example with iCloud), the data may be included in that backup."
+      ]
+    },
+    {
+      "heading": "Photos and camera",
+      "paragraphs": [
+        "When you use Save to Photos, the app asks for permission to add to your photo library. It does not list or read the photos already there.",
+        "When importing an image, only the picture you choose or take is used. The camera is used only when you choose to take a photo."
+      ]
+    },
+    {
+      "heading": "Network use and third parties",
+      "paragraphs": [
+        "The app contains no advertising, analytics or tracking. No information is provided to third parties.",
+        "Apple (the App Store) handles purchases and restoring purchases. Your payment details are never given to the developer.",
+        "If you open an external link or specify an external image, your device connects to that site, and its own policy applies."
+      ]
+    },
+    {
+      "heading": "Sharing and exporting",
+      "paragraphs": [
+        "Sharing, printing and saving to files happen only when you ask, and only to the destination you choose.",
+        "A backup with images contains the original images you imported. If an image carries information such as where it was taken, that is included too. Take care where you share it."
+      ]
+    },
+    {
+      "heading": "Changes to this policy",
+      "paragraphs": [
+        "If this policy changes, this page and the text shown in the app are updated."
+      ]
+    }
+  ]
+}

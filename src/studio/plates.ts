@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import { templateById, type ModernTemplateId, type Palette } from "./registry";
 import { withTimeout } from "../export/files";
+import { tr } from "../i18n";
 
 // Vite fingerprints the local WebPs. Looking up a URL does not fetch the plate.
 const urls = import.meta.glob<string>("../assets/posters/*.webp", {
@@ -74,7 +75,7 @@ export async function loadPlate(id: ModernTemplateId, palette: Palette) {
       .catch(() => {
         originals.delete(id);
         throw new Error(
-          "チラシの図版を読み込めません。再読み込みするか、装飾を外してください。",
+          tr("チラシの図版を読み込めません。再読み込みするか、装飾を外してください。"),
         );
       });
     originals.set(id, pending);
