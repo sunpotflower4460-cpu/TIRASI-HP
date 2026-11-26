@@ -284,3 +284,16 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 - Next (owner): wait for processing, select the build, attach the three purchases, replace the screenshots
   already registered (01, 03-06), test purchases with TestFlight, then submit for review.
 
+## 2026-11-26 Owner feedback from the iPhone (branch `docs/record-upload`, PR #44)
+- Both apps built from `main` (3c27330) and installed on the owner's iPhone SE; both launched.
+- Added a live preview pinned under the header on the design, layout and text tabs of the store app
+  (`src/store/LivePeek.tsx`), so colour and size changes are visible while adjusting.
+- Fixed a slowdown from the layout pass: phrase tidying now runs only when a size fits. In WebKit the sampled
+  render times are back to the earlier level or better.
+- The nudge e2e test failed once in CI by reading during a redraw; it now reads both attributes at once and
+  waits longer.
+- Checked the uploaded 1.0 (1) archive: no venue names or personal bundle id in its text files.
+- Prices shown in USD and the Apple Account prompt appear in the development install (no sandbox account
+  signed in); not verified with TestFlight.
+- Uploaded build 1.0 (1) does not contain the preview or speed fix; a new build number is needed to ship them.
+

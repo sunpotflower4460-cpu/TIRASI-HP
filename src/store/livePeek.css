@@ -1,0 +1,33 @@
+.live-peek { display: none; }
+@media (max-width: 760px) {
+  .store-app .live-peek {
+    --peek-height: clamp(150px, 27vh, 240px);
+    position: sticky;
+    top: calc(60px + env(safe-area-inset-top));
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 -14px 12px;
+    padding: 10px 14px;
+    background: #eceefa;
+    border-block: 1px solid #d5d0c4;
+    box-shadow: 0 6px 14px rgba(18, 21, 48, 0.1);
+  }
+  html.native-app .store-app .live-peek { top: calc(64px + env(safe-area-inset-top)); }
+  .store-app .live-peek.large { --peek-height: clamp(220px, 44vh, 400px); }
+  .store-app .studio-page .live-peek button.live-peek-paper { flex: 0 0 auto; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .store-app .live-peek .studio-paper {
+    position: relative;
+    width: min(calc(var(--peek-height) * var(--paper-ratio, 0.7071)), 56vw);
+    margin: 0;
+    box-shadow: 0 4px 14px rgba(18, 21, 48, 0.22);
+  }
+  .store-app .live-peek .trial-mark { font-size: 15px; }
+  .live-peek-side { display: grid; flex: 1; gap: 3px; min-width: 0; justify-items: start; }
+  .live-peek-side strong { font-size: 14px; color: #1e2140; }
+  .live-peek-side small { font-size: 11.5px; line-height: 1.5; color: #575c7a; overflow-wrap: anywhere; }
+  .store-app .studio-page .live-peek-side button { min-height: 40px; margin: 6px 0 0; padding: 6px 14px; border: 1px solid #d5d0c4; border-radius: 999px; background: #fff; color: #232a57; font-size: 12px; font-weight: 700; }
+  /* With the keyboard up there is no room to pin it: it scrolls with the page. */
+  .store-app .studio-inspector:has(textarea:focus, input:not([type="checkbox"], [type="range"], [type="radio"]):focus) .live-peek { position: static; }
+}

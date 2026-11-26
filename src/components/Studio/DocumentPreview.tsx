@@ -24,15 +24,19 @@ function CanvasDocumentPreview({
   events,
   thumbnail = false,
   showBefore = false,
+  peek = false,
 }: {
   document: CreativeDocument;
   events: EventRecord[];
   thumbnail?: boolean;
   showBefore?: boolean;
+  /** A thumbnail large enough to judge by: drawn sharper, with the trial mark. */
+  peek?: boolean;
 }) {
   const lock = useExportLock(doc);
   const scene = useMemo(() => composeScene(doc, events), [doc, events]);
   const size = sizes[doc.design.sizeId];
+  const smallWidth = thumbnail ? (peek ? 640 : 320) : undefined;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderGeneration = useRef(0);
   const [images, setImages] = useState<Map<string, ImageBitmap>>(new Map());
@@ -96,9 +100,9 @@ function CanvasDocumentPreview({
           : await renderScene(
               scene,
               images,
-              thumbnail ? 320 : 1000,
-              thumbnail
-                ? Math.round((320 * size.height) / size.width)
+              smallWidth ?? 1000,
+              smallWidth
+                ? Math.round((smallWidth * size.height) / size.width)
                 : Math.round(scene.height),
             );
       if (cancelled) return;
@@ -204,12 +208,18 @@ function CanvasDocumentPreview({
         }
         aria-busy={busy}
       >
-        {!thumbnail && lock.mark}
+        {(!thumbnail || peek) && lock.mark}
         <canvas
           ref={canvasRef}
           role="img"
           aria-label={`${doc.name}の${showBefore ? "元画像" : "プレビュー"}`}
-          data-testid={thumbnail ? "template-thumbnail" : "document-canvas"}
+          data-testid={
+            peek
+              ? "peek-canvas"
+              : thumbnail
+                ? "template-thumbnail"
+                : "document-canvas"
+          }
           data-errors={errors.length}
           data-measurements={JSON.stringify(result?.measurements ?? [])}
         />
@@ -247,6 +257,7 @@ export function DocumentPreview(props: {
   events: EventRecord[];
   thumbnail?: boolean;
   showBefore?: boolean;
+  peek?: boolean;
 }) {
   const doc = props.document;
   if (doc.design.templateId !== "legacy" || doc.kind !== "event-flyer")
