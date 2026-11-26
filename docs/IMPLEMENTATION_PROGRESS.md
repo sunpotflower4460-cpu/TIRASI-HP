@@ -275,3 +275,12 @@ A0〜A6を実装しPR-Aを提出済み。B0〜B9を実装・ローカル検証�
 - Tests on the final code: unit 94, Playwright 38, both builds. Screenshots in `docs/appstore/screenshots`
   retaken (replace the ones already given to App Store Connect). Not checked on a physical device.
 - Next action: merge the PR, rebuild the release archive from `main`, then upload.
+
+## 2026-11-26 Build 1.0 (1) uploaded
+- PR #43 merged into `main` (3c27330); `main` CI passed. The release archive's web files matched a build of
+  that commit. After the owner signed in to Xcode, `xcodebuild -exportArchive` reported "Upload succeeded".
+- Apple was still processing the package; the processed result has not been checked. Warning received: from
+  April 2027, uploads need the iOS 27 SDK (Xcode 27); this build used the iOS 26.2 SDK.
+- Next (owner): wait for processing, select the build, attach the three purchases, replace the screenshots
+  already registered (01, 03-06), test purchases with TestFlight, then submit for review.
+
