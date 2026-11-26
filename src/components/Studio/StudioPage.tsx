@@ -14,6 +14,7 @@ import { eventCollectionsFit } from "../../domain/limits";
 import { DesignPanel } from "./DesignPanel";
 import { ImagePanel } from "./ImagePanel";
 import { NudgePanel } from "./NudgePanel";
+import { LivePeek } from "../../store/LivePeek";
 import { Field } from "./controls";
 import { LayoutChangeDialog } from "./LayoutChangeDialog";
 import { useEffect, useRef, useState } from "react";
@@ -752,6 +753,16 @@ export function StudioPage({
                   </button>
                 ))}
               </div>
+              {isStore && view === "edit" && tab !== "live" && (
+                <LivePeek
+                  doc={doc}
+                  events={workspace.events}
+                  onOpen={() => {
+                    setView("preview");
+                    window.scrollTo({ top: 0 });
+                  }}
+                />
+              )}
               <div
                 role="tabpanel"
                 id={`studio-panel-${tab}`}

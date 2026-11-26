@@ -222,20 +222,47 @@ test('a block of the flyer can be nudged and put back', async ({ page }) => {
   await newLive(page);
   await page.getByRole('button', { name: '仕上がり・保存' }).click();
   const canvas = page.getByTestId('document-canvas');
-  const dateTop = async () => {
-    await expect(canvas).toHaveAttribute('data-errors', '0');
-    const measured = JSON.parse((await canvas.getAttribute('data-measurements')) ?? '[]') as { id: string; usedBounds: { y: number } }[];
-    return measured.find((m) => m.id === 'facts-date')!.usedBounds.y;
-  };
-  const original = await dateTop();
+  // Read both attributes in one step: a redraw can start between two reads. NaN means "not drawn yet".
+  const dateTop = () => canvas.evaluate((node) => {
+    if (node.getAttribute('data-errors') !== '0') return Number.NaN;
+    const measured = JSON.parse(node.getAttribute('data-measurements') ?? '[]') as { id: string; usedBounds: { y: number } }[];
+    return measured.find((m) => m.id === 'facts-date')?.usedBounds.y ?? Number.NaN;
+  });
+  let original = Number.NaN;
+  // The first drawing on a slow machine can take longer than the default wait.
+  const slow = { timeout: 30_000 };
+  await expect.poll(async () => (original = await dateTop()), slow).not.toBeNaN();
   await page.getByText('位置を微調整').click();
   const up = page.getByRole('button', { name: '日付・料金を上へ' });
   await up.click();
   await up.click();
   await expect(page.locator('.nudge-note')).toHaveText('日付・料金：上へ2。');
-  await expect.poll(dateTop).toBeCloseTo(original - 8, 0);
+  await expect.poll(dateTop, slow).toBeCloseTo(original - 8, 0);
   await page.getByRole('button', { name: '元の位置' }).click();
-  await expect.poll(dateTop).toBeCloseTo(original, 0);
+  await expect.poll(dateTop, slow).toBeCloseTo(original, 0);
+});
+
+test('the flyer stays in sight while colours and sizes are adjusted', async ({ page }) => {
+  await fakeStore(page);
+  await start(page);
+  await newLive(page);
+  const peek = page.getByTestId('peek-canvas');
+  // The main form keeps its room; the design tab shows the flyer.
+  await expect(peek).toHaveCount(0);
+  await page.getByRole('tab', { name: /デザイン/ }).click();
+  await expect(peek).toBeVisible();
+  const slow = { timeout: 30_000 };
+  const picture = () => peek.evaluate((node: HTMLCanvasElement) => node.getAttribute('data-errors') === '0' ? node.toDataURL() : '');
+  let before = '';
+  await expect.poll(async () => (before = await picture()), slow).not.toBe('');
+  await page.getByLabel('出力サイズ', { exact: false }).selectOption('square');
+  await expect.poll(async () => { const now = await picture(); return now !== '' && now !== before; }, slow).toBe(true);
+  // It is still on screen after scrolling to the controls further down.
+  await page.getByText('書体・装飾の調整').scrollIntoViewIfNeeded();
+  await expect(peek).toBeInViewport();
+  await page.getByRole('button', { name: '仕上がりを開く' }).click();
+  await expect(page.getByTestId('document-canvas')).toBeVisible();
+  await expect(peek).toHaveCount(0);
 });
 
 test('the privacy policy and licence notices can be read inside the app', async ({ page }) => {

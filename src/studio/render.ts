@@ -71,10 +71,13 @@ function tidyBreaks(
   return stranded(lines) ? fillLastLine(lines, width, measure) : lines;
 }
 
+/** `tidy` moves the breaks to phrase boundaries. It never changes the number of
+ * lines, and it is costly, so size searches leave it off until a size fits. */
 export function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
   width: number,
+  tidy = true,
 ): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split("\n")) {
@@ -106,7 +109,7 @@ export function wrapText(
       }
     }
     lines.push(line.trimEnd());
-    if (lines.length - start >= 2)
+    if (tidy && lines.length - start >= 2)
       lines.splice(
         start,
         lines.length - start,
@@ -146,16 +149,16 @@ export function measureText(
   for (; size >= node.minSize; size--) {
     if (firstFit && size < firstFit.size * 0.65) break;
     ctx.font = `${node.italic ? "italic " : ""}${node.weight ?? 400} ${size}px ${node.family}`;
-    lines = wrapText(
-      ctx,
-      node.vertical ? Array.from(node.text).join("\n") : node.text,
-      node.w,
-    );
+    const source = node.vertical
+      ? Array.from(node.text).join("\n")
+      : node.text;
+    lines = wrapText(ctx, source, node.w, false);
     if (
       lines.length <= (node.maxLines ?? Infinity) &&
       lines.length * size * (node.lineHeight ?? 1.42) <= node.h &&
       lines.every((line) => ctx.measureText(line).width <= node.w + 0.5)
     ) {
+      lines = wrapText(ctx, source, node.w);
       const fittedLines =
         node.balanced && !node.vertical
           ? balanceHeadline(
@@ -301,14 +304,15 @@ export function layoutFlow(
   // Enlarging must not turn a line that fits at its base size into two.
   const baseLines = node.blocks.map((block) => {
     ctx.font = `${block.weight ?? 400} ${block.size}px ${block.family}`;
-    return wrapText(ctx, block.text, node.w).length;
+    return wrapText(ctx, block.text, node.w, false).length;
   });
   for (; reduction <= 40; reduction++) {
     let orphan = false;
     items = node.blocks.map((block, index) => {
       const size = Math.max(block.minSize, block.size - reduction);
       ctx.font = `${block.weight ?? 400} ${size}px ${block.family}`;
-      const lines = wrapText(ctx, block.text, node.w);
+      // Only the enlarging steps look at where the lines break.
+      const lines = wrapText(ctx, block.text, node.w, reduction < 0);
       // Wrapped lines of one or two characters read as mistakes; only allow
       // them at the base size, never as the result of enlarging.
       const paragraphs = new Set(block.text.split("\n").map((p) => p.trim()));
