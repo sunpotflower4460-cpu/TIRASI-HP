@@ -37,6 +37,11 @@ describe("the English text", () => {
     expect(keys.filter((key) => JSON.stringify(slots(key)) !== JSON.stringify(slots(en[key] ?? "")))).toEqual([]);
   });
 
+  it("ships nothing of the venue edition's own names", () => {
+    const table = Object.entries(en).flat().join("\n");
+    expect(table).not.toMatch(/生音|Namaoto|しののめ|館林|ミツデ|mitsude|tatebayashi/i);
+  });
+
   it("has no leftover entries and no Japanese left inside the English", () => {
     expect(Object.keys(en).filter((key) => !keys.includes(key))).toEqual([]);
     // The classic design keeps the venue's own name, which only the personal edition shows.
