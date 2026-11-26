@@ -192,6 +192,18 @@ export function listingProblems() {
   return problems;
 }
 
+/** Nothing of the venue's own edition may be in the store build, once there is one. */
+const venueWords = ["生音", "Namaoto", "しののめ", "館林", "ミツデ", "mitsude", "TATEBAYASHI", "Tatebayashi", "jp.tirasi.hp"];
+function venueWordsInBuild() {
+  const out = join(root, "dist-store");
+  if (!existsSync(out)) return [];
+  const files = readdirSync(out, { recursive: true }).filter((name) => /\.(js|css|html|json|svg|webmanifest|txt)$/.test(name));
+  return files.flatMap((name) => {
+    const text = readFileSync(join(out, name), "utf8");
+    return venueWords.filter((word) => text.includes(word)).map((word) => `dist-store/${name} contains the venue word "${word}"`);
+  });
+}
+
 function check() {
   const data = legal();
   const problems = [];
@@ -199,6 +211,7 @@ function check() {
   if (!data.contact.trim()) problems.push("src/store/legal.json: contact (お問い合わせ先) is empty");
   if (!/^https:\/\//.test(data.privacyPolicyUrl)) problems.push("src/store/legal.json: privacyPolicyUrl is not a public https URL");
   if (!existsSync(join(root, licensesPath))) problems.push(`${licensesPath} is missing`);
+  problems.push(...venueWordsInBuild());
   problems.push(...listingProblems());
   if (problems.length) {
     console.error(`Not ready to submit:\n- ${problems.join("\n- ")}`);
