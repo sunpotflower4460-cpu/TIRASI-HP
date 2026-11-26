@@ -3,6 +3,7 @@ import { defaultPlacement } from "./document";
 import { drawImageInBox } from "./render";
 import { sizes } from "./registry";
 import type { RenderResult } from "./render";
+import { tr } from "../i18n";
 export function seededRandom(seed: number) {
   let state = seed >>> 0;
   return () => {
@@ -193,7 +194,7 @@ export function renderTreatment(
   const image = id ? images.get(id) : undefined;
   if (!image)
     errors.push(
-      "加工する画像を選択してください。PNG・JPEG・WebP、8MB・1600万画素以内に対応しています。",
+      tr("加工する画像を選択してください。PNG・JPEG・WebP、8MB・1600万画素以内に対応しています。"),
     );
   else {
     // Contain by default so an existing flyer's full text and composition are retained.

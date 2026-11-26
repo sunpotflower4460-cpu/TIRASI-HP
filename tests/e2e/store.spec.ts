@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 const port = Number(process.env.TIRASI_TEST_PORT ?? 5173) + 1;
-test.use({ baseURL: `http://127.0.0.1:${port}`, viewport: { width: 390, height: 844 } });
+test.use({ baseURL: `http://127.0.0.1:${port}`, viewport: { width: 390, height: 844 }, locale: 'ja-JP' });
 
 const ID = 'jp.tirasi.livechirashi';
 

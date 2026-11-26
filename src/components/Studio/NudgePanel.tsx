@@ -2,6 +2,7 @@
 // The offsets belong to the current size, and undo works as for any other edit.
 import { useState } from "react";
 import type { CreativeDocument, Placement } from "../../studio/document";
+import { tr } from "../../i18n";
 import "../../styles/nudge.css";
 
 type Key = "titleX" | "titleY" | "factsX" | "factsY" | "programX" | "programY" | "infoX" | "infoY";
@@ -14,11 +15,11 @@ function parts(doc: Exclude<CreativeDocument, { kind: "image-treatment" }>): Par
   const live = doc.kind === "event-flyer";
   const part = (id: Part["id"], label: string): Part => ({ id, label, x: `${id}X`, y: `${id}Y` });
   return [
-    part("title", "タイトル"),
-    ...(live || doc.content.facts.trim() ? [part("facts", live ? "日付・料金" : "日時など")] : []),
-    part("program", live ? "出演者" : "本文"),
+    part("title", tr("タイトル")),
+    ...(live || doc.content.facts.trim() ? [part("facts", live ? tr("日付・料金") : tr("日時など"))] : []),
+    part("program", live ? tr("出演者") : tr("本文")),
     ...(live || doc.content.blocks.some((block) => block.visible && block.type === "details")
-      ? [part("info", "会場・詳細")]
+      ? [part("info", tr("会場・詳細"))]
       : []),
   ];
 }
@@ -40,17 +41,17 @@ export function NudgePanel({ doc, placement, onChange }: Props) {
     onChange({ [part.x]: limit(x + dx * STEP), [part.y]: limit(y + dy * STEP) });
   };
   const arrows: [string, string, number, number, boolean][] = [
-    ["↑", "上へ", 0, -1, y <= -LIMIT],
-    ["↓", "下へ", 0, 1, y >= LIMIT],
-    ["←", "左へ", -1, 0, x <= -LIMIT],
-    ["→", "右へ", 1, 0, x >= LIMIT],
+    ["↑", tr("上へ"), 0, -1, y <= -LIMIT],
+    ["↓", tr("下へ"), 0, 1, y >= LIMIT],
+    ["←", tr("左へ"), -1, 0, x <= -LIMIT],
+    ["→", tr("右へ"), 1, 0, x >= LIMIT],
   ];
   const position = [
-    y ? `${y < 0 ? "上" : "下"}へ${Math.abs(y) / STEP}` : "",
-    x ? `${x < 0 ? "左" : "右"}へ${Math.abs(x) / STEP}` : "",
+    y ? tr("{0}へ{1}", y < 0 ? tr("上") : tr("下"), Math.abs(y) / STEP) : "",
+    x ? tr("{0}へ{1}", x < 0 ? tr("左") : tr("右"), Math.abs(x) / STEP) : "",
   ]
     .filter(Boolean)
-    .join("・");
+    .join(tr("・"));
   return (
     <details
       className="nudge-panel print-hidden"
@@ -63,8 +64,8 @@ export function NudgePanel({ doc, placement, onChange }: Props) {
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       }}
     >
-      <summary>位置を微調整</summary>
-      <div className="nudge-parts" role="group" aria-label="動かす部分">
+      <summary>{tr("位置を微調整")}</summary>
+      <div className="nudge-parts" role="group" aria-label={tr("動かす部分")}>
         {list.map((value) => (
           <button
             key={value.id}
@@ -81,7 +82,7 @@ export function NudgePanel({ doc, placement, onChange }: Props) {
           <button
             key={label}
             type="button"
-            aria-label={`${part.label}を${label}`}
+            aria-label={tr("{0}を{1}", part.label, label)}
             disabled={disabled}
             onClick={() => move(dx, dy)}
           >
@@ -93,12 +94,10 @@ export function NudgePanel({ doc, placement, onChange }: Props) {
           className="nudge-reset"
           disabled={!x && !y}
           onClick={() => onChange({ [part.x]: 0, [part.y]: 0 })}
-        >
-          元の位置
-        </button>
+        >{tr("元の位置")}</button>
       </div>
       <p className="nudge-note" role="status">
-        {position ? `${part.label}：${position}。` : "このサイズだけに反映します。"}
+        {position ? tr("{0}：{1}。", part.label, position) : tr("このサイズだけに反映します。")}
       </p>
     </details>
   );

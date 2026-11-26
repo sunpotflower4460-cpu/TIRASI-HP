@@ -5,6 +5,7 @@ import { balanceHeadline } from "./typography";
 import { defaultPlacement } from "./document";
 import { canvasBlob, withTimeout } from "../export/files";
 import { loadDisplayFonts } from "./displayFonts";
+import { tr } from "../i18n";
 export type Measurement = {
   id: string;
   lines: number;
@@ -225,17 +226,17 @@ export function textTop(
 }
 const areaName = (id: string) =>
   id === "title"
-    ? "タイトル"
+    ? tr("タイトル")
     : id === "subtitle"
-      ? "サブタイトル"
+      ? tr("サブタイトル")
       : id === "kicker"
-        ? "上部テキスト"
+        ? tr("上部テキスト")
         : id.startsWith("facts")
-          ? "日付・料金"
+          ? tr("日付・料金")
           : /^(program|act-|time-|schedule-|body-)/.test(id)
-            ? "本文・出演者"
+            ? tr("本文・出演者")
             : id.startsWith("details")
-              ? "会場・詳細"
+              ? tr("会場・詳細")
               : id;
 /** The area the glyphs actually cover, which is what can collide. */
 function inkBounds(
@@ -429,8 +430,8 @@ export async function renderScene(
   if (!ctx)
     throw new Error(
       import.meta.env?.VITE_EDITION === "store"
-        ? "画像を描画できません。アプリを再起動して、もう一度お試しください。"
-        : "画像を描画できません。このブラウザのCanvasを確認してください。",
+        ? tr("画像を描画できません。アプリを再起動して、もう一度お試しください。")
+        : tr("画像を描画できません。このブラウザのCanvasを確認してください。"),
     );
   ctx.scale(canvas.width / scene.width, canvas.height / scene.height);
   ctx.fillStyle = scene.background;
@@ -444,10 +445,10 @@ export async function renderScene(
       if (!laidOut.fits)
         errors.push(
           node.id === "program"
-            ? "本文が収まりません。文章や改行を調整するか、大きなサイズを選んでください。"
+            ? tr("本文が収まりません。文章や改行を調整するか、大きなサイズを選んでください。")
             : scene.document.kind === "event-flyer"
-              ? "会場・詳細が収まりません。「本文」タブの『載せる情報』で注意書き・Open Mic・SNS表示名を非表示にするか、A4など大きなサイズを選ぶと収まる場合があります。"
-              : "会場・詳細が収まりません。文章を短くするか、別の構図や大きなサイズを選んでください。",
+              ? tr("会場・詳細が収まりません。「本文」タブの『載せる情報』で注意書き・Open Mic・SNS表示名を非表示にするか、A4など大きなサイズを選ぶと収まる場合があります。")
+              : tr("会場・詳細が収まりません。文章を短くするか、別の構図や大きなサイズを選んでください。"),
         );
       return laidOut.nodes;
     },
@@ -464,7 +465,7 @@ export async function renderScene(
       const fits = result.fits && fitsBounds;
       if (!fits)
         errors.push(
-          `「${areaName(node.id)}」が収まりません。文章を短くするか、詳細を減らす・別の構図やサイズを選ぶなどで調整してください。`,
+          tr("「{0}」が収まりません。文章を短くするか、詳細を減らす・別の構図やサイズを選ぶなどで調整してください。", areaName(node.id)),
         );
       ctx.font = `${node.italic ? "italic " : ""}${node.weight ?? 400} ${result.size}px ${node.family}`;
       ctx.fillStyle = node.color;
@@ -526,7 +527,7 @@ export async function renderScene(
         );
       else {
         errors.push(
-          "元画像が見つかりません。完全バックアップを復元するか画像を再選択してください。",
+          tr("元画像が見つかりません。完全バックアップを復元するか画像を再選択してください。"),
         );
         ctx.fillStyle = scene.palette.soft;
         ctx.fillRect(node.x, node.y, node.w, node.h);
@@ -544,7 +545,7 @@ export async function renderScene(
         Math.min(r.y + r.h, s.y + s.h) - Math.max(r.y, s.y) > 2
       )
         errors.push(
-          `「${areaName(first.id)}」と「${areaName(second.id)}」の文字が重なっています。位置の微調整を元に戻すか、別の構図を選んでください。`,
+          tr("「{0}」と「{1}」の文字が重なっています。位置の微調整を元に戻すか、別の構図を選んでください。", areaName(first.id), areaName(second.id)),
         );
     }
   const photographs = resolvedNodes.filter((node) => node.kind === "image");
@@ -562,7 +563,7 @@ export async function renderScene(
       )
     ) {
       errors.push(
-        "画像と文字が重なっています。タイトルの位置を戻すか、別の構図を選んでください。",
+        tr("画像と文字が重なっています。タイトルの位置を戻すか、別の構図を選んでください。"),
       );
     }
   }

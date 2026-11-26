@@ -10,6 +10,7 @@ import { posterStyles, stockInks } from "./posterStyles";
 import { responsiveRecipe, liveRecipe, freePosterLayout } from "./layouts";
 import type { Slot } from "./layouts";
 import { missingArtistNames } from "./live";
+import { displayDay, language, tr } from "../i18n";
 export { compositions, responsiveRecipe } from "./layouts";
 
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -265,7 +266,7 @@ export function composeScene(
       !events.some((event) => event.id === doc.eventId)
     )
       errors.push(
-        "参照するイベントが見つかりません。固定コピーに切り替えるかイベントを選んでください。",
+        tr("参照するイベントが見つかりません。固定コピーに切り替えるかイベントを選んでください。"),
       );
     const event = eventForDocument(doc, events);
     scene.signature = `live/${scene.signature}`;
@@ -282,8 +283,8 @@ export function composeScene(
     const priceText = event.price.trim();
     priceInDetails = priceText.includes("\n") || estimate(priceText, 22) > 230;
     facts = priceInDetails
-      ? `${event.date} (${eventDay(event)})\n開始 ${event.startTime}`
-      : `${event.date} (${eventDay(event)})\n開始 ${event.startTime}   /   ${event.price}`;
+      ? tr("{0} ({1})\n開始 {2}", event.date, displayDay(eventDay(event)), event.startTime)
+      : tr("{0} ({1})\n開始 {2}   /   {3}", event.date, displayDay(eventDay(event)), event.startTime, event.price);
     const parsedDate = dateISO(event.date);
     if (parsedDate) {
       // Keep the writer's own month/day separator ("5/9", "5.9") so the
@@ -298,12 +299,14 @@ export function composeScene(
       dateParts = {
         year: parsedDate.slice(0, 4),
         monthDay: `${Number(parsedDate.slice(5, 7))}${separator}${Number(parsedDate.slice(8))}`,
-        weekday: day,
+        // In English the weekday is written once; in Japanese the English
+        // abbreviation accompanies it.
+        weekday: language === "en" ? displayDay(day).toUpperCase() : day,
         english:
-          day.length === 1 && japaneseIndex >= 0
+          language === "ja" && day.length === 1 && japaneseIndex >= 0
             ? englishDays[japaneseIndex]
             : "",
-        start: event.startTime.trim() ? `開始 ${event.startTime.trim()}` : "",
+        start: event.startTime.trim() ? tr("開始 {0}", event.startTime.trim()) : "",
         price: priceInDetails ? "" : priceText,
       };
     }
@@ -315,7 +318,7 @@ export function composeScene(
       !event.venue.name.trim()
     )
       errors.push(
-        "イベント名・開催日・開始時間・料金・会場名を入力してください。",
+        tr("イベント名・開催日・開始時間・料金・会場名を入力してください。"),
       );
     if (doc.design.visibility.schedule) {
       program = event.schedule
@@ -345,7 +348,7 @@ export function composeScene(
         ? [
             flowBlock(
               "details-price-label",
-              "料金",
+              tr("料金"),
               18,
               700,
               palette.accent,
@@ -363,7 +366,7 @@ export function composeScene(
         : []),
       flowBlock(
         "details-label",
-        "会場",
+        tr("会場"),
         18,
         700,
         palette.accent,
@@ -439,7 +442,7 @@ export function composeScene(
       .filter((block) => block.type === "details")
       .map((block) => flowBlock(`details-block-${block.id}`, block.text, 22)),
   );
-  if (!title.trim()) errors.push("チラシのタイトルを入力してください。");
+  if (!title.trim()) errors.push(tr("チラシのタイトルを入力してください。"));
 
   if (doc.kind === "free-flyer" && templateId === "gallery") {
     recipe.hero = [0, 0, 1, 0.28];
@@ -813,7 +816,12 @@ export function composeScene(
   const titleBox = {
     ...inset,
     y: inset.y + titleOffset,
-    h: Math.max(38, inset.h * 0.79 - titleOffset),
+    // Latin descenders reach further down than kanji, towards the subtitle.
+    h: Math.max(
+      38,
+      inset.h * (/^[^\u3040-\u9fff]*[gjpqy][^\u3040-\u9fff]*$/u.test(title) ? 0.77 : 0.79) -
+        titleOffset,
+    ),
   };
   text(
     "title",
@@ -1064,9 +1072,9 @@ export function composeScene(
       const accentInk = filled ? palette.onAccent : inks.accent;
       const weekdayLabel = d.english
         ? `${d.english} (${d.weekday})`
-        : d.weekday
+        : d.weekday && language === "ja"
           ? `(${d.weekday})`
-          : "";
+          : d.weekday;
       const horizontal =
         inner.w >= 330 && (inner.h < 220 || inner.w / inner.h > 4.2);
       if (horizontal) {
@@ -1306,7 +1314,7 @@ export function composeScene(
     if (solidHeading) shape({ ...pb, h: 33 }, palette.ink);
     text(
       "program-heading",
-      showTimes ? "出演・タイムテーブル" : "出演者",
+      showTimes ? tr("出演・タイムテーブル") : tr("出演者"),
       {
         ...pb,
         x: pb.x + (solidHeading ? 11 : 0),

@@ -3,7 +3,8 @@
 // rules and panel edges running through type, type that fades into the artwork,
 // and awkward line breaks.
 //   npm run dev:store -- --port 5199 --strictPort      (in another terminal)
-//   [BROWSER=webkit] node scripts/layout-audit.mjs [outDir] [origin] [fixture,...]
+//   [BROWSER=webkit] [UI_LOCALE=en-US] node scripts/layout-audit.mjs [outDir] [origin] [fixture,...]
+// UI_LOCALE=en-US draws the store app in English with English content.
 // Writes <outDir>/report.json and one PNG per render.
 import { chromium, webkit } from "@playwright/test";
 import { writeFile, mkdir, rm } from "node:fs/promises";
@@ -22,7 +23,8 @@ const browser =
     : await chromium.launch(
         process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
       );
-const page = await browser.newPage();
+const locale = process.env.UI_LOCALE ?? "ja-JP";
+const page = await browser.newPage({ locale });
 const pageErrors = [];
 page.on("pageerror", (error) => pageErrors.push(String(error)));
 await page.exposeFunction("savePng", (name, data) =>
@@ -88,6 +90,37 @@ try {
       },
       freedate: { date: "2027年春ごろ", day: "未定", dayOverride: true, startTime: "未定", price: "投げ銭" },
     };
+    const { language } = await import(`${root}/i18n/index.ts`);
+    if (language === "en") {
+      Object.assign(events, {
+        typical: {
+          title: "Late Night Music", venueSubtitle: "AT LIVE HOUSE HINATA", organizer: "Presented by Night Owl Club",
+          schedule: [act("Luna Hart", "18:30-18:55"), act("The Lullaby Orchestra", "19:05-19:30"), act("Paper Moon Duo", "19:40-20:05"), act("Morning Calm Trio", "20:15-20:45")],
+          venue: { name: "LIVE HOUSE HINATA", address: "2-1-1 Kitazawa, Setagaya, Tokyo B1F", url: "https://example.com" },
+        },
+        long: {
+          title: "The Midsummer Night Acoustic Thanksgiving", subtitle: "Songs under the open sky", volume: "vol.12",
+          venueSubtitle: "AT HINATABOKKO LIVE AND CAFE SPACE", price: "Advance $25 / At the door $30 (+1 drink)",
+          organizer: "Presented by Sunny Spot Music Project and Night Owl Club",
+          statusNote: "Doors 18:00 (entry by ticket number)\nNo preschool children, please.",
+          schedule: [act("Luna Hart and Her Merry Companions"), act("The Midnight Lantern Orchestra", "19:30-19:55"), act("The Lullaby Orchestra (acoustic set)", "20:00-20:25"), { type: "break", label: "Break (15 min)" }, act("Morning Calm Trio feat. Nagisa", "20:40-21:05"), act("Seaside Breeze Unit", "21:10-21:35"), { type: "end", label: "- End -" }],
+          venue: { name: "Hinatabokko Live & Cafe Space Shimokitazawa", address: "Sample Building B1, 2-34-5 Kitazawa, Setagaya, Tokyo", url: "https://example.com/live/schedule" },
+        },
+        many: { schedule: [...Array.from({ length: 10 }, (_, i) => act(`Performer ${i + 1}`, slot(i))), { type: "end", label: "- End -" }] },
+        one: { title: "Echo", subtitle: "", volume: "", schedule: [act("Luna Hart")] },
+        two: { title: "Two of Us", schedule: [act("Luna Hart", "19:00-19:45"), act("Morning Calm Trio", "20:00-20:45")] },
+        newline: { title: "Late Night\nMusic" },
+        bios: {
+          flyerOptions: { showPerformerProfiles: true },
+          performers: [
+            { id: "a", name: "Luna Hart", catchcopy: "Songs for the late hours", bio: "A singer touring with one guitar.", imageUrl: "", linkUrl: "" },
+            { id: "b", name: "Morning Calm Trio", catchcopy: "A quiet groove in three", bio: "Keys, bass and percussion.", imageUrl: "", linkUrl: "" },
+          ],
+        },
+        freedate: { date: "Spring 2027", day: "TBA", dayOverride: true, startTime: "TBA", price: "Pay what you like" },
+      });
+      Object.assign(events.minimal, { venue: { name: "SAMPLE LIVE HOUSE", address: "", url: "" } });
+    }
     const eventVariants = { notimes: { times: false } };
 
     const fixtures = [];
@@ -101,11 +134,19 @@ try {
       fixtures.push({ name: `free-${starter.id}`, kind: "free-flyer", starter });
     fixtures.push({
       name: "free-facts", kind: "free-flyer",
-      free: { title: "春の作品展", subtitle: "SPRING EXHIBITION", facts: "2027.4/3 11:00-18:00 入場無料" },
+      free: language === "en"
+        ? { title: "Spring Art Show", subtitle: "SPRING EXHIBITION", facts: "2027.4/3 11:00-18:00 Free entry" }
+        : { title: "春の作品展", subtitle: "SPRING EXHIBITION", facts: "2027.4/3 11:00-18:00 入場無料" },
     });
     fixtures.push({
       name: "free-long", kind: "free-flyer",
-      free: {
+      free: language === "en" ? {
+        title: "The Neighborhood Spring Handmade Market",
+        subtitle: "SPRING HANDMADE MARKET 2027",
+        facts: "Saturday, April 3, 2027 10:00-16:00\nFree entry, rain or shine",
+        text: "A small market of handmade goods, baked treats and vegetables from our neighbors.\nWorkshops and live music too.\n\nThirty stalls. Families are very welcome.",
+        details: "Venue: Sakura Park, Central Plaza\n1-2-3 Sample Street\nContact: info@example.com",
+      } : {
         title: "地域のみんなで楽しむ春の手づくり市",
         subtitle: "SPRING HANDMADE MARKET 2027",
         facts: "2027年4月3日（土）10:00-16:00\n参加無料・雨天決行",
@@ -263,6 +304,10 @@ try {
             issues.push({ type: "split-word", ids: [t.id], text: [line, next] });
         });
       }
+      if (language === "en")
+        for (const t of texts)
+          if (/[\u3040-\u30ff\u4e00-\u9fff]/u.test(t.node.text))
+            issues.push({ type: "japanese-text", ids: [t.id], text: [t.node.text] });
       const sizesUsed = texts.map((t) => t.size);
       return { issues, canvas: rendered.canvas, smallest: Math.min(...sizesUsed), shrunk: texts.filter((t) => t.size < t.node.size * 0.55).map((t) => `${t.id}:${t.size}/${t.node.size}`) };
     }
@@ -294,7 +339,7 @@ try {
           subtitle: (s ?? f).subtitle,
           facts: f?.facts ?? "",
           blocks: [
-            { id: "b1", type: "text", visible: true, text: s?.text ?? f.text ?? "内容の紹介をここに書きます。" },
+            { id: "b1", type: "text", visible: true, text: s?.text ?? f.text ?? (language === "en" ? "Introduce your event here." : "内容の紹介をここに書きます。") },
             ...(f?.details ? [{ id: "b2", type: "details", visible: true, text: f.details }] : []),
           ],
         };

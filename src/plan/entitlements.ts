@@ -11,10 +11,11 @@ import { allTemplates, palettes, sizes, templateById, paletteById } from "../stu
 import type { SizeId, TemplateId } from "../studio/registry";
 import { effects } from "../studio/document";
 import type { CreativeDocument, EffectId } from "../studio/document";
+import { tr } from "../i18n";
 
 export type Tier = "free" | "standard" | "full";
 export const tierRank: Record<Tier, number> = { free: 0, standard: 1, full: 2 };
-export const tierName: Record<Tier, string> = { free: "無料", standard: "スタンダード", full: "フル" };
+export const tierName: Record<Tier, string> = { free: tr("無料"), standard: tr("スタンダード"), full: tr("フル") };
 
 export const productIds = {
   standard: "jp.tirasi.livechirashi.standard",
@@ -65,17 +66,17 @@ export function lockedItems(doc: CreativeDocument, owned: Tier): Requirement[] {
   const size = doc.design.sizeId;
   if (doc.kind === "image-treatment") {
     const effect = doc.content.recipe.preset;
-    needs.push({ kind: "effect", label: `画像加工「${effectName(effect)}」`, tier: effectTier(effect) });
+    needs.push({ kind: "effect", label: tr("画像加工「{0}」", effectName(effect)), tier: effectTier(effect) });
   } else {
     const template = doc.design.templateId;
-    needs.push({ kind: "design", label: `デザイン「${templateById(template).label}」`, tier: templateTier(template) });
+    needs.push({ kind: "design", label: tr("デザイン「{0}」", templateById(template).label), tier: templateTier(template) });
     needs.push({
       kind: "palette",
-      label: `配色「${paletteById(doc.design.paletteId).label}」`,
+      label: tr("配色「{0}」", paletteById(doc.design.paletteId).label),
       tier: paletteTier(doc.design.paletteId, template),
     });
   }
-  needs.push({ kind: "size", label: `サイズ「${sizes[size].label}」`, tier: sizeTier(size) });
+  needs.push({ kind: "size", label: tr("サイズ「{0}」", sizes[size].label), tier: sizeTier(size) });
   return needs.filter((need) => tierRank[need.tier] > tierRank[owned]);
 }
 

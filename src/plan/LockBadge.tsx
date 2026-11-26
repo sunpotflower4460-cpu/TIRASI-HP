@@ -1,6 +1,7 @@
 import { tierName, tierRank } from "./entitlements";
 import type { Tier } from "./entitlements";
 import { usePlan } from "./PlanContext";
+import { tr } from "../i18n";
 
 /** A small "🔒 plan" mark on a choice the current plan cannot save yet. */
 export function LockBadge({ need }: { need: Tier }) {
@@ -12,7 +13,7 @@ export function LockBadge({ need }: { need: Tier }) {
 /** Suffix for <option> labels, which cannot contain elements. */
 export function useLockSuffix() {
   const plan = usePlan();
-  return (need: Tier) => (plan.gated && tierRank[need] > tierRank[plan.tier] ? `（🔒${tierName[need]}）` : "");
+  return (need: Tier) => (plan.gated && tierRank[need] > tierRank[plan.tier] ? tr("（🔒{0}）", tierName[need]) : "");
 }
 
 /**

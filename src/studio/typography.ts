@@ -6,6 +6,8 @@ const parser = new Parser(jaModel);
 const phraseCache = new Map<string, number[]>();
 const closing = /^[、。，．？！：；）］｝」』】ぁぃぅぇぉっゃゅょー]/u;
 const opening = /[（［｛「『【]$/u;
+const insideWord = (text: string, at: number) =>
+  /[A-Za-z0-9'’]$/u.test(text.slice(0, at)) && /^[A-Za-z0-9'’]/u.test(text.slice(at));
 
 /** Balance a display heading at semantic boundaries after font fitting.
  * Explicit author line breaks and long inputs retain the normal wrapping path.
@@ -54,6 +56,8 @@ export function balanceHeadline(
       if (remaining > 1 && end === points.length - 1) continue;
       const line = text.slice(points[start], points[end]).trim();
       if (!line || closing.test(line) || opening.test(line)) continue;
+      // The Japanese phrase model must not split an English word.
+      if (end !== points.length - 1 && insideWord(text, points[end])) continue;
       // A currency mark or a price/time label stays with what follows it. The
       // last line has nothing after it, so a title may end with these words.
       if (

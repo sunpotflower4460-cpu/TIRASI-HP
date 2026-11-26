@@ -7,6 +7,7 @@ import { initialWorkspace, parseLibrary, parseRecords, recordFor, workspaceReduc
 import type { Workspace } from '../domain/workspace';
 import { errorMessage, parseEvent } from '../domain/validation';
 import { ConflictError, initializeWorkspace, readWorkspace, readRawWorkspace, saveWorkspace } from '../storage/database';
+import { tr } from "../i18n";
 export type { EventRecord } from '../domain/workspace';
 export const normalizeEventData = parseEvent;
 export function safeParseEventLibrary(value: string | null) { try { return value ? parseLibrary(value) : null; } catch { return null; } }
@@ -14,7 +15,7 @@ export function safeParseEventLibrary(value: string | null) { try { return value
 export function useEventData() {
   const [workspace, setWorkspace] = useState<Workspace>(() => initialWorkspace());
   const [ready, setReady] = useState(false);
-  const [saveStatus, setSaveStatus] = useState('保存領域を読み込んでいます…');
+  const [saveStatus, setSaveStatus] = useState(tr("保存領域を読み込んでいます…"));
   const [storageError, setStorageError] = useState('');
   const [conflict, setConflict] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -30,7 +31,7 @@ export function useEventData() {
     Promise.resolve().then(() => initializeWorkspace(window.localStorage)).then(value => {
       if (cancelled) return;
       revision.current = value.revision; persisted.current = value;
-      setWorkspace(value); setReady(true); setSaveStatus(`${storagePlace}に保存済み`);
+      setWorkspace(value); setReady(true); setSaveStatus(tr("{0}に保存済み", storagePlace));
     }).catch(async error => {
       if (cancelled) return;
       // Keep the source untouched. Editing in memory and backup remain available.
@@ -46,7 +47,7 @@ export function useEventData() {
       }
       const fallback = { ...current.current, legacyBackup, ...(unreadableV2Backup !== undefined ? { unreadableV2Backup } : {}) };
       persisted.current = fallback; setWorkspace(fallback);
-      setReady(true); setStorageError(`未保存: ${errorMessage(error)} 旧データは削除していません。JSON保存で退避できます。`); setSaveStatus('未保存（メモリ内）');
+      setReady(true); setStorageError(tr("未保存: {0} 旧データは削除していません。JSON保存で退避できます。", errorMessage(error))); setSaveStatus(tr("未保存（メモリ内）"));
     });
     return () => { cancelled = true; };
   }, []);
@@ -57,15 +58,15 @@ export function useEventData() {
       while (dirty.current) {
         dirty.current = false;
         const value = current.current;
-        setSaveStatus('保存中…');
+        setSaveStatus(tr("保存中…"));
         const saved = await saveWorkspace(value, revision.current);
         revision.current = saved.revision; persisted.current = value;
         new BroadcastChannelSafe().notify(saved.revision);
-        setStorageError(''); setSaveStatus(`${storagePlace}に保存済み`);
+        setStorageError(''); setSaveStatus(tr("{0}に保存済み", storagePlace));
       }
     } catch (error) {
       dirty.current = true;
-      setStorageError(`未保存: ${errorMessage(error)} JSON保存で現在の内容を退避してください。`); setSaveStatus('未保存（メモリ内）');
+      setStorageError(tr("未保存: {0} JSON保存で現在の内容を退避してください。", errorMessage(error))); setSaveStatus(tr("未保存（メモリ内）"));
       if (error instanceof ConflictError) setConflict(true);
     } finally { saving.current = false; }
   };
@@ -80,7 +81,7 @@ export function useEventData() {
   }, []);
   useEffect(() => {
     if (!ready || persisted.current === workspace) return;
-    dirty.current = true; setSaveStatus('未保存');
+    dirty.current = true; setSaveStatus(tr("未保存"));
     const timer = setTimeout(() => void flush(), 350);
     return () => clearTimeout(timer);
   }, [workspace, ready]); // Persist only after a completed edit; no storage writes in state updaters.
@@ -88,7 +89,7 @@ export function useEventData() {
     const onChange = async () => {
       try {
         const other = await readWorkspace();
-        if (other && other.revision > revision.current) { setConflict(true); setStorageError('別のタブで更新されました。現在の内容をJSON保存してから再読み込みしてください。'); setSaveStatus('保存を停止（競合）'); }
+        if (other && other.revision > revision.current) { setConflict(true); setStorageError(tr("別のタブで更新されました。現在の内容をJSON保存してから再読み込みしてください。")); setSaveStatus(tr("保存を停止（競合）")); }
       } catch { /* The next explicit save surfaces storage errors. */ }
     };
     let channel: BroadcastChannel | null = null;
@@ -113,12 +114,12 @@ export function useEventData() {
   return {
     workspace, setWorkspace, ready, saveStatus, storageError, conflict, restoring,
     restoreWorkspace: async (value: Workspace, assets: { id: string; blob: Blob }[] = []) => {
-      if (saving.current || conflict) throw new Error('保存処理が終わってから再試行してください。競合時はバックアップ後に再読み込みしてください。');
+      if (saving.current || conflict) throw new Error(tr("保存処理が終わってから再試行してください。競合時はバックアップ後に再読み込みしてください。"));
       saving.current = true; setRestoring(true);
       try {
         const saved = await saveWorkspace(value, revision.current, assets);
         revision.current = saved.revision; persisted.current = saved; dirty.current = false; recoveryBlocked.current = false;
-        setWorkspace(saved); setStorageError(''); setSaveStatus(`${storagePlace}に保存済み`);
+        setWorkspace(saved); setStorageError(''); setSaveStatus(tr("{0}に保存済み", storagePlace));
         new BroadcastChannelSafe().notify(saved.revision);
       } finally { saving.current = false; setRestoring(false); }
     },
@@ -127,8 +128,8 @@ export function useEventData() {
     eventRecords: workspace.events, activeEventId: workspace.activeEventId,
     hasCustomData: ready,
     selectEvent: (id: string) => setWorkspace(s => workspaceReducer(s, { type: 'select', id })),
-    createNewEvent: () => { const record = recordFor({ ...structuredClone(defaultEvent), title: '新しいイベント', volume: '', date: '', day: '', startTime: '', schedule: [], performers: [] }); setWorkspace(s => workspaceReducer(s, { type: 'add', record })); },
-    duplicateActiveEvent: () => { const record = recordFor(activeRecord.eventData, undefined, `${activeRecord.name} コピー`); setWorkspace(s => workspaceReducer(s, { type: 'add', record })); },
+    createNewEvent: () => { const record = recordFor({ ...structuredClone(defaultEvent), title: tr("新しいイベント"), volume: '', date: '', day: '', startTime: '', schedule: [], performers: [] }); setWorkspace(s => workspaceReducer(s, { type: 'add', record })); },
+    duplicateActiveEvent: () => { const record = recordFor(activeRecord.eventData, undefined, tr("{0} コピー", activeRecord.name)); setWorkspace(s => workspaceReducer(s, { type: 'add', record })); },
     renameActiveEvent: (name: string) => setWorkspace(s => workspaceReducer(s, { type: 'rename', id: workspace.activeEventId, name })),
     deleteActiveEvent: () => { const fallback = recordFor(defaultEvent); setWorkspace(s => workspaceReducer(s, { type: 'delete', id: workspace.activeEventId, fallback })); },
     resetEventData: () => setEventData(structuredClone(defaultEvent)),

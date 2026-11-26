@@ -1,6 +1,7 @@
 import type { Workspace, EventRecord } from "../domain/workspace";
 import type { CreativeDocument } from "./document";
 import { ValidationError } from "../domain/validation";
+import { tr } from "../i18n";
 
 export type HistoryFrame = {
   document: CreativeDocument;
@@ -14,7 +15,7 @@ export function restoreHistoryFrame(
 ): Workspace {
   if (!state.documents.some((doc) => doc.id === frame.document.id))
     throw new ValidationError(
-      "このチラシは見つかりません。制作物を選び直してください。",
+      tr("このチラシは見つかりません。制作物を選び直してください。"),
     );
   if (frame.event) {
     const current = state.events.find((event) => event.id === frame.event!.id);
@@ -26,7 +27,7 @@ export function restoreHistoryFrame(
         JSON.stringify(frame.expectedEvent.eventData)
     )
       throw new ValidationError(
-        "他のチラシで内容が更新されています。最新の内容を確認して編集してください。",
+        tr("他のチラシで内容が更新されています。最新の内容を確認して編集してください。"),
       );
   }
   return {

@@ -13,6 +13,7 @@ import { DocumentPreview } from "./DocumentPreview";
 import { LockBadge, useAccess, useLockSuffix } from "../../plan/LockBadge";
 import { paletteTier, sizeTier, templateTier } from "../../plan/entitlements";
 import { isStore } from "../../edition";
+import { tr } from "../../i18n";
 export function DesignPanel({
   doc,
   workspace,
@@ -44,9 +45,9 @@ export function DesignPanel({
     ? [legacyTemplate, ...templates]
     : templates;
   const matchesFamily = (template: Template) =>
-    family === "すべて" ||
-    (family === "ライブ向け"
-      ? ["旧版", "80年代", "音楽"].includes(template.family)
+    family === tr("すべて") ||
+    (family === tr("ライブ向け")
+      ? [tr("旧版"), tr("80年代"), tr("音楽")].includes(template.family)
       : template.family === family);
   const previewFor = (template: Template): CreativeDocument => {
     const selected = template.id === doc.design.templateId;
@@ -73,9 +74,9 @@ export function DesignPanel({
     return (
       <>
         <label className="studio-field">
-          <span>出力サイズ</span>
+          <span>{tr("出力サイズ")}</span>
           <select
-            aria-label="出力サイズ"
+            aria-label={tr("出力サイズ")}
             value={doc.design.sizeId}
             onChange={(e) => setDesign({ sizeId: e.target.value as SizeId })}
           >
@@ -96,17 +97,17 @@ export function DesignPanel({
   return (
     <>
       <div className="design-section design-pick">
-        <h2 className="design-section-title">1. デザインを選ぶ</h2>
+        <h2 className="design-section-title">{tr("1. デザインを選ぶ")}</h2>
         <div className="design-filter-row">
           {isStore ? (
             <div
               className="family-chips"
               role="group"
-              aria-label="デザインを絞り込む"
+              aria-label={tr("デザインを絞り込む")}
             >
               {[
-                "すべて",
-                ...(doc.kind === "event-flyer" ? ["ライブ向け"] : []),
+                tr("すべて"),
+                ...(doc.kind === "event-flyer" ? [tr("ライブ向け")] : []),
                 ...new Set(visibleTemplates.map((t) => t.family)),
               ].map((f) => (
                 <button
@@ -121,15 +122,15 @@ export function DesignPanel({
             </div>
           ) : (
           <label className="studio-field">
-            <span>デザインを絞り込む</span>
+            <span>{tr("デザインを絞り込む")}</span>
             <select
-              aria-label="デザインを絞り込む"
+              aria-label={tr("デザインを絞り込む")}
               value={family}
               onChange={(e) => setFamily(e.target.value)}
             >
               {[
-                "すべて",
-                ...(doc.kind === "event-flyer" ? ["ライブ向け"] : []),
+                tr("すべて"),
+                ...(doc.kind === "event-flyer" ? [tr("ライブ向け")] : []),
                 ...new Set(visibleTemplates.map((t) => t.family)),
               ].map((f) => (
                 <option key={f}>{f}</option>
@@ -144,16 +145,9 @@ export function DesignPanel({
               onChange={(event) =>
                 setUseRecommendedPalette(event.target.checked)
               }
-            />
-            選ぶとおすすめの配色も適用
-          </label>
+            />{tr("選ぶとおすすめの配色も適用")}</label>
         </div>
-        <p className="gallery-count">
-          {isStore ? "デザイン20種" : "新デザイン20種"}
-          {withLegacy ? "＋旧版A4" : ""} ·{" "}
-          {visibleTemplates.filter(matchesFamily).length}
-          件表示
-        </p>
+        <p className="gallery-count">{tr("{0}{1} · {2}件表示", isStore ? tr("デザイン20種") : tr("新デザイン20種"), withLegacy ? tr("＋旧版A4") : "", visibleTemplates.filter(matchesFamily).length)}</p>
         {(() => {
           const matching = visibleTemplates.filter(matchesFamily);
           const card = (t: Template) => (
@@ -161,7 +155,7 @@ export function DesignPanel({
               key={t.id}
               className={`template-card ${doc.design.templateId === t.id ? "selected" : ""}`}
               aria-pressed={doc.design.templateId === t.id}
-              aria-label={`デザイン: ${t.label}`}
+              aria-label={tr("デザイン: {0}", t.label)}
               onClick={() => chooseTemplate(t.id, useRecommendedPalette)}
             >
               <span className="template-thumb">
@@ -189,21 +183,18 @@ export function DesignPanel({
             <>
               <h3 className="gallery-group">
                 {access.plan.tier === "free"
-                  ? "無料で使える"
-                  : "使えるデザイン"}
+                  ? tr("無料で使える")
+                  : tr("使えるデザイン")}
                 <span>{usable.length}</span>
               </h3>
               {usable.length ? (
                 <div className="template-gallery">{usable.map(card)}</div>
               ) : (
-                <p className="gallery-empty">
-                  このカテゴリには、今のプランで使えるデザインがありません。
-                </p>
+                <p className="gallery-empty">{tr("このカテゴリには、今のプランで使えるデザインがありません。")}</p>
               )}
               {paid.length > 0 && (
                 <>
-                  <h3 className="gallery-group paid">
-                    有料プラン（お試しできます）<span>{paid.length}</span>
+                  <h3 className="gallery-group paid">{tr("有料プラン（お試しできます）")}<span>{paid.length}</span>
                   </h3>
                   <div className="template-gallery paid">{paid.map(card)}</div>
                 </>
@@ -213,11 +204,11 @@ export function DesignPanel({
         })()}
       </div>
       <div className="design-section">
-        <h2 className="design-section-title">2. 色を整える</h2>
+        <h2 className="design-section-title">{tr("2. 色を整える")}</h2>
         <label className="studio-field">
-          <span>配色（構図と独立して変更）</span>
+          <span>{tr("配色（構図と独立して変更）")}</span>
           <select
-            aria-label="配色（構図と独立して変更）"
+            aria-label={tr("配色（構図と独立して変更）")}
             value={doc.design.paletteId}
             onChange={(e) => setDesign({ paletteId: e.target.value })}
           >
@@ -235,7 +226,7 @@ export function DesignPanel({
               ))}
           </select>
         </label>
-        <div className="palette-swatches" aria-label="配色の見本">
+        <div className="palette-swatches" aria-label={tr("配色の見本")}>
           {orderedPalettes
             .filter(
               (p) =>
@@ -245,7 +236,7 @@ export function DesignPanel({
             .map((p) => (
               <button
                 key={p.id}
-                aria-label={`配色: ${p.label}`}
+                aria-label={tr("配色: {0}", p.label)}
                 title={`${p.label}${lockSuffix(paletteTier(p.id, doc.design.templateId))}`}
                 aria-pressed={doc.design.paletteId === p.id}
                 onClick={() => setDesign({ paletteId: p.id })}
@@ -262,11 +253,11 @@ export function DesignPanel({
         </div>
       </div>
       <div className="design-section">
-        <h2 className="design-section-title">3. 出力サイズ</h2>
+        <h2 className="design-section-title">{tr("3. 出力サイズ")}</h2>
         <label className="studio-field">
-          <span>出力サイズ</span>
+          <span>{tr("出力サイズ")}</span>
           <select
-            aria-label="出力サイズ"
+            aria-label={tr("出力サイズ")}
             value={doc.design.sizeId}
             onChange={(e) => setDesign({ sizeId: e.target.value as SizeId })}
           >
@@ -284,11 +275,11 @@ export function DesignPanel({
         </label>
       </div>
       <details className="design-section design-more">
-        <summary className="design-section-title">書体・装飾の調整</summary>
+        <summary className="design-section-title">{tr("書体・装飾の調整")}</summary>
         <label className="studio-field">
-          <span>見出しの書体</span>
+          <span>{tr("見出しの書体")}</span>
           <select
-            aria-label="見出しの書体"
+            aria-label={tr("見出しの書体")}
             disabled={doc.design.templateId === "legacy"}
             value={doc.design.fontSet}
             onChange={(e) =>
@@ -297,10 +288,10 @@ export function DesignPanel({
               })
             }
           >
-            <option value="auto">デザインに合わせる</option>
-            <option value="sans">すっきり / ゴシック</option>
-            <option value="serif">落ち着き / セリフ</option>
-            <option value="rounded">やわらか / 丸ゴシック優先</option>
+            <option value="auto">{tr("デザインに合わせる")}</option>
+            <option value="sans">{tr("すっきり / ゴシック")}</option>
+            <option value="serif">{tr("落ち着き / セリフ")}</option>
+            <option value="rounded">{tr("やわらか / 丸ゴシック優先")}</option>
           </select>
         </label>
         <label className="inline-check">
@@ -309,21 +300,14 @@ export function DesignPanel({
             disabled={doc.design.templateId === "legacy"}
             checked={doc.design.decorations}
             onChange={(e) => setDesign({ decorations: e.target.checked })}
-          />
-          装飾を入れる
-        </label>
+          />{tr("装飾を入れる")}</label>
       </details>
       <div className="studio-note">
         <strong>{templateById(doc.design.templateId).label}</strong>
         {doc.design.templateId === "legacy" && (
-          <p>
-            旧版はイベント用A4・従来の4配色に対応します。新しい20デザインはSNSを含む4サイズに対応しています。
-          </p>
+          <p>{tr("旧版はイベント用A4・従来の4配色に対応します。新しい20デザインはSNSを含む4サイズに対応しています。")}</p>
         )}
-        <p>
-          {templateById(doc.design.templateId).recommended}
-          向け。情報量が多い場合は「インフォメーション」やA4を選んでください。
-        </p>
+        <p>{tr("{0}向け。情報量が多い場合は「インフォメーション」やA4を選んでください。", templateById(doc.design.templateId).recommended)}</p>
       </div>
     </>
   );

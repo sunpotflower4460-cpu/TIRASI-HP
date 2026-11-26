@@ -16,6 +16,7 @@ import {
 import { errorMessage } from "../../domain/validation";
 import { Field } from "./controls";
 import type { DocumentMutator } from "./controls";
+import { displayDay, tr } from "../../i18n";
 
 export function LivePanel({
   doc,
@@ -83,13 +84,11 @@ export function LivePanel({
   return (
     <div className="live-panel">
       <div className="live-panel-intro">
-        <span>今回変えるところだけ、入力。</span>
-        <p>タイトル・出演者・日時は、選んだデザインへ自動で入ります。</p>
+        <span>{tr("今回変えるところだけ、入力。")}</span>
+        <p>{tr("タイトル・出演者・日時は、選んだデザインへ自動で入ります。")}</p>
       </div>
       {doc.contentBinding === "snapshot" && (
-        <p className="studio-note">
-          固定コピーを編集中です。元のイベントは変更しません。
-        </p>
+        <p className="studio-note">{tr("固定コピーを編集中です。元のイベントは変更しません。")}</p>
       )}
       {doc.contentBinding === "linked" &&
         workspace.documents.filter(
@@ -98,14 +97,12 @@ export function LivePanel({
             value.contentBinding === "linked" &&
             value.eventId === doc.eventId,
         ).length > 1 && (
-          <p className="live-help">
-            同じライブのデザイン違いにも内容を反映します。次回の告知は「次回分を作る」から作成できます。
-          </p>
+          <p className="live-help">{tr("同じライブのデザイン違いにも内容を反映します。次回の告知は「次回分を作る」から作成できます。")}</p>
         )}
       {doc.contentBinding === "linked" &&
         !workspace.events.some((record) => record.id === doc.eventId) && (
           <div className="studio-note">
-            <p>参照元のイベントが見つかりません。</p>
+            <p>{tr("参照元のイベントが見つかりません。")}</p>
             <button
               onClick={() =>
                 mutate(doc.id, (current) =>
@@ -114,40 +111,36 @@ export function LivePanel({
                     : current,
                 )
               }
-            >
-              固定コピーを編集する
-            </button>
+            >{tr("固定コピーを編集する")}</button>
           </div>
         )}
       <Field
-        label="ライブタイトル"
+        label={tr("ライブタイトル")}
         value={doc.content.titleOverride ?? event.title}
         onChange={(value) => setTitle(value)}
       />
       <div className="live-field-grid">
         <Field
-          label="副題"
+          label={tr("副題")}
           value={doc.content.subtitleOverride ?? event.subtitle}
           onChange={(value) => setTitle(value, true)}
         />
         <Field
-          label="回数・vol."
+          label={tr("回数・vol.")}
           value={event.volume}
           onChange={(volume) => patch({ volume })}
           max={1000}
         />
       </div>
       {doc.content.subtitleOverride !== undefined && (
-        <p className="live-help">
-          副題はこのチラシだけの上書きです。回数を自動で添えるには「本文」からイベントのタイトルに戻せます。
-        </p>
+        <p className="live-help">{tr("副題はこのチラシだけの上書きです。回数を自動で添えるには「本文」からイベントのタイトルに戻せます。")}</p>
       )}
       <div className="live-field-grid">
         <label className="studio-field">
-          <span>開催日（{eventDay(event) || "曜日は自動"}）</span>
+          <span>{tr("開催日（{0}）", displayDay(eventDay(event)) || tr("曜日は自動"))}</span>
           <input
             type="date"
-            aria-label="ライブの開催日"
+            aria-label={tr("ライブの開催日")}
             value={dateISO(event.date) ?? ""}
             onChange={(change) =>
               patch({
@@ -159,10 +152,10 @@ export function LivePanel({
           />
         </label>
         <label className="studio-field">
-          <span>開始時間</span>
+          <span>{tr("開始時間")}</span>
           <input
             type="time"
-            aria-label="ライブの開始時間"
+            aria-label={tr("ライブの開始時間")}
             value={
               /^([01]\d|2[0-3]):[0-5]\d$/.test(event.startTime)
                 ? event.startTime
@@ -173,20 +166,17 @@ export function LivePanel({
         </label>
       </div>
       {!dateISO(event.date) && event.date && (
-        <p className="live-help">現在の日付表記: {event.date}</p>
+        <p className="live-help">{tr("現在の日付表記: {0}", event.date)}</p>
       )}
       <Field
-        label="料金・入場案内"
+        label={tr("料金・入場案内")}
         value={event.price}
         onChange={(price) => patch({ price })}
       />
       <section className="live-lineup">
         <div className="live-section-heading">
-          <h2>
-            出演者{" "}
-            <small>
-              {event.schedule.filter((item) => item.type === "act").length}組
-            </small>
+          <h2>{tr("出演者")}{" "}
+            <small>{tr("{0}組", event.schedule.filter((item) => item.type === "act").length)}</small>
           </h2>
           <label className="inline-check">
             <input
@@ -200,14 +190,10 @@ export function LivePanel({
                   },
                 })
               }
-            />
-            出演時刻を表示
-          </label>
+            />{tr("出演時刻を表示")}</label>
         </div>
         {!times && (
-          <p className="live-help">
-            紙面は名前の一覧になります。時刻・休憩・終了のデータは残ります。
-          </p>
+          <p className="live-help">{tr("紙面は名前の一覧になります。時刻・休憩・終了のデータは残ります。")}</p>
         )}
         <datalist id={suggestionId}>
           {artistSuggestions(workspace, event).map((name) => (
@@ -225,14 +211,14 @@ export function LivePanel({
                 {item.type === "act"
                   ? String(number).padStart(2, "0")
                   : item.type === "break"
-                    ? "休憩"
-                    : "終了"}
+                    ? tr("休憩")
+                    : tr("終了")}
               </span>
               {item.type === "act" ? (
                 <input
                   className="live-artist-name"
-                  aria-label={`出演者${number}の名前`}
-                  placeholder="出演者名"
+                  aria-label={tr("出演者{0}の名前", number)}
+                  placeholder={tr("出演者名")}
                   list={suggestionId}
                   value={item.name}
                   maxLength={1000}
@@ -242,7 +228,7 @@ export function LivePanel({
                 />
               ) : (
                 <input
-                  aria-label={`区切り${index + 1}の表示`}
+                  aria-label={tr("区切り{0}の表示", index + 1)}
                   value={item.label}
                   maxLength={1000}
                   onChange={(change) =>
@@ -253,7 +239,7 @@ export function LivePanel({
               <div className="live-row-actions">
                 <button
                   type="button"
-                  aria-label={`項目${index + 1}を上へ`}
+                  aria-label={tr("項目{0}を上へ", index + 1)}
                   disabled={index === 0}
                   onClick={() => move(index, -1)}
                 >
@@ -261,7 +247,7 @@ export function LivePanel({
                 </button>
                 <button
                   type="button"
-                  aria-label={`項目${index + 1}を下へ`}
+                  aria-label={tr("項目{0}を下へ", index + 1)}
                   disabled={index === event.schedule.length - 1}
                   onClick={() => move(index, 1)}
                 >
@@ -269,7 +255,7 @@ export function LivePanel({
                 </button>
                 <button
                   type="button"
-                  aria-label={`項目${index + 1}を削除`}
+                  aria-label={tr("項目{0}を削除", index + 1)}
                   onClick={() =>
                     updateEvent((current) => ({
                       ...current,
@@ -284,9 +270,9 @@ export function LivePanel({
               </div>
               {item.type === "act" && times && (
                 <label className="live-act-time">
-                  <span>時間</span>
+                  <span>{tr("時間")}</span>
                   <input
-                    aria-label={`出演者${number}の時間`}
+                    aria-label={tr("出演者{0}の時間", number)}
                     value={item.time}
                     placeholder="14:30-14:50"
                     maxLength={300}
@@ -303,30 +289,26 @@ export function LivePanel({
           <button
             disabled={event.schedule.length >= EVENT_LIMITS.schedule}
             onClick={() => insert({ type: "act", name: "", time: "" })}
-          >
-            ＋ 出演者
-          </button>
+          >{tr("＋ 出演者")}</button>
           <button
             disabled={event.schedule.length >= EVENT_LIMITS.schedule}
-            onClick={() => insert({ type: "break", label: "休憩（15分）" })}
-          >
-            ＋ 休憩
-          </button>
+            onClick={() => insert({ type: "break", label: tr("休憩（15分）") })}
+          >{tr("＋ 休憩")}</button>
         </div>
         {event.schedule.length >= EVENT_LIMITS.schedule && (
-          <p role="status">スケジュールは{EVENT_LIMITS.schedule}件までです。</p>
+          <p role="status">{tr("スケジュールは{0}件までです。", EVENT_LIMITS.schedule)}</p>
         )}
         <details className="live-utility">
-          <summary>名前をまとめて追加する</summary>
+          <summary>{tr("名前をまとめて追加する")}</summary>
           <label className="studio-field">
-            <span>1行に1組ずつ入力・貼り付け</span>
+            <span>{tr("1行に1組ずつ入力・貼り付け")}</span>
             <textarea
-              aria-label="まとめて追加する出演者名"
+              aria-label={tr("まとめて追加する出演者名")}
               value={names}
               onChange={(change) => setNames(change.target.value)}
               rows={5}
               maxLength={10000}
-              placeholder={"出演者A\n出演者B\n出演者C"}
+              placeholder={tr("出演者A\n出演者B\n出演者C")}
             />
           </label>
           <button
@@ -336,39 +318,35 @@ export function LivePanel({
                 const schedule = appendArtistNames(event.schedule, names);
                 patch({ schedule });
                 setNames("");
-                setNotice("出演者を追加しました。時刻はそのままです。");
+                setNotice(tr("出演者を追加しました。時刻はそのままです。"));
               } catch (error) {
                 setNotice(errorMessage(error));
               }
             }}
-          >
-            名前を追加
-          </button>
+          >{tr("名前を追加")}</button>
         </details>
         <details className="live-utility">
-          <summary>出演時刻をまとめて設定する</summary>
-          <p>
-            開始時間から演奏・転換を順に割り当てます。名前や出演順は変えません。休憩欄の「○分」を使い、記載がなければ15分とします。
-          </p>
+          <summary>{tr("出演時刻をまとめて設定する")}</summary>
+          <p>{tr("開始時間から演奏・転換を順に割り当てます。名前や出演順は変えません。休憩欄の「○分」を使い、記載がなければ15分とします。")}</p>
           <div className="live-field-grid">
             <label className="studio-field">
-              <span>1組の演奏（分）</span>
+              <span>{tr("1組の演奏（分）")}</span>
               <input
                 type="number"
                 min="1"
                 max="180"
-                aria-label="1組の演奏時間"
+                aria-label={tr("1組の演奏時間")}
                 value={duration}
                 onChange={(change) => setDuration(change.target.value)}
               />
             </label>
             <label className="studio-field">
-              <span>転換（分）</span>
+              <span>{tr("転換（分）")}</span>
               <input
                 type="number"
                 min="0"
                 max="120"
-                aria-label="転換時間"
+                aria-label={tr("転換時間")}
                 value={changeover}
                 onChange={(change) => setChangeover(change.target.value)}
               />
@@ -386,15 +364,13 @@ export function LivePanel({
                   ),
                 });
                 setNotice(
-                  "出演時刻を設定しました。「取り消す」で元に戻せます。",
+                  tr("出演時刻を設定しました。「取り消す」で元に戻せます。"),
                 );
               } catch (error) {
                 setNotice(errorMessage(error));
               }
             }}
-          >
-            この時間で割り当てる
-          </button>
+          >{tr("この時間で割り当てる")}</button>
         </details>
         {notice && (
           <p className="live-help" role="status">
@@ -403,10 +379,10 @@ export function LivePanel({
         )}
       </section>
       <details className="live-fixed-info">
-        <summary>会場・主催・注意書き</summary>
-        <p>毎回変わらない情報です。次回分にもそのまま引き継ぎます。</p>
+        <summary>{tr("会場・主催・注意書き")}</summary>
+        <p>{tr("毎回変わらない情報です。次回分にもそのまま引き継ぎます。")}</p>
         <Field
-          label="会場名"
+          label={tr("会場名")}
           value={event.venue.name}
           onChange={(name) =>
             updateEvent((current) => ({
@@ -416,7 +392,7 @@ export function LivePanel({
           }
         />
         <Field
-          label="会場住所"
+          label={tr("会場住所")}
           value={event.venue.address}
           onChange={(address) =>
             updateEvent((current) => ({
@@ -426,7 +402,7 @@ export function LivePanel({
           }
         />
         <Field
-          label="会場URL"
+          label={tr("会場URL")}
           value={event.venue.url}
           onChange={(url) =>
             updateEvent((current) => ({
@@ -437,17 +413,17 @@ export function LivePanel({
           max={2048}
         />
         <Field
-          label="主催・企画"
+          label={tr("主催・企画")}
           value={event.organizer}
           onChange={(organizer) => patch({ organizer })}
         />
         <Field
-          label="上部の会場表記"
+          label={tr("上部の会場表記")}
           value={event.venueSubtitle}
           onChange={(venueSubtitle) => patch({ venueSubtitle })}
         />
         <Field
-          label="注意書き"
+          label={tr("注意書き")}
           value={event.statusNote}
           multiline
           onChange={(statusNote) => patch({ statusNote })}
@@ -455,7 +431,7 @@ export function LivePanel({
         />
       </details>
       <details className="live-fixed-info">
-        <summary>終演後のOpen Mic</summary>
+        <summary>{tr("終演後のOpen Mic")}</summary>
         <label className="inline-check">
           <input
             type="checkbox"
@@ -468,9 +444,7 @@ export function LivePanel({
                 },
               })
             }
-          />
-          Open Micを載せる
-        </label>
+          />{tr("Open Micを載せる")}</label>
         {(
           [
             "title",
@@ -485,12 +459,12 @@ export function LivePanel({
             key={key}
             label={
               [
-                "Open Micの見出し",
-                "Open Micの時間",
-                "ラストオーダー",
-                "参加案内",
-                "Open Micの注意",
-                "終了案内",
+                tr("Open Micの見出し"),
+                tr("Open Micの時間"),
+                tr("ラストオーダー"),
+                tr("参加案内"),
+                tr("Open Micの注意"),
+                tr("終了案内"),
               ][index]
             }
             value={event.openMic[key]}
@@ -505,7 +479,7 @@ export function LivePanel({
       </details>
       {warnings.length > 0 && (
         <details className="live-fixed-info live-warning">
-          <summary>日時・時刻の確認（{warnings.length}件）</summary>
+          <summary>{tr("日時・時刻の確認（{0}件）", warnings.length)}</summary>
           <ul>
             {warnings.map((warning, index) => (
               <li key={index}>{warning}</li>
@@ -515,8 +489,8 @@ export function LivePanel({
       )}
       <p className="live-help">
         {isStore
-          ? "この端末の下書きを編集中です。"
-          : "このブラウザの下書きを編集中です。公開HPは変わりません。"}
+          ? tr("この端末の下書きを編集中です。")
+          : tr("このブラウザの下書きを編集中です。公開HPは変わりません。")}
       </p>
     </div>
   );

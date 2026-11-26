@@ -5,6 +5,7 @@ import type { Requirement, Tier } from "./entitlements";
 import { getStoreBackend } from "./store";
 import type { StoreBackend, StoreProduct } from "./store";
 import { Paywall } from "./Paywall";
+import { tr } from "../i18n";
 
 export type PlanValue = {
   /** False in the personal app: nothing is ever locked there. */
@@ -79,19 +80,19 @@ export function PlanProvider({ children }: { children: (openPlans: () => void, t
   const buy = async (id: string) => {
     if (!backend.current || busy) return;
     setBusy(true);
-    setMessage("App Storeに接続しています…");
+    setMessage(tr("App Storeに接続しています…"));
     try {
       const outcome = await backend.current.purchase(id);
       await refreshOwned();
       setMessage(
         outcome === "purchased"
-          ? "購入ありがとうございます。機能を解放しました。"
+          ? tr("購入ありがとうございます。機能を解放しました。")
           : outcome === "pending"
-            ? "購入は承認待ちです。承認されると自動で解放されます。"
-            : "購入をキャンセルしました。",
+            ? tr("購入は承認待ちです。承認されると自動で解放されます。")
+            : tr("購入をキャンセルしました。"),
       );
     } catch {
-      setMessage("購入できませんでした。通信状態を確認して、もう一度お試しください。");
+      setMessage(tr("購入できませんでした。通信状態を確認して、もう一度お試しください。"));
     } finally {
       setBusy(false);
     }
@@ -99,13 +100,13 @@ export function PlanProvider({ children }: { children: (openPlans: () => void, t
   const restore = async () => {
     if (!backend.current || busy) return;
     setBusy(true);
-    setMessage("購入内容を確認しています…");
+    setMessage(tr("購入内容を確認しています…"));
     try {
       await backend.current.restore();
       const next = await refreshOwned();
-      setMessage(next && next !== "free" ? "購入内容を復元しました。" : "復元できる購入はありませんでした。");
+      setMessage(next && next !== "free" ? tr("購入内容を復元しました。") : tr("復元できる購入はありませんでした。"));
     } catch {
-      setMessage("復元できませんでした。通信状態を確認して、もう一度お試しください。");
+      setMessage(tr("復元できませんでした。通信状態を確認して、もう一度お試しください。"));
     } finally {
       setBusy(false);
     }

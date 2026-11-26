@@ -4,6 +4,7 @@ import { defaultEvent } from '../data/defaultEvent';
 import type { EventData } from '../types/event';
 import { array, object, parseEvent, parseJson, string, ValidationError } from './validation';
 import { eventCollectionsFit, MAX_EVENTS } from './limits';
+import { tr } from "../i18n";
 
 export type EventRecord = { id: string; name: string; eventData: EventData; updatedAt: string };
 export type Workspace = {
@@ -27,8 +28,8 @@ export const eventName = (event: EventData) => `${event.title} ${event.subtitle}
 export const recordFor = (eventData: EventData, id: string = newId(), name = eventName(eventData)): EventRecord => ({ id, name, eventData: structuredClone(eventData), updatedAt: new Date().toISOString() });
 export function parseRecords(value: unknown): EventRecord[] {
   const ids = new Set<string>();
-  const records = array(value, 'イベント一覧', MAX_EVENTS).map((v, index) => {
-    const record = object(v, `イベント[${index}]`);
+  const records = array(value, tr("イベント一覧"), MAX_EVENTS).map((v, index) => {
+    const record = object(v, tr("イベント[{0}]", index));
     const eventData = parseEvent(record.eventData);
     const originalId = record.id === undefined ? `import-${index}` : string(record.id, 'id', 200);
     let id = originalId || `import-${index}`;
@@ -36,11 +37,11 @@ export function parseRecords(value: unknown): EventRecord[] {
     ids.add(id);
     return {
       ...record, id, eventData,
-      name: record.name === undefined ? eventName(eventData) : string(record.name, '管理名', 1000),
-      updatedAt: record.updatedAt === undefined ? '1970-01-01T00:00:00.000Z' : string(record.updatedAt, '更新日', 100)
+      name: record.name === undefined ? eventName(eventData) : string(record.name, tr("管理名"), 1000),
+      updatedAt: record.updatedAt === undefined ? '1970-01-01T00:00:00.000Z' : string(record.updatedAt, tr("更新日"), 100)
     } as EventRecord;
   });
-  if (!records.length) throw new ValidationError('イベント一覧は1件以上必要です。');
+  if (!records.length) throw new ValidationError(tr("イベント一覧は1件以上必要です。"));
   return records;
 }
 export function parseLibrary(text: string): EventRecord[] {
@@ -48,25 +49,25 @@ export function parseLibrary(text: string): EventRecord[] {
   if (Array.isArray(value)) return parseRecords(value);
   const envelope = object(value);
   if (envelope.schemaVersion === 2 && envelope.kind === undefined && Array.isArray(envelope.events)) {
-    if (Array.isArray(envelope.documents) && envelope.documents.length) throw new ValidationError('制作物を含むワークスペースJSONです。スタジオの「JSONのみ復元」を使ってください。');
+    if (Array.isArray(envelope.documents) && envelope.documents.length) throw new ValidationError(tr("制作物を含むワークスペースJSONです。スタジオの「JSONのみ復元」を使ってください。"));
     return parseWorkspace(envelope).events;
   }
-  if (envelope.schemaVersion !== 2 || envelope.kind !== 'event-library') throw new ValidationError('未対応の一覧形式です。');
+  if (envelope.schemaVersion !== 2 || envelope.kind !== 'event-library') throw new ValidationError(tr("未対応の一覧形式です。"));
   return parseRecords(envelope.records);
 }
 export function parseWorkspace(value: unknown): Workspace {
   const data = object(value);
-  if (data.schemaVersion !== 2 || !Number.isSafeInteger(data.revision) || Number(data.revision) < 0) throw new ValidationError('保存領域のバージョンが不正です。');
+  if (data.schemaVersion !== 2 || !Number.isSafeInteger(data.revision) || Number(data.revision) < 0) throw new ValidationError(tr("保存領域のバージョンが不正です。"));
   const events = parseRecords(data.events);
   const activeEventId = string(data.activeEventId, 'activeEventId', 200);
-  if (!events.some(e => e.id === activeEventId)) throw new ValidationError('選択中のイベントが見つかりません。');
+  if (!events.some(e => e.id === activeEventId)) throw new ValidationError(tr("選択中のイベントが見つかりません。"));
   if (data.legacyBackup !== undefined) {
     const backup = object(data.legacyBackup);
-    Object.values(backup).forEach(v => { if (v !== null) string(v, '移行原本', 4 * 1024 * 1024); });
+    Object.values(backup).forEach(v => { if (v !== null) string(v, tr("移行原本"), 4 * 1024 * 1024); });
   }
-  const docs = array(data.documents ?? [], '制作物', 100).map(parseDocument);
-  if (new Set(docs.map(d => d.id)).size !== docs.length) throw new ValidationError('制作物IDが重複しています。');
-  if (data.activeDocumentId !== undefined && !docs.some(d => d.id === data.activeDocumentId)) throw new ValidationError('選択中の制作物が見つかりません。');
+  const docs = array(data.documents ?? [], tr("制作物"), 100).map(parseDocument);
+  if (new Set(docs.map(d => d.id)).size !== docs.length) throw new ValidationError(tr("制作物IDが重複しています。"));
+  if (data.activeDocumentId !== undefined && !docs.some(d => d.id === data.activeDocumentId)) throw new ValidationError(tr("選択中の制作物が見つかりません。"));
   return { ...data, schemaVersion: 2, revision: Number(data.revision), events, activeEventId, documents: docs } as Workspace;
 }
 export function initialWorkspace(legacy: Record<string, string | null> = {}): Workspace {

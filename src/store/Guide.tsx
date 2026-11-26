@@ -1,12 +1,13 @@
 import { useEffect, useRef } from "react";
 import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
+import { tr } from "../i18n";
 import "../styles/plan.css";
 
 const steps: [IconName, string, string][] = [
-  ["sparkle", "デザインを選ぶ", "ホームの見本をタップすると、すぐ作り始められます。"],
-  ["edit", "日時・出演者を入れる", "入力した内容は、デザインに自動で配置されます。"],
-  ["eye", "仕上がりを確認して保存", "下の「仕上がり・保存」から、写真に保存・共有・印刷ができます。"],
+  ["sparkle", tr("デザインを選ぶ"), tr("ホームの見本をタップすると、すぐ作り始められます。")],
+  ["edit", tr("日時・出演者を入れる"), tr("入力した内容は、デザインに自動で配置されます。")],
+  ["eye", tr("仕上がりを確認して保存"), tr("下の「仕上がり・保存」から、写真に保存・共有・印刷ができます。")],
 ];
 
 /** A short how-to, shown on first launch and from the help button. */
@@ -31,10 +32,8 @@ export function Guide({ onClose }: { onClose: () => void }) {
         ref={dialog}
       >
         <header className="plan-header">
-          <h2 id="guide-title">3ステップで完成</h2>
-          <button type="button" className="plan-close" onClick={onClose}>
-            閉じる
-          </button>
+          <h2 id="guide-title">{tr("3ステップで完成")}</h2>
+          <button type="button" className="plan-close" onClick={onClose}>{tr("閉じる")}</button>
         </header>
         <ol className="guide-steps">
           {steps.map(([icon, title, text], index) => (
@@ -51,10 +50,8 @@ export function Guide({ onClose }: { onClose: () => void }) {
             </li>
           ))}
         </ol>
-        <p className="plan-fineprint">鍵のついたデザインも仕上がりを試せます。作ったデータは、この端末の中だけに保存します。</p>
-        <button type="button" className="plan-buy" onClick={onClose}>
-          はじめる
-        </button>
+        <p className="plan-fineprint">{tr("鍵のついたデザインも仕上がりを試せます。作ったデータは、この端末の中だけに保存します。")}</p>
+        <button type="button" className="plan-buy" onClick={onClose}>{tr("はじめる")}</button>
       </div>
     </div>
   );

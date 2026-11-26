@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { NextLiveValues } from "../../studio/live";
 import { weekday } from "../../domain/date";
 import { Field } from "./controls";
+import { displayDay, tr } from "../../i18n";
 
 export function NextLiveDialog({
   initial,
@@ -38,18 +39,14 @@ export function NextLiveDialog({
           setError(onCreate(values) ?? "");
         }}
       >
-        <p className="live-step-label">前回を残して、次の一枚へ</p>
-        <h2 id={heading}>次回分を作る</h2>
-        <p>
-          会場・主催・料金・デザインはそのまま引き継ぎます。まず次回の日付を入れてください。
-        </p>
+        <p className="live-step-label">{tr("前回を残して、次の一枚へ")}</p>
+        <h2 id={heading}>{tr("次回分を作る")}</h2>
+        <p>{tr("会場・主催・料金・デザインはそのまま引き継ぎます。まず次回の日付を入れてください。")}</p>
         <label className="studio-field">
-          <span>
-            次回の開催日 {values.date && `（${weekday(values.date) ?? ""}）`}
-          </span>
+          <span>{tr("次回の開催日 {0}", values.date && tr("（{0}）", displayDay(weekday(values.date) ?? "")))}</span>
           <input
             type="date"
-            aria-label="次回の開催日"
+            aria-label={tr("次回の開催日")}
             required
             value={values.date}
             onChange={(event) =>
@@ -60,18 +57,18 @@ export function NextLiveDialog({
         </label>
         <div className="live-field-grid">
           <Field
-            label="次回のタイトル"
+            label={tr("次回のタイトル")}
             value={values.title}
             onChange={(title) => setValues({ ...values, title })}
           />
           <Field
-            label="次回の回数・vol."
+            label={tr("次回の回数・vol.")}
             value={values.volume}
             onChange={(volume) => setValues({ ...values, volume })}
           />
         </div>
         <Field
-          label="次回の副題"
+          label={tr("次回の副題")}
           value={values.subtitle}
           onChange={(subtitle) => setValues({ ...values, subtitle })}
         />
@@ -82,9 +79,7 @@ export function NextLiveDialog({
             onChange={(event) =>
               setValues({ ...values, keepLineup: event.target.checked })
             }
-          />
-          出演者{count}組と時刻も引き継ぐ
-        </label>
+          />{tr("出演者{0}組と時刻も引き継ぐ", count)}</label>
         <p className="live-repeat-summary">
           {values.title} {values.subtitle} {values.volume}
         </p>
@@ -94,12 +89,8 @@ export function NextLiveDialog({
           </p>
         )}
         <div className="action-row">
-          <button type="submit" className="primary">
-            引き継いで作成
-          </button>
-          <button type="button" onClick={onCancel}>
-            キャンセル
-          </button>
+          <button type="submit" className="primary">{tr("引き継いで作成")}</button>
+          <button type="button" onClick={onCancel}>{tr("キャンセル")}</button>
         </div>
       </form>
     </dialog>

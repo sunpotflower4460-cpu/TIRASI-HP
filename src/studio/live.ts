@@ -6,6 +6,7 @@ import { dateISO, weekday } from "../domain/date";
 import { parseEvent, ValidationError } from "../domain/validation";
 import type { CreativeDocument } from "./document";
 import { eventForDocument } from "./document";
+import { tr } from "../i18n";
 
 export type LiveDocument = Extract<CreativeDocument, { kind: "event-flyer" }>;
 export type NextLiveValues = {
@@ -43,7 +44,7 @@ export function liveDate(iso: string, previous: string): string {
   if (!iso) return "";
   const normalized = dateISO(iso);
   if (!normalized)
-    throw new ValidationError("開催日を正しく入力してください。");
+    throw new ValidationError(tr("開催日を正しく入力してください。"));
   const [year, month, day] = normalized.split("-");
   return /^\d{4}\.\d{1,2}\/\d{1,2}$/.test(previous)
     ? `${year}.${Number(month)}/${Number(day)}`
@@ -79,20 +80,20 @@ export function repeatLiveWorkspace(
 ): Workspace {
   const doc = state.documents.find((document) => document.id === sourceId);
   if (!doc || doc.kind !== "event-flyer")
-    throw new ValidationError("引き継ぐライブチラシを選んでください。");
+    throw new ValidationError(tr("引き継ぐライブチラシを選んでください。"));
   if (state.events.length >= MAX_EVENTS || state.documents.length >= 100)
     throw new ValidationError(
-      "保存件数の上限です。バックアップ後に不要なイベント・チラシを整理してください。",
+      tr("保存件数の上限です。バックアップ後に不要なイベント・チラシを整理してください。"),
     );
   if (
     state.events.some((event) => event.id === identity.eventId) ||
     state.documents.some((document) => document.id === identity.documentId)
   )
     throw new ValidationError(
-      "新しいIDが重複しています。もう一度作成してください。",
+      tr("新しいIDが重複しています。もう一度作成してください。"),
     );
   if (!values.title.trim() || !dateISO(values.date))
-    throw new ValidationError("タイトルと次回の開催日を入力してください。");
+    throw new ValidationError(tr("タイトルと次回の開催日を入力してください。"));
   const source = eventForDocument(doc, state.events);
   const eventData = parseEvent({
     ...structuredClone(source),
@@ -163,13 +164,13 @@ export function appendArtistNames(
     .map((name) => name.trim())
     .filter(Boolean);
   if (!names.length)
-    throw new ValidationError("出演者名を1行に1組ずつ入力してください。");
+    throw new ValidationError(tr("出演者名を1行に1組ずつ入力してください。"));
   if (
     names.some((name) => name.length > 1000) ||
     schedule.length + names.length > EVENT_LIMITS.schedule
   )
     throw new ValidationError(
-      `出演者名は1000文字以内、スケジュールは${EVENT_LIMITS.schedule}件以内にしてください。`,
+      tr("出演者名は1000文字以内、スケジュールは{0}件以内にしてください。", EVENT_LIMITS.schedule),
     );
   const index = schedule.findIndex((item) => item.type === "end");
   const at = index < 0 ? schedule.length : index;
@@ -187,7 +188,7 @@ export function buildTimetable(
   defaultBreak = 15,
 ): ScheduleItem[] {
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(start))
-    throw new ValidationError("開始時間を入力してください。");
+    throw new ValidationError(tr("開始時間を入力してください。"));
   if (
     !Number.isInteger(duration) ||
     duration < 1 ||
@@ -200,10 +201,10 @@ export function buildTimetable(
     defaultBreak > 120
   )
     throw new ValidationError(
-      "演奏は1〜180分、転換・休憩は0〜120分で入力してください。",
+      tr("演奏は1〜180分、転換・休憩は0〜120分で入力してください。"),
     );
   if (!schedule.some((item) => item.type === "act"))
-    throw new ValidationError("先に出演者を追加してください。");
+    throw new ValidationError(tr("先に出演者を追加してください。"));
   const [hours, minutes] = start.split(":").map(Number);
   const first = hours * 60 + minutes;
   let clock = first;
@@ -221,7 +222,7 @@ export function buildTimetable(
     clock += duration;
     if (clock - first >= 1440)
       throw new ValidationError(
-        "自動設定は24時間未満のライブに対応します。演奏時間や転換時間を短くしてください。",
+        tr("自動設定は24時間未満のライブに対応します。演奏時間や転換時間を短くしてください。"),
       );
     if (schedule[index + 1]?.type === "act") clock += changeover;
     return { ...item, time };
@@ -233,7 +234,7 @@ export function missingArtistNames(event: EventData): string[] {
   return event.schedule.flatMap((item) =>
     item.type === "act"
       ? (++act,
-        item.name.trim() ? [] : [`出演者${act}の名前を入力してください。`])
+        item.name.trim() ? [] : [tr("出演者{0}の名前を入力してください。", act)])
       : [],
   );
 }

@@ -8,6 +8,7 @@ import {
   validateAsset,
 } from "./assets";
 import type { CreativeDocument } from "./document";
+import { tr } from "../i18n";
 export const MAX_BACKUP_BYTES = 64 * 1024 * 1024;
 export type BackupAsset = {
   id: string;
@@ -45,14 +46,14 @@ export async function createBackup(workspace: Workspace): Promise<Backup> {
     const blob = await getAssetBlob(id);
     if (!blob)
       throw new Error(
-        "元画像が欠損しています。完全バックアップを作成できません。画像を復元してください。",
+        tr("元画像が欠損しています。完全バックアップを作成できません。画像を復元してください。"),
       );
     const savedMeta = await getAssetMetadata(id);
     const meta = await validateAsset(blob, savedMeta?.name ?? id);
     total += (blob.size * 4) / 3;
     if (total > MAX_BACKUP_BYTES - 4 * 1024 * 1024)
       throw new Error(
-        "バックアップ上限64MBを超えます。使う画像を軽量化してください。",
+        tr("バックアップ上限64MBを超えます。使う画像を軽量化してください。"),
       );
     assets.push({
       id,
@@ -72,7 +73,7 @@ export async function createBackup(workspace: Workspace): Promise<Backup> {
   };
   if (new Blob([JSON.stringify(backup, null, 2)]).size > MAX_BACKUP_BYTES)
     throw new Error(
-      "完全バックアップの上限64MBを超えます。制作物ごとの完全バックアップを保存してください。",
+      tr("完全バックアップの上限64MBを超えます。制作物ごとの完全バックアップを保存してください。"),
     );
   return backup;
 }
@@ -85,16 +86,16 @@ export async function readBackup(file: File): Promise<{
   }[];
 }> {
   if (file.size > MAX_BACKUP_BYTES)
-    throw new Error("完全バックアップは64MB以内にしてください。");
+    throw new Error(tr("完全バックアップは64MB以内にしてください。"));
   let json: unknown;
   try {
     json = JSON.parse(await file.text());
   } catch {
-    throw new Error("バックアップのJSON形式が正しくありません。");
+    throw new Error(tr("バックアップのJSON形式が正しくありません。"));
   }
-  const input = object(json, "バックアップ");
+  const input = object(json, tr("バックアップ"));
   if (input.schemaVersion !== 2 || input.kind !== "tirasi-complete-backup")
-    throw new Error("TIRASI完全バックアップを選択してください。");
+    throw new Error(tr("TIRASI完全バックアップを選択してください。"));
   const workspace = parseWorkspace(input.workspace);
   const refs = new Set(referencedAssets(workspace));
   const ids = new Set<string>();
@@ -104,42 +105,42 @@ export async function readBackup(file: File): Promise<{
     metadata?: import("./assets").AssetMetadata;
   }[] = [];
   let total = 0;
-  for (const v of array(input.assets, "素材", 100)) {
-    const asset = object(v, "素材");
-    const id = string(asset.id, "素材ID", 200);
+  for (const v of array(input.assets, tr("素材"), 100)) {
+    const asset = object(v, tr("素材"));
+    const id = string(asset.id, tr("素材ID"), 200);
     if (ids.has(id) || !refs.has(id))
-      throw new Error("素材の参照が不正または重複しています。");
+      throw new Error(tr("素材の参照が不正または重複しています。"));
     ids.add(id);
-    const encoded = string(asset.data, "素材データ", 12 * 1024 * 1024);
+    const encoded = string(asset.data, tr("素材データ"), 12 * 1024 * 1024);
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded))
-      throw new Error("素材のエンコードが不正です。");
+      throw new Error(tr("素材のエンコードが不正です。"));
     let binary: string;
     try {
       binary = atob(encoded);
     } catch {
-      throw new Error("素材を復号できません。");
+      throw new Error(tr("素材を復号できません。"));
     }
     total += binary.length;
     if (total > 45 * 1024 * 1024 || binary.length !== asset.bytes)
-      throw new Error("素材の容量が不正です。");
-    const mime = string(asset.mime, "素材形式", 100);
+      throw new Error(tr("素材の容量が不正です。"));
+    const mime = string(asset.mime, tr("素材形式"), 100);
     const blob = new Blob([Uint8Array.from(binary, (c) => c.charCodeAt(0))], {
       type: mime,
     });
     const hash = await sha256(blob);
     if (hash !== asset.hash || id !== `asset-${hash}`)
       throw new Error(
-        "素材の整合性チェックに失敗しました。元のバックアップを確認してください。",
+        tr("素材の整合性チェックに失敗しました。元のバックアップを確認してください。"),
       );
     const metadata = await validateAsset(
       blob,
-      string(asset.name, "素材名", 500),
+      string(asset.name, tr("素材名"), 500),
     );
     assets.push({ id, blob, metadata });
   }
   if ([...refs].some((id) => !ids.has(id)))
     throw new Error(
-      "素材が欠けているため完全復元できません。現在の内容は変更していません。",
+      tr("素材が欠けているため完全復元できません。現在の内容は変更していません。"),
     );
   return { workspace, assets };
 }

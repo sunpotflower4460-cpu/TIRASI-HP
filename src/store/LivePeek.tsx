@@ -6,6 +6,7 @@ import type { CreativeDocument } from "../studio/document";
 import type { EventRecord } from "../domain/workspace";
 import { paletteById, sizes, templateById } from "../studio/registry";
 import { DocumentPreview } from "../components/Studio/DocumentPreview";
+import { tr } from "../i18n";
 import "./livePeek.css";
 
 type Props = {
@@ -18,11 +19,11 @@ export function LivePeek({ doc, events, onOpen }: Props) {
   const [large, setLarge] = useState(false);
   return (
     <div className={`live-peek print-hidden${large ? " large" : ""}`}>
-      <button type="button" className="live-peek-paper" aria-label="仕上がりを開く" onClick={onOpen}>
+      <button type="button" className="live-peek-paper" aria-label={tr("仕上がりを開く")} onClick={onOpen}>
         <DocumentPreview document={doc} events={events} thumbnail peek />
       </button>
       <div className="live-peek-side">
-        <strong>今の仕上がり</strong>
+        <strong>{tr("今の仕上がり")}</strong>
         {doc.kind !== "image-treatment" && (
           <>
             <small>{templateById(doc.design.templateId).label}</small>
@@ -31,7 +32,7 @@ export function LivePeek({ doc, events, onOpen }: Props) {
         )}
         <small>{sizes[doc.design.sizeId].label}</small>
         <button type="button" aria-pressed={large} onClick={() => setLarge((value) => !value)}>
-          {large ? "小さくする" : "大きくする"}
+          {large ? tr("小さくする") : tr("大きくする")}
         </button>
       </div>
     </div>

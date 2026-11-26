@@ -19,6 +19,7 @@ import { OnePageFlyer } from "../Flyer/OnePageFlyer";
 import { getThemeClassName } from "../../data/themes";
 import { eventForDocument } from "../../studio/document";
 import { missingArtistNames } from "../../studio/live";
+import { tr } from "../../i18n";
 function CanvasDocumentPreview({
   document: doc,
   events,
@@ -133,7 +134,7 @@ function CanvasDocumentPreview({
   }, [scene, images, assetsReady, showBefore, thumbnail]);
   const generate = async (light: boolean) => {
     if (assetError || error || !assetsReady)
-      throw new Error(assetError || error || "画像の読み込み中です。");
+      throw new Error(assetError || error || tr("画像の読み込み中です。"));
     const factor = light && doc.design.sizeId === "a4" ? 0.5 : 1;
     const originals = await loadImages(doc.assetRefs);
     try {
@@ -161,11 +162,11 @@ function CanvasDocumentPreview({
           : await renderScene(scene, originals, size.width, size.height);
       if (generation !== renderGeneration.current)
         throw new Error(
-          "編集内容が変わったため、印刷を中断しました。もう一度印刷ボタンを押してください。",
+          tr("編集内容が変わったため、印刷を中断しました。もう一度印刷ボタンを押してください。"),
         );
       if (generated.errors.length) throw new Error(generated.errors.join("\n"));
       const target = canvasRef.current;
-      if (!target) throw new Error("印刷用の紙面が見つかりません。");
+      if (!target) throw new Error(tr("印刷用の紙面が見つかりません。"));
       target.width = generated.canvas.width;
       target.height = generated.canvas.height;
       target.getContext("2d")!.drawImage(generated.canvas, 0, 0);
@@ -178,7 +179,7 @@ function CanvasDocumentPreview({
     assetError,
     error,
     ...(result?.errors ?? []),
-    ...(!result && busy ? ["プレビューを準備しています。"] : []),
+    ...(!result && busy ? [tr("プレビューを準備しています。")] : []),
   ].filter(Boolean);
   return (
     <div className={`document-preview ${thumbnail ? "thumbnail" : ""}`}>
@@ -194,7 +195,7 @@ function CanvasDocumentPreview({
           )}
           canPrint={size.print}
           onPrint={print}
-          sizeInfo={`${size.label} / PNG ${size.width}×${size.height}px${size.print ? (isStore ? "（300dpi相当）。印刷は「印刷 / PDFとして保存」から。塗り足しなし。" : "（300dpi相当）。印刷はブラウザでA4・倍率100%・余白なし・背景の印刷を選択。塗り足しなし。") : "。このサイズはPNG出力専用です。"}`}
+          sizeInfo={`${size.label} / PNG ${size.width}×${size.height}px${size.print ? (isStore ? tr("（300dpi相当）。印刷は「印刷 / PDFとして保存」から。塗り足しなし。") : tr("（300dpi相当）。印刷はブラウザでA4・倍率100%・余白なし・背景の印刷を選択。塗り足しなし。")) : tr("。このサイズはPNG出力専用です。")}`}
           errors={errors}
         />
       )}
@@ -212,7 +213,7 @@ function CanvasDocumentPreview({
         <canvas
           ref={canvasRef}
           role="img"
-          aria-label={`${doc.name}の${showBefore ? "元画像" : "プレビュー"}`}
+          aria-label={tr("{0}の{1}", doc.name, showBefore ? tr("元画像") : tr("プレビュー"))}
           data-testid={
             peek
               ? "peek-canvas"
@@ -229,11 +230,11 @@ function CanvasDocumentPreview({
           <p className="preview-caption print-hidden">
             {size.label} · {size.width} × {size.height}px ·{" "}
             {doc.kind === "image-treatment"
-              ? "元画像を保持した非破壊加工"
-              : "文字の収まりを自動確認"}
+              ? tr("元画像を保持した非破壊加工")
+              : tr("文字の収まりを自動確認")}
           </p>
           <details className="scene-text print-hidden">
-            <summary>表示内容をテキストで読む</summary>
+            <summary>{tr("表示内容をテキストで読む")}</summary>
             {scene.nodes
               .flatMap((node) =>
                 node.kind === "text"
@@ -292,12 +293,12 @@ function LegacyDocumentPreview({
   );
   const errors = doc.assetRefs.length
     ? [
-        "旧版A4には画像枠がありません。画像を外すか、画像対応の新しい構図を選んでください。元画像は保持されています。",
+        tr("旧版A4には画像枠がありません。画像を外すか、画像対応の新しい構図を選んでください。元画像は保持されています。"),
       ]
     : [];
   if (doc.contentBinding === "linked" && !bound)
     errors.push(
-      "参照イベントが見つかりません。固定コピーまたは別のイベントを選択してください。",
+      tr("参照イベントが見つかりません。固定コピーまたは別のイベントを選択してください。"),
     );
   return (
     <div
